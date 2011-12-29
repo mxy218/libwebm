@@ -2,6 +2,15 @@ Code-Review+2: Frank Galligan <fgalligan@google.com>
 Verified+1: Frank Galligan <fgalligan@google.com>
 Code-Review+1: James Zern <jzern@google.com>
 Submitted-by: Frank Galligan <fgalligan@google.com>
+Submitted-at: Fri, 04 Nov 2011 10:33:47 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/9803
+Project: webm/libwebm
+Branch: refs/heads/master
+
+Code-Review+2: Frank Galligan <fgalligan@google.com>
+Verified+1: Frank Galligan <fgalligan@google.com>
+Code-Review+1: James Zern <jzern@google.com>
+Submitted-by: Frank Galligan <fgalligan@google.com>
 Submitted-at: Fri, 04 Nov 2011 11:33:47 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/9803
 Project: webm/libwebm

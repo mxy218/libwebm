@@ -435,14 +435,29 @@ class Tracks {
 };
 
 ///////////////////////////////////////////////////////////////
+// Cluster started notification callback interface.
+class IClusterStartedCallback {
+ public:
+  virtual ~IClusterStartedCallback();
+
+  // |offset| is the position in the WebM stream where the first octet of the
+  // Cluster element ID is written.
+  virtual void OnClusterStarted(int64 offset) = 0;
+};
+
+///////////////////////////////////////////////////////////////
 // Cluster element
 class Cluster {
  public:
+  Cluster();
+  ~Cluster();
+
   // |timecode| is the absolute timecode of the cluster. |cues_pos| is the
   // position for the cluster within the segment that should be written in
-  // the cues element.
-  Cluster(uint64 timecode, IMkvWriter* writer, int64 cues_pos);
-  ~Cluster();
+  // the cues element. |ptr_cluster_started| is the notification interface
+  // used to inform users when a new cluster is started in the WebM stream.
+  bool Init(uint64 timecode, IMkvWriter* ptr_writer, int64 cues_pos,
+            IClusterStartedCallback* ptr_cluster_started);
 
   // Adds a frame to be output in the file. The frame is written out through
   // |writer_| if successful. Returns true on success.
@@ -497,10 +512,14 @@ class Cluster {
   int64 size_position_;
 
   // The absolute timecode of the cluster.
-  const uint64 timecode_;
+  uint64 timecode_;
 
   // Pointer to the writer object. Not owned by this class.
   IMkvWriter* writer_;
+
+  // Notification interface used when a new cluster header is written to the
+  // WebM stream.
+  IClusterStartedCallback* ptr_cluster_started_;
 
   LIBWEBM_DISALLOW_COPY_AND_ASSIGN(Cluster);
 };
@@ -600,8 +619,13 @@ class Segment {
 
   const static uint64 kDefaultMaxClusterDuration = 30000000000ULL;
 
-  explicit Segment(IMkvWriter* writer);
+  Segment();
   virtual ~Segment();
+
+  // Initializes |SegmentInfo| and returns result. Always returns false when
+  // |ptr_writer| is NULL.
+  bool Init(IMkvWriter* ptr_writer,
+            IClusterStartedCallback* ptr_cluster_started);
 
   // Adds an audio track to the segment. Returns the number of the track on
   // success, 0 on error.
@@ -821,6 +845,10 @@ class Segment {
   IMkvWriter* writer_cluster_;
   IMkvWriter* writer_cues_;
   IMkvWriter* writer_header_;
+
+  // Pointer to cluster start notification callback interface. Passed to
+  // |Cluster::Init|, and used by |Cluster| when a cluster is started.
+  IClusterStartedCallback* ptr_cluster_started_;
 
   LIBWEBM_DISALLOW_COPY_AND_ASSIGN(Segment);
 };

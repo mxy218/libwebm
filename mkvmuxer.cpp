@@ -986,19 +986,33 @@ bool Tracks::Write(IMkvWriter* writer) const {
 //
 // Cluster Class
 
-Cluster::Cluster(uint64 timecode, IMkvWriter* writer, int64 cues_pos)
+Cluster::Cluster()
     : blocks_added_(0),
       finalized_(false),
       header_written_(false),
       payload_size_(0),
-      position_for_cues_(cues_pos),
+      position_for_cues_(0),
       size_position_(-1),
-      timecode_(timecode),
-      writer_(writer) {
-  assert(writer_);
+      timecode_(0),
+      writer_(NULL),
+      ptr_cluster_started_(NULL) {
 }
 
 Cluster::~Cluster() {
+}
+
+bool Cluster::Init(uint64 timecode,
+                   IMkvWriter* ptr_writer,
+                   int64 cues_pos,
+                   IClusterStartedCallback* ptr_cluster_started) {
+  if (!ptr_writer) {
+   return false;
+  }
+  timecode_ = timecode;
+  writer_ = ptr_writer;
+  position_for_cues_ = cues_pos;
+  ptr_cluster_started_ = ptr_cluster_started;
+  return true;
 }
 
 bool Cluster::AddFrame(const uint8* frame,
@@ -1066,6 +1080,10 @@ uint64 Cluster::Size() const {
 
 bool Cluster::WriteClusterHeader() {
   assert(!finalized_);
+
+  if (ptr_cluster_started_) {
+    ptr_cluster_started_->OnClusterStarted(writer_->Position());
+  }
 
   if (SerializeInt(writer_, kMkvCluster, 4))
     return false;
@@ -1352,7 +1370,7 @@ void SegmentInfo::set_writing_app(const char* app) {
 //
 // Segment Class
 
-Segment::Segment(IMkvWriter* writer)
+Segment::Segment()
     : chunk_count_(0),
       chunk_name_(NULL),
       chunk_writer_cluster_(NULL),
@@ -1378,13 +1396,10 @@ Segment::Segment(IMkvWriter* writer)
       output_cues_(true),
       payload_pos_(0),
       size_position_(0),
-      writer_cluster_(writer),
-      writer_cues_(writer),
-      writer_header_(writer) {
-  assert(writer_cluster_);
-
-  // TODO(fgalligan): Create an Init function for Segment.
-  segment_info_.Init();
+      writer_cluster_(NULL),
+      writer_cues_(NULL),
+      writer_header_(NULL),
+      ptr_cluster_started_(NULL) {
 }
 
 Segment::~Segment() {
@@ -1419,6 +1434,18 @@ Segment::~Segment() {
     chunk_writer_header_->Close();
     delete chunk_writer_header_;
   }
+}
+
+bool Segment::Init(IMkvWriter* ptr_writer,
+                   IClusterStartedCallback* ptr_cluster_started) {
+  if (!ptr_writer) {
+    return false;
+  }
+  writer_cluster_ = ptr_writer;
+  writer_cues_ = ptr_writer;
+  writer_header_ = ptr_writer;
+  ptr_cluster_started_ = ptr_cluster_started;
+  return segment_info_.Init();
 }
 
 bool Segment::Finalize() {
@@ -1649,12 +1676,18 @@ bool Segment::AddFrame(const uint8* frame,
     // TODO(fgalligan): Add checks here to make sure the timestamps passed in
     // are valid.
 
-    cluster_list_[cluster_list_size_] =
-        new (std::nothrow) Cluster(timecode,
-                                   writer_cluster_,
-                                   MaxOffset());
+    cluster_list_[cluster_list_size_] = new (std::nothrow) Cluster();
     if (!cluster_list_[cluster_list_size_])
       return false;
+
+    const bool cluster_init_ok =
+        cluster_list_[cluster_list_size_]->Init(timecode,
+                                                writer_cluster_,
+                                                MaxOffset(),
+                                                ptr_cluster_started_);
+    if (!cluster_init_ok)
+      return false;
+
     cluster_list_size_ = new_size;
     new_cluster_ = false;
   }

@@ -438,11 +438,13 @@ class Tracks {
 // Cluster element
 class Cluster {
  public:
+  Cluster(uint64 timecode, int64 cues_pos);
+  ~Cluster();
+
   // |timecode| is the absolute timecode of the cluster. |cues_pos| is the
   // position for the cluster within the segment that should be written in
   // the cues element.
-  Cluster(uint64 timecode, IMkvWriter* writer, int64 cues_pos);
-  ~Cluster();
+  bool Init(IMkvWriter* ptr_writer);
 
   // Adds a frame to be output in the file. The frame is written out through
   // |writer_| if successful. Returns true on success.
@@ -491,7 +493,7 @@ class Cluster {
   uint64 payload_size_;
 
   // The file position used for cue points.
-  int64 position_for_cues_;
+  const int64 position_for_cues_;
 
   // The file position of the cluster's size element.
   int64 size_position_;
@@ -591,6 +593,10 @@ class SegmentInfo {
 ///////////////////////////////////////////////////////////////
 // This class represents the main segment in a WebM file. Currently only
 // supports one Segment element.
+//
+// Note:
+//  Users MUST call |Init| and pass a non-NULL |ptr_writer| to mux a WebM
+//  stream using this class.
 class Segment {
  public:
   enum Mode {
@@ -600,8 +606,12 @@ class Segment {
 
   const static uint64 kDefaultMaxClusterDuration = 30000000000ULL;
 
-  explicit Segment(IMkvWriter* writer);
+  Segment();
   virtual ~Segment();
+
+  // Initializes |SegmentInfo| and returns result. Always returns false when
+  // |ptr_writer| is NULL.
+  bool Init(IMkvWriter* ptr_writer);
 
   // Adds an audio track to the segment. Returns the number of the track on
   // success, 0 on error.

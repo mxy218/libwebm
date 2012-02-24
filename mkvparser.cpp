@@ -21,7 +21,7 @@ void mkvparser::GetVersion(int& major, int& minor, int& build, int& revision)
     major = 1;
     minor = 0;
     build = 0;
-    revision = 22;
+    revision = 23;
 }
 
 long long mkvparser::ReadUInt(IMkvReader* pReader, long long pos, long& len)
@@ -5404,8 +5404,14 @@ long Track::GetFirst(const BlockEntry*& pBlockEntry) const
             return E_BUFFER_NOT_FULL;
         }
 
+#if 0
         pBlockEntry = pCluster->GetFirst();
+#else
+        long status = pCluster->GetFirst(pBlockEntry);
 
+        if (status < 0)  //error
+            return status;
+#endif
         if (pBlockEntry == 0)  //empty cluster
         {
             pCluster = m_pSegment->GetNext(pCluster);
@@ -5422,10 +5428,24 @@ long Track::GetFirst(const BlockEntry*& pBlockEntry) const
             if ((tn == m_info.number) && VetEntry(pBlockEntry))
                 return 0;
 
+#if 0
             pBlockEntry = pCluster->GetNext(pBlockEntry);
 
             if (pBlockEntry == 0)
                 break;
+#else
+            const BlockEntry* pNextEntry;
+
+            status = pCluster->GetNext(pBlockEntry, pNextEntry);
+
+            if (status < 0)  //error
+                return status;
+
+            if (pNextEntry == 0)
+                break;
+
+            pBlockEntry = pNextEntry;
+#endif
         }
 
         ++i;
@@ -5459,7 +5479,14 @@ long Track::GetNext(
     assert(pCluster);
     assert(!pCluster->EOS());
 
+#if 0
     pNextEntry = pCluster->GetNext(pCurrEntry);
+#else
+    long status = pCluster->GetNext(pCurrEntry, pNextEntry);
+
+    if (status < 0)  //error
+        return status;
+#endif
 
     for (int i = 0; ; )
     {
@@ -5470,8 +5497,16 @@ long Track::GetNext(
 
             if (pNextBlock->GetTrackNumber() == m_info.number)
                 return 0;
-
+#if 0
             pNextEntry = pCluster->GetNext(pNextEntry);
+#else
+            pCurrEntry = pNextEntry;
+
+            status = pCluster->GetNext(pCurrEntry, pNextEntry);
+
+            if (status < 0) //error
+                return status;
+#endif
         }
 
         pCluster = m_pSegment->GetNext(pCluster);
@@ -5514,7 +5549,14 @@ long Track::GetNext(
             return E_BUFFER_NOT_FULL;
         }
 
+#if 0
         pNextEntry = pCluster->GetFirst();
+#else
+        status = pCluster->GetFirst(pNextEntry);
+
+        if (status < 0)  //error
+            return status;
+#endif
 
         if (pNextEntry == NULL)  //empty cluster
             continue;
@@ -5631,7 +5673,6 @@ Track::EOSBlock::EOSBlock() :
     BlockEntry(NULL, LONG_MIN)
 {
 }
-
 
 BlockEntry::Kind Track::EOSBlock::GetKind() const
 {
@@ -6915,7 +6956,11 @@ long Cluster::ParseSimpleBlock(
         return E_BUFFER_NOT_FULL;
     }
 
-    CreateBlock(0x23, block_start, block_size);  //simple block id
+    status = CreateBlock(0x23, block_start, block_size);  //simple block id
+
+    if (status != 0)
+        return status;
+
     m_pos = block_stop;
 
     return 0;  //success
@@ -7133,7 +7178,11 @@ long Cluster::ParseBlockGroup(
 
     assert(pos == payload_stop);
 
-    CreateBlock(0x20, payload_start, payload_size);  //BlockGroup ID
+    status = CreateBlock(0x20, payload_start, payload_size);  //BlockGroup ID
+
+    if (status != 0)
+        return status;
+
     m_pos = payload_stop;
 
     return 0;  //success
@@ -7595,7 +7644,14 @@ long long Cluster::GetTime() const
 
 long long Cluster::GetFirstTime() const
 {
+#if 0
     const BlockEntry* const pEntry = GetFirst();
+#else
+    const BlockEntry* pEntry;
+
+    const long status = GetFirst(pEntry);
+    assert(status >= 0);
+#endif
 
     if (pEntry == NULL)  //empty cluster
         return GetTime();
@@ -7609,7 +7665,14 @@ long long Cluster::GetFirstTime() const
 
 long long Cluster::GetLastTime() const
 {
+#if 0
     const BlockEntry* const pEntry = GetLast();
+#else
+    const BlockEntry* pEntry;
+
+    const long status = GetLast(pEntry);
+    assert(status >= 0);
+#endif
 
     if (pEntry == NULL)  //empty cluster
         return GetTime();
@@ -7621,12 +7684,12 @@ long long Cluster::GetLastTime() const
 }
 
 
-void Cluster::CreateBlock(
+long Cluster::CreateBlock(
     long long id,
     long long pos,   //absolute pos of payload
     long long size) const
 {
-    BlockEntry** ppEntry;
+    assert((id == 0x20) || (id == 0x23));  //BlockGroup or SimpleBlock
 
     if (m_entries_count < 0)  //haven't parsed anything yet
     {
@@ -7636,14 +7699,12 @@ void Cluster::CreateBlock(
         m_entries_size = 1024;
         m_entries = new BlockEntry*[m_entries_size];
 
-        ppEntry = m_entries;
-        m_entries_count = 1;
+        m_entries_count = 0;
     }
     else
     {
         assert(m_entries);
         assert(m_entries_size > 0);
-        assert(m_entries_count > 0);
         assert(m_entries_count <= m_entries_size);
 
         if (m_entries_count >= m_entries_size)
@@ -7666,34 +7727,23 @@ void Cluster::CreateBlock(
             m_entries = entries;
             m_entries_size = entries_size;
         }
-
-        ppEntry = m_entries + m_entries_count;
-        ++m_entries_count;
     }
 
     if (id == 0x20)  //BlockGroup ID
-        CreateBlockGroup(pos, size, ppEntry);
-    else
-    {
-        assert(id == 0x23);  //SimpleBlock ID
-        CreateSimpleBlock(pos, size, ppEntry);
-    }
+        return CreateBlockGroup(pos, size);
+    else  //SimpleBlock ID
+        return CreateSimpleBlock(pos, size);
 }
 
 
-void Cluster::CreateBlockGroup(
+long Cluster::CreateBlockGroup(
     long long st,
-    long long sz,
-    BlockEntry**& ppEntry) const
+    long long sz) const
 {
     assert(m_entries);
     assert(m_entries_size > 0);
-    assert(ppEntry);
-    assert(ppEntry >= m_entries);
-
-    const ptrdiff_t idx = ppEntry - m_entries;
-    assert(idx >= 0);
-    assert(idx < m_entries_size);
+    assert(m_entries_count >= 0);
+    assert(m_entries_count < m_entries_size);
 
     Cluster* const this_ = const_cast<Cluster*>(this);
 
@@ -7769,38 +7819,71 @@ void Cluster::CreateBlockGroup(
     assert(bpos >= 0);
     assert(bsize >= 0);
 
-    *ppEntry++ = new BlockGroup(this_, idx, bpos, bsize, prev, next, duration);
+    const long idx = m_entries_count;
+
+    BlockEntry** const ppEntry = m_entries + idx;
+    BlockEntry*& pEntry = *ppEntry;
+
+    pEntry = new BlockGroup(this_, idx, bpos, bsize, prev, next, duration);
+    assert(pEntry);
+
+    BlockGroup* const p = static_cast<BlockGroup*>(pEntry);
+
+    const long status = p->Parse();
+
+    if (status == 0)  //success
+    {
+        ++m_entries_count;
+        return 0;
+    }
+
+    delete pEntry;
+    pEntry = 0;
+
+    return status;
 }
 
 
 
-void Cluster::CreateSimpleBlock(
+long Cluster::CreateSimpleBlock(
     long long st,
-    long long sz,
-    BlockEntry**& ppEntry) const
+    long long sz) const
 {
     assert(m_entries);
     assert(m_entries_size > 0);
-    assert(ppEntry);
-    assert(ppEntry >= m_entries);
+    assert(m_entries_count >= 0);
+    assert(m_entries_count < m_entries_size);
 
-    const ptrdiff_t idx = ppEntry - m_entries;
-    assert(idx >= 0);
-    assert(idx < m_entries_size);
+    const long idx = m_entries_count;
+
+    BlockEntry** const ppEntry = m_entries + idx;
+    BlockEntry*& pEntry = *ppEntry;
 
     Cluster* const this_ = const_cast<Cluster*>(this);
-    *ppEntry++ = new SimpleBlock(this_, idx, st, sz);
+
+    pEntry = new SimpleBlock(this_, idx, st, sz);
+    assert(pEntry);
+
+    SimpleBlock* const p = static_cast<SimpleBlock*>(pEntry);
+
+    const long status = p->Parse();
+
+    if (status == 0)
+    {
+        ++m_entries_count;
+        return 0;
+    }
+
+    delete pEntry;
+    pEntry = 0;
+
+    return status;
 }
 
 
+#if 0
 const BlockEntry* Cluster::GetFirst() const
 {
-#if 0
-    LoadBlockEntries();
-
-    if ((m_entries == NULL) || (m_entries_count <= 0))
-        return NULL;
-#else
     if (m_entries_count <= 0)
     {
         long long pos;
@@ -7815,23 +7898,48 @@ const BlockEntry* Cluster::GetFirst() const
         assert(m_entries);
         assert(m_entries_count > 0);
     }
-#endif
 
     const BlockEntry* const pFirst = m_entries[0];
     assert(pFirst);
 
     return pFirst;
 }
+#else
+long Cluster::GetFirst(const BlockEntry*& pFirst) const
+{
+    if (m_entries_count <= 0)
+    {
+        long long pos;
+        long len;
+
+        const long status = Parse(pos, len);
+
+        if (status < 0)  //error
+        {
+            pFirst = NULL;
+            return status;
+        }
+
+        if (m_entries_count <= 0)  //empty cluster
+        {
+            pFirst = NULL;
+            return 0;
+        }
+    }
+
+    assert(m_entries);
+
+    pFirst = m_entries[0];
+    assert(pFirst);
+
+    return 0;  //success
+}
+#endif
 
 
+#if 0
 const BlockEntry* Cluster::GetLast() const
 {
-#if 0
-    LoadBlockEntries();
-
-    if ((m_entries == NULL) || (m_entries_count <= 0))
-        return NULL;
-#else
     for (;;)
     {
         long long pos;
@@ -7848,7 +7956,6 @@ const BlockEntry* Cluster::GetLast() const
         return NULL;
 
     assert(m_entries);
-#endif
 
     const long idx = m_entries_count - 1;
 
@@ -7857,8 +7964,45 @@ const BlockEntry* Cluster::GetLast() const
 
     return pLast;
 }
+#else
+long Cluster::GetLast(const BlockEntry*& pLast) const
+{
+    for (;;)
+    {
+        long long pos;
+        long len;
+
+        const long status = Parse(pos, len);
+
+        if (status < 0)  //error
+        {
+            pLast = NULL;
+            return status;
+        }
+
+        if (status > 0)  //no new block
+            break;
+    }
+
+    if (m_entries_count <= 0)
+    {
+        pLast = NULL;
+        return 0;
+    }
+
+    assert(m_entries);
+
+    const long idx = m_entries_count - 1;
+
+    pLast = m_entries[idx];
+    assert(pLast);
+
+    return 0;
+}
+#endif
 
 
+#if 0
 const BlockEntry* Cluster::GetNext(const BlockEntry* pEntry) const
 {
     assert(pEntry);
@@ -7871,10 +8015,6 @@ const BlockEntry* Cluster::GetNext(const BlockEntry* pEntry) const
 
     ++idx;
 
-#if 0
-    if (idx >= size_t(m_entries_count))
-      return NULL;
-#else
     if (idx >= size_t(m_entries_count))
     {
         long long pos;
@@ -7893,10 +8033,54 @@ const BlockEntry* Cluster::GetNext(const BlockEntry* pEntry) const
         assert(m_entries_count > 0);
         assert(idx < size_t(m_entries_count));
     }
-#endif
 
     return m_entries[idx];
 }
+#else
+long Cluster::GetNext(
+    const BlockEntry* pCurr,
+    const BlockEntry*& pNext) const
+{
+    assert(pCurr);
+    assert(m_entries);
+    assert(m_entries_count > 0);
+
+    size_t idx = pCurr->GetIndex();
+    assert(idx < size_t(m_entries_count));
+    assert(m_entries[idx] == pCurr);
+
+    ++idx;
+
+    if (idx >= size_t(m_entries_count))
+    {
+        long long pos;
+        long len;
+
+        const long status = Parse(pos, len);
+
+        if (status < 0)  //error
+        {
+            pNext = NULL;
+            return status;
+        }
+
+        if (status > 0)
+        {
+            pNext = NULL;
+            return 0;
+        }
+
+        assert(m_entries);
+        assert(m_entries_count > 0);
+        assert(idx < size_t(m_entries_count));
+    }
+
+    pNext = m_entries[idx];
+    assert(pNext);
+
+    return 0;
+}
+#endif
 
 
 long Cluster::GetEntryCount() const
@@ -8313,8 +8497,14 @@ SimpleBlock::SimpleBlock(
     long long start,
     long long size) :
     BlockEntry(pCluster, idx),
-    m_block(start, size, pCluster->m_pSegment->m_pReader)
+    m_block(start, size)
 {
+}
+
+
+long SimpleBlock::Parse()
+{
+    return m_block.Parse(m_pCluster->m_pSegment->m_pReader);
 }
 
 
@@ -8339,12 +8529,24 @@ BlockGroup::BlockGroup(
     long long next,
     long long duration) :
     BlockEntry(pCluster, idx),
-    m_block(block_start, block_size, pCluster->m_pSegment->m_pReader),
+    m_block(block_start, block_size),
     m_prev(prev),
     m_next(next),
     m_duration(duration)
 {
-    m_block.SetKey((prev > 0) && (next <= 0));
+}
+
+
+long BlockGroup::Parse()
+{
+    const long status = m_block.Parse(m_pCluster->m_pSegment->m_pReader);
+
+    if (status)
+        return status;
+
+    m_block.SetKey((m_prev > 0) && (m_next <= 0));
+
+    return 0;
 }
 
 
@@ -8389,56 +8591,86 @@ long long BlockGroup::GetNextTimeCode() const
 }
 
 
-Block::Block(long long start, long long size_, IMkvReader* pReader) :
+Block::Block(long long start, long long size_) :
     m_start(start),
-    m_size(size_)
+    m_size(size_),
+    m_track(0),
+    m_timecode(-1),
+    m_flags(0),
+    m_frames(NULL),
+    m_frame_count(-1)
 {
-    long long pos = start;
-    const long long stop = start + size_;
+}
+
+
+Block::~Block()
+{
+    delete[] m_frames;
+}
+
+
+long Block::Parse(IMkvReader* pReader)
+{
+    assert(pReader);
+    assert(m_start >= 0);
+    assert(m_size >= 0);
+    assert(m_track <= 0);
+    assert(m_frames == NULL);
+    assert(m_frame_count <= 0);
+
+    long long pos = m_start;
+    const long long stop = m_start + m_size;
 
     long len;
 
     m_track = ReadUInt(pReader, pos, len);
-    assert(m_track > 0);
-    assert((pos + len) <= stop);
+
+    if (m_track <= 0)
+        return E_FILE_FORMAT_INVALID;
+
+    if ((pos + len) > stop)
+        return E_FILE_FORMAT_INVALID;
 
     pos += len;  //consume track number
-    assert((stop - pos) >= 2);
+
+    if ((stop - pos) < 2)
+        return E_FILE_FORMAT_INVALID;
 
     long status;
-
-#if 0
-    m_timecode = Unserialize2SInt(pReader, pos);
-#else
     long long value;
 
     status = UnserializeInt(pReader, pos, 2, value);
-    assert(status == 0);
-    assert(value >= SHRT_MIN);
-    assert(value <= SHRT_MAX);
+
+    if (status)
+        return E_FILE_FORMAT_INVALID;
+
+    if (value < SHRT_MIN)
+        return E_FILE_FORMAT_INVALID;
+
+    if (value > SHRT_MAX)
+        return E_FILE_FORMAT_INVALID;
 
     m_timecode = static_cast<short>(value);
-#endif
 
     pos += 2;
-    assert((stop - pos) >= 1);
+
+    if ((stop - pos) <= 0)
+        return E_FILE_FORMAT_INVALID;
 
     status = pReader->Read(pos, 1, &m_flags);
-    assert(status == 0);
 
-#if 0
-    const int invisible = int(m_flags & 0x08) >> 3;
-    invisible;
-    assert(!invisible);  //TODO
-#endif
+    if (status)
+        return E_FILE_FORMAT_INVALID;
 
     const int lacing = int(m_flags & 0x06) >> 1;
 
     ++pos;  //consume flags byte
-    assert(pos <= stop);
 
     if (lacing == 0)  //no lacing
     {
+        if (pos > stop)
+            return E_FILE_FORMAT_INVALID;
+
         m_frame_count = 1;
         m_frames = new Frame[m_frame_count];
 
@@ -8446,19 +8678,24 @@ Block::Block(long long start, long long size_, IMkvReader* pReader) :
         f.pos = pos;
 
         const long long frame_size = stop - pos;
-        assert(frame_size <= LONG_MAX);
+
+        if (frame_size > LONG_MAX)
+            return E_FILE_FORMAT_INVALID;
 
         f.len = static_cast<long>(frame_size);
 
-        return;
+        return 0;  //success
     }
 
-    assert(pos < stop);
+    if (pos >= stop)
+        return E_FILE_FORMAT_INVALID;
 
     unsigned char biased_count;
 
     status = pReader->Read(pos, 1, &biased_count);
-    assert(status == 0);
+
+    if (status)
+        return E_FILE_FORMAT_INVALID;
 
     ++pos;  //consume frame count
     assert(pos <= stop);
@@ -8484,8 +8721,13 @@ Block::Block(long long start, long long size_, IMkvReader* pReader) :
             {
                 unsigned char val;
 
+                if (pos >= stop)
+                    return E_FILE_FORMAT_INVALID;
+
                 status = pReader->Read(pos, 1, &val);
-                assert(status == 0);
+
+                if (status)
+                    return E_FILE_FORMAT_INVALID;
 
                 ++pos;  //consume xiph size byte
 
@@ -8498,6 +8740,8 @@ Block::Block(long long start, long long size_, IMkvReader* pReader) :
             Frame& f = *pf++;
             assert(pf < pf_end);
 
+            f.pos = 0;  //patch later
+
             f.len = frame_size;
             size += frame_size;  //contribution of this frame
 
@@ -8505,17 +8749,25 @@ Block::Block(long long start, long long size_, IMkvReader* pReader) :
         }
 
         assert(pf < pf_end);
-        assert(pos < stop);
+        assert(pos <= stop);
 
         {
             Frame& f = *pf++;
-            assert(pf == pf_end);
+
+            if (pf != pf_end)
+                return E_FILE_FORMAT_INVALID;
+
+            f.pos = 0;  //patch later
 
             const long long total_size = stop - pos;
-            assert(total_size > size);
+
+            if (total_size < size)
+                return E_FILE_FORMAT_INVALID;
 
             const long long frame_size = total_size - size;
-            assert(frame_size <= LONG_MAX);
+
+            if (frame_size > LONG_MAX)
+                return E_FILE_FORMAT_INVALID;
 
             f.len = static_cast<long>(frame_size);
         }
@@ -8535,10 +8787,14 @@ Block::Block(long long start, long long size_, IMkvReader* pReader) :
     else if (lacing == 2)  //fixed-size lacing
     {
         const long long total_size = stop - pos;
-        assert((total_size % m_frame_count) == 0);
+
+        if ((total_size % m_frame_count) != 0)
+            return E_FILE_FORMAT_INVALID;
 
         const long long frame_size = total_size / m_frame_count;
-        assert(frame_size <= LONG_MAX);
+
+        if (frame_size > LONG_MAX)
+            return E_FILE_FORMAT_INVALID;
 
         Frame* pf = m_frames;
         Frame* const pf_end = pf + m_frame_count;
@@ -8560,24 +8816,36 @@ Block::Block(long long start, long long size_, IMkvReader* pReader) :
     else
     {
         assert(lacing == 3);  //EBML lacing
-        assert(pos < stop);
+
+        if (pos >= stop)
+            return E_FILE_FORMAT_INVALID;
 
         long size = 0;
         int frame_count = m_frame_count;
 
         long long frame_size = ReadUInt(pReader, pos, len);
-        assert(frame_size > 0);
-        assert(frame_size <= LONG_MAX);
-        assert((pos + len) <= stop);
+
+        if (frame_size < 0)
+            return E_FILE_FORMAT_INVALID;
+
+        if (frame_size > LONG_MAX)
+            return E_FILE_FORMAT_INVALID;
+
+        if ((pos + len) > stop)
+            return E_FILE_FORMAT_INVALID;
 
         pos += len; //consume length of size of first frame
-        assert((pos + frame_size) <= stop);
+
+        if ((pos + frame_size) > stop)
+            return E_FILE_FORMAT_INVALID;
 
         Frame* pf = m_frames;
         Frame* const pf_end = pf + m_frame_count;
 
         {
             Frame& curr = *pf;
+
+            curr.pos = 0;  //patch later
 
             curr.len = static_cast<long>(frame_size);
             size += curr.len;  //contribution of this frame
@@ -8587,18 +8855,27 @@ Block::Block(long long start, long long size_, IMkvReader* pReader) :
 
         while (frame_count > 1)
         {
-            assert(pos < stop);
+            if (pos >= stop)
+                return E_FILE_FORMAT_INVALID;
+
             assert(pf < pf_end);
 
             const Frame& prev = *pf++;
-            assert(pf < pf_end);
             assert(prev.len == frame_size);
+
+            assert(pf < pf_end);
 
             Frame& curr = *pf;
 
+            curr.pos = 0;  //patch later
+
             const long long delta_size_ = ReadUInt(pReader, pos, len);
-            assert(delta_size_ >= 0);
-            assert((pos + len) <= stop);
+
+            if (delta_size_ < 0)
+                return E_FILE_FORMAT_INVALID;
+
+            if ((pos + len) > stop)
+                return E_FILE_FORMAT_INVALID;
 
             pos += len;  //consume length of (delta) size
             assert(pos <= stop);
@@ -8608,8 +8885,12 @@ Block::Block(long long start, long long size_, IMkvReader* pReader) :
             const long long delta_size = delta_size_ - bias;
 
             frame_size += delta_size;
-            assert(frame_size > 0);
-            assert(frame_size <= LONG_MAX);
+
+            if (frame_size < 0)
+                return E_FILE_FORMAT_INVALID;
+
+            if (frame_size > LONG_MAX)
+                return E_FILE_FORMAT_INVALID;
 
             curr.len = static_cast<long>(frame_size);
             size += curr.len;  //contribution of this frame
@@ -8618,23 +8899,28 @@ Block::Block(long long start, long long size_, IMkvReader* pReader) :
         }
 
         {
-            assert(pos < stop);
+            assert(pos <= stop);
             assert(pf < pf_end);
 
             const Frame& prev = *pf++;
-            assert(pf < pf_end);
             assert(prev.len == frame_size);
+
+            assert(pf < pf_end);
 
             Frame& curr = *pf++;
             assert(pf == pf_end);
 
+            curr.pos = 0;  //patch later
+
             const long long total_size = stop - pos;
-            assert(total_size > 0);
-            assert(total_size > size);
+
+            if (total_size < size)
+                return E_FILE_FORMAT_INVALID;
 
             frame_size = total_size - size;
-            assert(frame_size > 0);
-            assert(frame_size <= LONG_MAX);
+
+            if (frame_size > LONG_MAX)
+                return E_FILE_FORMAT_INVALID;
 
             curr.len = static_cast<long>(frame_size);
         }
@@ -8651,12 +8937,8 @@ Block::Block(long long start, long long size_, IMkvReader* pReader) :
 
         assert(pos == stop);
     }
-}
 
-
-Block::~Block()
-{
-    delete[] m_frames;
+    return 0;  //success
 }
 
 

@@ -42,6 +42,8 @@ signed char Unserialize1SInt(IMkvReader*, long long);
 long UnserializeInt(IMkvReader*, long long pos, long len, long long& result);
 #endif
 
+long UnserializeString(IMkvReader*, long long pos, long long size, char*&);
+
 bool Match(IMkvReader*, long long&, unsigned long, long long&);
 bool Match(IMkvReader*, long long&, unsigned long, char*&);
 bool Match(IMkvReader*, long long&, unsigned long, unsigned char*&, size_t&);
@@ -344,6 +346,7 @@ protected:
         const Info&,
         long long element_start,
         long long element_size);
+
     const Info m_info;
 
     class EOSBlock : public BlockEntry
@@ -368,12 +371,20 @@ class VideoTrack : public Track
     VideoTrack(const VideoTrack&);
     VideoTrack& operator=(const VideoTrack&);
 
-public:
     VideoTrack(
         Segment*,
         const Info&,
         long long element_start,
         long long element_size);
+
+public:
+    static long Parse(
+        Segment*,
+        const Info&,
+        long long element_start,
+        long long element_size,
+        VideoTrack*&);
+
     long long GetWidth() const;
     long long GetHeight() const;
     double GetFrameRate() const;
@@ -394,12 +405,19 @@ class AudioTrack : public Track
     AudioTrack(const AudioTrack&);
     AudioTrack& operator=(const AudioTrack&);
 
-public:
     AudioTrack(
         Segment*,
         const Info&,
         long long element_start,
         long long element_size);
+public:
+    static long Parse(
+        Segment*,
+        const Info&,
+        long long element_start,
+        long long element_size,
+        AudioTrack*&);
+
     double GetSamplingRate() const;
     long long GetChannels() const;
     long long GetBitDepth() const;
@@ -431,7 +449,12 @@ public:
         long long size,
         long long element_start,
         long long element_size);
-    virtual ~Tracks();
+
+    ~Tracks();
+
+    long Parse();
+
+    unsigned long GetTracksCount() const;
 
     const Track* GetTrackByNumber(unsigned long tn) const;
     const Track* GetTrackByIndex(unsigned long idx) const;
@@ -440,15 +463,13 @@ private:
     Track** m_trackEntries;
     Track** m_trackEntriesEnd;
 
-    void ParseTrackEntry(
-        long long,
-        long long,
-        Track*&,
+    long ParseTrackEntry(
+        long long payload_start,
+        long long payload_size,
         long long element_start,
-        long long element_size);
+        long long element_size,
+        Track*&) const;
 
-public:
-    unsigned long GetTracksCount() const;
 };
 
 
@@ -472,6 +493,8 @@ public:
         long long element_size);
 
     ~SegmentInfo();
+
+    long Parse();
 
     long long GetTimeCodeScale() const;
     long long GetDuration() const;  //scaled

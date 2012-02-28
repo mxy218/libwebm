@@ -273,21 +273,27 @@ int main(int argc, char* argv[])
             const long long trackNum = pBlock->GetTrackNumber();
             const unsigned long tn = static_cast<unsigned long>(trackNum);
             const Track* const pTrack = pTracks->GetTrackByNumber(tn);
-            const long long trackType = pTrack->GetType();
-            const int frameCount = pBlock->GetFrameCount();
-            const long long time_ns = pBlock->GetTime(pCluster);
 
-            printf("\t\t\tBlock\t\t:%s,%s,%15lld\n",
-                   (trackType == VIDEO_TRACK) ? "V" : "A",
-                   pBlock->IsKey() ? "I" : "P",
-                   time_ns);
-
-            for (int i = 0; i < frameCount; ++i)
+            if (pTrack == NULL)
+                printf("\t\t\tBlock\t\t:UNKNOWN TRACK TYPE\n");
+            else
             {
-                const Block::Frame& theFrame = pBlock->GetFrame(i);
-                const long size = theFrame.len;
-                const long long offset = theFrame.pos;
-                printf("\t\t\t %15ld,%15llx\n", size, offset);
+                const long long trackType = pTrack->GetType();
+                const int frameCount = pBlock->GetFrameCount();
+                const long long time_ns = pBlock->GetTime(pCluster);
+
+                printf("\t\t\tBlock\t\t:%s,%s,%15lld\n",
+                       (trackType == VIDEO_TRACK) ? "V" : "A",
+                       pBlock->IsKey() ? "I" : "P",
+                       time_ns);
+
+                for (int i = 0; i < frameCount; ++i)
+                {
+                    const Block::Frame& theFrame = pBlock->GetFrame(i);
+                    const long size = theFrame.len;
+                    const long long offset = theFrame.pos;
+                    printf("\t\t\t %15ld,%15llx\n", size, offset);
+                }
             }
 
             status = pCluster->GetNext(pBlockEntry, pBlockEntry);

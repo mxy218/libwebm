@@ -267,6 +267,79 @@ bool Cues::Write(IMkvWriter* writer) const {
 
 ///////////////////////////////////////////////////////////////
 //
+// ContentEncAESSettings Class
+
+ContentEncAESSettings::ContentEncAESSettings()
+    : cipher_mode_(kCTR),
+      cipher_init_data_(NULL),
+      cipher_init_data_size_(0) {
+}
+
+ContentEncAESSettings::~ContentEncAESSettings() {
+  delete [] cipher_init_data_;
+}
+
+bool ContentEncAESSettings::SetCipherInitData(const uint8* data, int32 size) {
+  if (!data || size < 1)
+    return false;
+
+  uint8* const temp = new (std::nothrow) uint8[size];
+  if (!temp)
+    return false;
+
+  delete [] cipher_init_data_;
+  cipher_init_data_ = temp;
+  memcpy(cipher_init_data_, data, size);
+  cipher_init_data_size_ = size;
+  return true;
+}
+
+uint64 ContentEncAESSettings::Size() const {
+  const uint64 payload = PayloadSize();
+  const uint64 size =
+      EbmlMasterElementSize(kMkvContentEncAESSettings, payload) + payload;
+  return size;
+}
+
+bool ContentEncAESSettings::Write(IMkvWriter* writer) const {
+  const uint64 payload = PayloadSize();
+
+  if (!WriteEbmlMasterElement(writer, kMkvContentEncAESSettings, payload))
+    return false;
+
+  const int64 payload_position = writer->Position();
+  if (payload_position < 0)
+    return false;
+
+  if (!WriteEbmlElement(writer, kMkvAESSettingsCipherMode, cipher_mode_))
+    return false;
+  if (cipher_init_data_) {
+    if (!WriteEbmlElement(writer,
+                          kMkvAESSettingsCipherInitData,
+                          cipher_init_data_,
+                          cipher_init_data_size_))
+      return false;
+  }
+
+  const int64 stop_position = writer->Position();
+  if (stop_position < 0 ||
+      stop_position - payload_position != static_cast<int64>(payload))
+    return false;
+
+  return true;
+}
+
+uint64 ContentEncAESSettings::PayloadSize() const {
+  uint64 size = EbmlElementSize(kMkvAESSettingsCipherMode, cipher_mode_);
+  if (cipher_init_data_)
+    size += EbmlElementSize(kMkvAESSettingsCipherInitData,
+                            cipher_init_data_,
+                            cipher_init_data_size_);
+  return size;
+}
+
+///////////////////////////////////////////////////////////////
+//
 // ContentEncoding Class
 
 ContentEncoding::ContentEncoding()
@@ -338,6 +411,9 @@ bool ContentEncoding::Write(IMkvWriter* writer) const {
                         enc_key_id_length_))
     return false;
 
+  if (!enc_aes_settings_.Write(writer))
+    return false;
+
   const int64 stop_position = writer->Position();
   if (stop_position < 0 ||
       stop_position - payload_position != static_cast<int64>(size))
@@ -367,12 +443,14 @@ uint64 ContentEncoding::EncodingSize(uint64 compresion_size,
 }
 
 uint64 ContentEncoding::EncryptionSize() const {
+  const uint64 aes_size = enc_aes_settings_.Size();
+
   uint64 encryption_size = EbmlElementSize(kMkvContentEncKeyID,
                                            enc_key_id_,
                                            enc_key_id_length_);
   encryption_size += EbmlElementSize(kMkvContentEncAlgo, enc_algo_);
 
-  return encryption_size;
+  return encryption_size + aes_size;
 }
 
 ///////////////////////////////////////////////////////////////

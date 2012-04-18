@@ -1,4 +1,4 @@
-// Copyright (c) 2011 The WebM project authors. All Rights Reserved.
+// Copyright (c) 2012 The WebM project authors. All Rights Reserved.
 //
 // Use of this source code is governed by a BSD-style license
 // that can be found in the LICENSE file in the root of the source
@@ -180,6 +180,48 @@ class Cues {
 };
 
 ///////////////////////////////////////////////////////////////
+// ContentEncAESSettings element
+class ContentEncAESSettings {
+ public:
+  enum {
+    kCTR = 1
+  };
+
+  ContentEncAESSettings();
+  ~ContentEncAESSettings();
+
+  // Set the data for the AESSettingsCipherInitData element. |data| is the
+  // data to be copied. |size| is length in bytes of |data|. Returns true on
+  // success.
+  bool SetCipherInitData(const uint8* data, int32 size);
+
+  // Returns the size in bytes for the ContentEncAESSettings element.
+  uint64 Size() const;
+
+  // Writes out the ContentEncAESSettings element to |writer|. Returns true on
+  // success.
+  bool Write(IMkvWriter* writer) const;
+
+  uint64 cipher_mode() const { return cipher_mode_; }
+  const uint8* cipher_init_data() const { return cipher_init_data_; }
+  int32 cipher_init_data_size() const { return cipher_init_data_size_; }
+
+ private:
+  // Returns the size in bytes for the payload of the ContentEncAESSettings
+  // element.
+  uint64 PayloadSize() const;
+
+  // Sub elements
+  uint64 cipher_mode_;
+  uint8* cipher_init_data_;
+
+  // Size in bytes of the AESSettingsCipherInitData element.
+  int32 cipher_init_data_size_;
+
+  LIBWEBM_DISALLOW_COPY_AND_ASSIGN(ContentEncAESSettings);
+};
+
+///////////////////////////////////////////////////////////////
 // ContentEncoding element
 // Elements used to describe if the track data has been encrypted or
 // compressed with zlib or header stripping.
@@ -191,11 +233,6 @@ class ContentEncoding {
   ContentEncoding();
   ~ContentEncoding();
 
-  uint64 enc_algo() const { return enc_algo_; }
-  uint64 encoding_order() const { return encoding_order_; }
-  uint64 encoding_scope() const { return encoding_scope_; }
-  uint64 encoding_type() const { return encoding_type_; }
-
   // Sets the content encryption id. Copies |length| bytes from |id| to
   // |enc_key_id_|. Returns true on success.
   bool SetEncryptionID(const uint8* id, uint64 length);
@@ -206,6 +243,12 @@ class ContentEncoding {
   // Writes out the ContentEncoding element to |writer|. Returns true on
   // success.
   bool Write(IMkvWriter* writer) const;
+
+  uint64 enc_algo() const { return enc_algo_; }
+  uint64 encoding_order() const { return encoding_order_; }
+  uint64 encoding_scope() const { return encoding_scope_; }
+  uint64 encoding_type() const { return encoding_type_; }
+  ContentEncAESSettings* enc_aes_settings() { return &enc_aes_settings_; }
 
  private:
   // Returns the size in bytes for the encoding elements.
@@ -220,6 +263,9 @@ class ContentEncoding {
   uint64 encoding_order_;
   uint64 encoding_scope_;
   uint64 encoding_type_;
+
+  // ContentEncAESSettings element.
+  ContentEncAESSettings enc_aes_settings_;
 
   // Size of the ContentEncKeyID data in bytes.
   uint64 enc_key_id_length_;

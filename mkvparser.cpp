@@ -4391,6 +4391,16 @@ ContentEncoding::ContentCompression::~ContentCompression() {
   delete [] settings;
 }
 
+ContentEncoding::ContentEncAESSettings::ContentEncAESSettings()
+    : cipher_mode(kCTR),
+      cipher_init_data(NULL),
+      cipher_init_data_len(0) {
+}
+
+ContentEncoding::ContentEncAESSettings::~ContentEncAESSettings() {
+  delete [] cipher_init_data;
+}
+
 ContentEncoding::ContentEncryption::ContentEncryption()
     : algo(0),
       key_id(NULL),
@@ -4522,6 +4532,13 @@ void ContentEncoding::ParseEncryptionEntry(
     } else if (Match(pReader, pos, 0x7E6, value)) {
       // ContentSigHashAlgo
       encoding_type_ = value;
+    } else if (Match(pReader, pos, 0x7E8, value)) {
+      // AESSettingsCipherMode
+      encryption->aes_settings.cipher_mode = value;
+    } else if (Match(pReader, pos, 0x7E9,  buf, buf_len)) {
+      // AESSettingsCipherInitData
+      encryption->aes_settings.cipher_init_data = buf;
+      encryption->aes_settings.cipher_init_data_len = buf_len;
     } else {
       long len;
       const long long id = ReadUInt(pReader, pos, len);
@@ -4537,8 +4554,11 @@ void ContentEncoding::ParseEncryptionEntry(
       pos += len;  //consume length of size
       assert((pos + size) <= stop);
 
-      pos += size;  //consume payload
-      assert(pos <= stop);
+      // Check for ContentEncAESSettings
+      if (id != 0x7E7) {
+        pos += size;  //consume payload
+        assert(pos <= stop);
+      }
     }
   }
 }

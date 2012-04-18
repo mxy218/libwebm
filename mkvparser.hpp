@@ -203,6 +203,10 @@ private:
 // compressed with zlib or header stripping.
 class ContentEncoding {
 public:
+    enum {
+      kCTR = 1
+    };
+    
     ContentEncoding();
     ~ContentEncoding();
 
@@ -213,6 +217,16 @@ public:
 
         unsigned long long algo;
         unsigned char* settings;
+    };
+
+    //
+    struct ContentEncAESSettings {
+      ContentEncAESSettings();
+      ~ContentEncAESSettings();
+
+      unsigned long long cipher_mode;
+      unsigned char* cipher_init_data;
+      long long cipher_init_data_len;
     };
 
     // ContentEncryption element names
@@ -229,6 +243,8 @@ public:
         long long sig_key_id_len;
         unsigned long long sig_algo;
         unsigned long long sig_hash_algo;
+
+        ContentEncAESSettings aes_settings;
     };
 
     // Returns ContentCompression represented by |idx|. Returns NULL if |idx|

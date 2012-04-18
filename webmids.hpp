@@ -101,6 +101,9 @@ enum MkvId {
   kMkvContentEncryption       = 0x5035,
   kMkvContentEncAlgo          = 0x47E1,
   kMkvContentEncKeyID         = 0x47E2,
+  kMkvContentEncAESSettings   = 0x47E7,
+  kMkvAESSettingsCipherMode   = 0x47E8,
+  kMkvAESSettingsCipherInitData = 0x47E9,
   //end ContentEncodings
   //Cueing Data
   kMkvCues                    = 0x1C53BB6B,

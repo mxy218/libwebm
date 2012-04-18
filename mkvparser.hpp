@@ -1,4 +1,4 @@
-// Copyright (c) 2010 The WebM project authors. All Rights Reserved.
+// Copyright (c) 2012 The WebM project authors. All Rights Reserved.
 //
 // Use of this source code is governed by a BSD-style license
 // that can be found in the LICENSE file in the root of the source
@@ -203,6 +203,10 @@ private:
 // compressed with zlib or header stripping.
 class ContentEncoding {
 public:
+    enum {
+      kCTR = 1
+    };
+
     ContentEncoding();
     ~ContentEncoding();
 
@@ -213,6 +217,16 @@ public:
 
         unsigned long long algo;
         unsigned char* settings;
+    };
+
+    // ContentEncAESSettings element names
+    struct ContentEncAESSettings {
+      ContentEncAESSettings();
+      ~ContentEncAESSettings();
+
+      unsigned long long cipher_mode;
+      unsigned char* cipher_init_data;
+      long long cipher_init_data_len;
     };
 
     // ContentEncryption element names
@@ -229,6 +243,8 @@ public:
         long long sig_key_id_len;
         unsigned long long sig_algo;
         unsigned long long sig_hash_algo;
+
+        ContentEncAESSettings aes_settings;
     };
 
     // Returns ContentCompression represented by |idx|. Returns NULL if |idx|

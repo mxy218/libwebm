@@ -8081,7 +8081,7 @@ SimpleBlock::SimpleBlock(
 
 long SimpleBlock::Parse()
 {
-    return m_block.Parse(m_pCluster->m_pSegment->m_pReader);
+    return m_block.Parse(m_pCluster);
 }
 
 
@@ -8116,7 +8116,7 @@ BlockGroup::BlockGroup(
 
 long BlockGroup::Parse()
 {
-    const long status = m_block.Parse(m_pCluster->m_pSegment->m_pReader);
+    const long status = m_block.Parse(m_pCluster);
 
     if (status)
         return status;
@@ -8186,14 +8186,21 @@ Block::~Block()
 }
 
 
-long Block::Parse(IMkvReader* pReader)
+long Block::Parse(const Cluster* pCluster)
 {
-    assert(pReader);
+    assert(pCluster);
     assert(m_start >= 0);
     assert(m_size >= 0);
     assert(m_track <= 0);
     assert(m_frames == NULL);
     assert(m_frame_count <= 0);
+
+    IMkvReader* const pReader = pCluster->m_pSegment->m_pReader;
+
+    const long long cluster_timecode = pCluster->GetTimeCode();
+
+    if (cluster_timecode < 0)  //weird
+        return static_cast<long>(cluster_timecode);
 
     long long pos = m_start;
     const long long stop = m_start + m_size;
@@ -8225,6 +8232,9 @@ long Block::Parse(IMkvReader* pReader)
         return E_FILE_FORMAT_INVALID;
 
     if (value > SHRT_MAX)
+        return E_FILE_FORMAT_INVALID;
+
+    if ((cluster_timecode + value) < 0)
         return E_FILE_FORMAT_INVALID;
 
     m_timecode = static_cast<short>(value);

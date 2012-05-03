@@ -8081,7 +8081,7 @@ SimpleBlock::SimpleBlock(
 
 long SimpleBlock::Parse()
 {
-    return m_block.Parse(m_pCluster->m_pSegment->m_pReader);
+    return m_block.Parse(m_pCluster);
 }
 
 
@@ -8116,7 +8116,7 @@ BlockGroup::BlockGroup(
 
 long BlockGroup::Parse()
 {
-    const long status = m_block.Parse(m_pCluster->m_pSegment->m_pReader);
+    const long status = m_block.Parse(m_pCluster);
 
     if (status)
         return status;
@@ -8186,14 +8186,21 @@ Block::~Block()
 }
 
 
-long Block::Parse(IMkvReader* pReader)
+long Block::Parse(const Cluster* pCluster)
 {
-    assert(pReader);
+    assert(pCluster);
     assert(m_start >= 0);
     assert(m_size >= 0);
     assert(m_track <= 0);
     assert(m_frames == NULL);
     assert(m_frame_count <= 0);
+
+    IMkvReader* const pReader = pCluster->m_pSegment->m_pReader;
+
+    const long long cluster_timecode = pCluster->GetTimeCode();
+
+    if (cluster_timecode < 0)  //weird
+        return static_cast<long>(cluster_timecode);
 
     long long pos = m_start;
     const long long stop = m_start + m_size;
@@ -8226,6 +8233,35 @@ long Block::Parse(IMkvReader* pReader)
 
     if (value > SHRT_MAX)
         return E_FILE_FORMAT_INVALID;
+
+    //NOTE(matthewjheaney): this is arguably an error, but reviewers
+    //felt that simply failing the parse was too conservative.
+    //if ((cluster_timecode + value) < 0)
+    //    return E_FILE_FORMAT_INVALID;
+
+    if (value >= 0)
+    {
+        if (value > LLONG_MAX - cluster_timecode)
+            return E_FILE_FORMAT_INVALID;
+    }
+    else
+    {
+        //TODO(mattjewheaney): one issue with this approach is that there's no
+        //guarantee that this doesn't create a timestamp that is out-of-order.
+        //Matroska timestamps are supposed to be strictly increasing, and
+        //WebM/VP8 timestamps are supposed to be monotonically increasing, so
+        //re-writing the timestamp this way might just simply push the problem
+        //downstream.  A safer solution would be to peek at the timestamp of
+        //the block that precedes this one, and set this timestamp value equal
+        //(or slightly greater) than that value.  (But of course, that's
+        //always true, because timestamps might be out-of-order even if we do
+        //not have a negative timestamp.)
+
+        const long long time = cluster_timecode + value;
+
+        if (time < 0)
+            value -= time;
+    }
 
     m_timecode = static_cast<short>(value);
 

@@ -419,6 +419,12 @@ class AudioTrack : public Track {
 };
 
 ///////////////////////////////////////////////////////////////
+// Track that has audio specific elements.
+
+
+
+
+///////////////////////////////////////////////////////////////
 // Tracks element
 class Tracks {
  public:
@@ -497,6 +503,12 @@ class Cluster {
                 uint64 track_number,
                 short timecode,
                 bool is_key);
+
+  bool AddMetadata(const uint8* frame,
+                   uint64 length,
+                   uint64 track_number,
+                   uint64 timecode,  // timecode units (absolute)
+                   uint64 duration);  // timecode units (absolute)
 
   // Increments the size of the cluster's data in bytes.
   void AddPayloadSize(uint64 size);
@@ -649,6 +661,11 @@ class Segment {
   // |ptr_writer| is NULL.
   bool Init(IMkvWriter* ptr_writer);
 
+  // Adds a generic track to the segment.  Returns the number of the track
+  // on success, 0 on error.  |type| is the track type; for metadata, that
+  // would be either 0x11 or 0x21.
+  uint64 AddTrack(int track_type);
+
   // Adds an audio track to the segment. Returns the number of the track on
   // success, 0 on error.
   uint64 AddAudioTrack(int32 sample_rate, int32 channels);
@@ -670,8 +687,14 @@ class Segment {
   bool AddFrame(const uint8* frame,
                 uint64 length,
                 uint64 track_number,
-                uint64 timestamp,
+                uint64 timestamp_ns,
                 bool is_key);
+
+  bool AddMetadata(const uint8* frame,
+                   uint64 length,
+                   uint64 track_number,
+                   uint64 timestamp_ns,
+                   uint64 duration_ns);
 
   // Adds a video track to the segment. Returns the number of the track on
   // success, 0 on error.
@@ -757,7 +780,7 @@ class Segment {
 
   // Output all frames that are queued. Returns true on success and if there
   // are no frames queued.
-  bool WriteFramesAll();
+  int WriteFramesAll();
 
   // Output all frames that are queued that have an end time that is less
   // then |timestamp|. Returns true on success and if there are no frames
@@ -767,6 +790,10 @@ class Segment {
   // Outputs the segment header, Segment Information element, SeekHead element,
   // and Tracks element to |writer_|.
   bool WriteSegmentHeader();
+
+  int TestFrame(uint64 track_num, uint64 timestamp_ns, bool key) const;
+  bool MakeNewCluster(uint64 timestamp_ns);
+  bool NewCluster(uint64 track_num, uint64 timestamp_ns, bool key);
 
   // WebM elements
   Cues cues_;
@@ -848,7 +875,7 @@ class Segment {
 
   // Flag telling the muxer that a new cluster should be started with the next
   // frame.
-  bool new_cluster_;
+  //bool new_cluster_;
 
   // Flag telling the muxer that a new cue point should be added.
   bool new_cuepoint_;

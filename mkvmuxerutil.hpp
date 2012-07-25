@@ -10,6 +10,7 @@
 #define MKVMUXERUTIL_HPP
 
 #include "mkvmuxertypes.hpp"
+#include <limits>
 
 namespace mkvmuxer {
 
@@ -67,6 +68,13 @@ uint64 WriteSimpleBlock(IMkvWriter* writer,
                         char track_number,
                         short timecode,
                         bool is_key);
+
+uint64 WriteMetadata(IMkvWriter* writer,
+                     const uint8* data,
+                     uint64 length,
+                     uint64 track_number,
+                     int64 relative_timecode,
+                     uint64 duration_timecode);
 
 // Output a void element. |size| must be the entire size in bytes that will be
 // void. The function will calculate the size of the void header and subtract

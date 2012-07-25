@@ -9,6 +9,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <list>
+#include <sys/stat.h>
 
 // libwebm parser includes
 #include "mkvreader.hpp"
@@ -18,6 +20,14 @@
 #include "mkvmuxer.hpp"
 #include "mkvwriter.hpp"
 #include "mkvmuxerutil.hpp"
+
+// webvtt includes
+#include "webvttparser.h"
+#include "vttreader.h"
+
+using mkvmuxer::uint64;
+using mkvmuxer::uint8;
+using std::string;
 
 namespace {
 
@@ -49,11 +59,40 @@ void Usage() {
   printf("  -output_cues_block_number <int> >0 outputs cue block number\n");
 }
 
+class Metadata {
+ public:
+  Metadata();
+  void Init(mkvmuxer::Segment*);
+  bool LoadSubtitles(const char* subtitles_filename);
+  bool AddTracks();
+  bool Write(long long time_ns);
+
+ private:
+  mkvmuxer::Segment* segment_;
+
+  typedef libwebvtt::Cue cue_t;
+  typedef std::list<cue_t> cues_t;
+
+  cues_t subtitles_;
+  uint64 subtitles_num_;
+
+  bool Load(const char* filename, const char* name, cues_t*);
+  bool AddTrack(const char* name, const cues_t&, int type, uint64* num);
+
+  int DoWrite(long long time_ns);
+  int DoWrite(long long time_ns, cues_t&, uint64 track_num);
+
+  void MakeFrame(const cue_t&, std::string* frame);
+
+ private:
+  Metadata(const Metadata&);
+  Metadata& operator=(const Metadata&);
+
+};
+
 } //end namespace
 
 int main(int argc, char* argv[]) {
-  using mkvmuxer::uint64;
-
   char* input = NULL;
   char* output = NULL;
 
@@ -77,6 +116,8 @@ int main(int argc, char* argv[]) {
   uint64 display_width = 0;
   uint64 display_height = 0;
   uint64 stereo_mode = 0;
+
+  const char* webvtt_subtitles_filename = NULL;
 
   const int argc_check = argc - 1;
   for (int i = 1; i < argc; ++i) {
@@ -131,12 +172,36 @@ int main(int argc, char* argv[]) {
       output_cues_block_number =
           strtol(argv[++i], &end, 10) == 0 ? false : true;
     }
+    else if (!strcmp("-webvtt-subtitles", argv[i])) {
+      ++i;  // consume arg name
+
+      if (i > argc_check) {
+	printf("missing value for -webvtt-subtitles\n");
+	return EXIT_FAILURE;
+      }
+
+      webvtt_subtitles_filename = argv[i];
+      struct ::stat buf;
+
+      if (::stat(webvtt_subtitles_filename, &buf) != 0) {
+        printf("bad value for -webvtt-subtitles: \"%s\"\n",
+               webvtt_subtitles_filename);
+        return EXIT_FAILURE;
+      }
+    }
   }
 
   if (input == NULL || output == NULL) {
     Usage();
     return EXIT_FAILURE;
   }
+
+  Metadata metadata;
+
+  if (!metadata.LoadSubtitles(webvtt_subtitles_filename))
+    return EXIT_FAILURE;
+
+  //TODO(matthewjheaney): load other metadata files
 
   // Get parser header info
   mkvparser::MkvReader reader;
@@ -184,6 +249,8 @@ int main(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
+  metadata.Init(&muxer_segment);
+
   if (live_mode)
     muxer_segment.set_mode(mkvmuxer::Segment::kLive);
   else
@@ -204,11 +271,12 @@ int main(int argc, char* argv[]) {
   info->set_writing_app("sample_muxer");
 
   // Set Tracks element attributes
-  enum { kVideoTrack = 1, kAudioTrack = 2 };
   const mkvparser::Tracks* const parser_tracks = parser_segment->GetTracks();
   unsigned long i = 0;
   uint64 vid_track = 0; // no track added
   uint64 aud_track = 0; // no track added
+
+  using mkvparser::Track;
 
   while (i != parser_tracks->GetTracksCount()) {
     int track_num = i++;
@@ -226,7 +294,7 @@ int main(int argc, char* argv[]) {
 
     const long long track_type = parser_track->GetType();
 
-    if (track_type == kVideoTrack && output_video) {
+    if (track_type == Track::kVideo && output_video) {
       // Get the video track from the parser
       const mkvparser::VideoTrack* const pVideoTrack =
           static_cast<const mkvparser::VideoTrack*>(parser_track);
@@ -264,7 +332,7 @@ int main(int argc, char* argv[]) {
       if (rate > 0.0) {
         video->set_frame_rate(rate);
       }
-    } else if (track_type == kAudioTrack && output_audio) {
+    } else if (track_type == Track::kAudio && output_audio) {
       // Get the audio track from the parser
       const mkvparser::AudioTrack* const pAudioTrack =
           static_cast<const mkvparser::AudioTrack*>(parser_track);
@@ -307,6 +375,9 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  if (!metadata.AddTracks())
+    return EXIT_FAILURE;
+
   // Set Cues element attributes
   mkvmuxer::Cues* const cues = muxer_segment.GetCues();
   cues->set_output_block_number(output_cues_block_number);
@@ -339,11 +410,14 @@ int main(int argc, char* argv[]) {
           parser_tracks->GetTrackByNumber(
               static_cast<unsigned long>(trackNum));
       const long long track_type = parser_track->GetType();
+      const long long time_ns = block->GetTime(cluster);
 
-      if ((track_type == kAudioTrack && output_audio) ||
-          (track_type == kVideoTrack && output_video)) {
+      if (!metadata.Write(time_ns))
+        return EXIT_FAILURE;
+
+      if ((track_type == Track::kAudio && output_audio) ||
+          (track_type == Track::kVideo && output_video)) {
         const int frame_count = block->GetFrameCount();
-        const long long time_ns = block->GetTime(cluster);
         const bool is_key = block->IsKey();
 
         for (int i = 0; i < frame_count; ++i) {
@@ -361,7 +435,7 @@ int main(int argc, char* argv[]) {
             return EXIT_FAILURE;
 
           uint64 track_num = vid_track;
-          if (track_type == kAudioTrack)
+          if (track_type == Track::kAudio)
             track_num = aud_track;
 
           if (!muxer_segment.AddFrame(data,
@@ -387,6 +461,9 @@ int main(int argc, char* argv[]) {
     cluster = parser_segment->GetNext(cluster);
   }
 
+  if (!metadata.Write(-1))
+    return EXIT_FAILURE;
+
   muxer_segment.Finalize();
 
   delete [] data;
@@ -398,5 +475,216 @@ int main(int argc, char* argv[]) {
   return EXIT_SUCCESS;
 }
 
+namespace {
 
+Metadata::Metadata() : segment_(NULL) {
+}
 
+void Metadata::Init(mkvmuxer::Segment* s) {
+  segment_ = s;
+}
+
+bool Metadata::LoadSubtitles(const char* f) {
+  return Load(f, "subtitles", &subtitles_);
+}
+
+bool Metadata::Load(const char* file,
+                    const char* name,
+                    cues_t* cues) {
+  if (file == NULL)
+    return true;
+
+  VttReader r;
+
+  int e = r.Open(file);
+
+  if (e) {
+    printf("Unable to open %s file: \"%s\"\n", name, file);
+    return false;
+  }
+
+  libwebvtt::Parser p(&r);
+
+  e = p.Init();
+
+  if (e < 0) {  // error
+    printf("Error parsing %s file\n", name);
+    return false;
+  }
+
+  libwebvtt::Time t;
+  t.hours = -1;
+
+  for (;;) {
+    cues->push_back(cue_t());
+    cue_t& c = cues->back();
+
+    e = p.Parse(&c);
+
+    if (e < 0) {  // error
+      printf("Error parsing %s file\n", name);
+      return false;
+    }
+
+    if (e > 0) {  // EOF
+      cues->pop_back();
+      return true;
+    }
+
+    if (c.start_time >= t)
+      t = c.start_time;
+    else {
+      printf("bad %s cue timestamp (out-of-order)\n", name);
+      return false;
+    }
+
+    if (c.stop_time < c.start_time) {
+      printf("bad %s cue timestamp (stop < start)\n", name);
+      return false;
+    }
+  }
+}
+
+bool Metadata::AddTracks() {
+  if (!AddTrack("subtitles", subtitles_, 0x11, &subtitles_num_))
+    return false;
+
+  return true;
+}
+
+bool Metadata::AddTrack(const char* name,
+                        const cues_t& cues,
+                        int track_type,
+                        uint64* num) {
+  *num = 0;
+
+  if (cues.empty())
+    return true;
+
+  *num = segment_->AddTrack(track_type);
+
+  //TODO(matthewjheaney): pass in name and language
+  //GetTrackByNumber, then set_name and set_language
+
+  if (*num)
+    return true;
+
+  printf("\n Could not add %s track.\n", name);
+  return false;
+}
+
+bool Metadata::Write(long long time_ns) {
+  for (;;) {
+    const int result = DoWrite(time_ns);
+
+    if (result < 0)  // error
+      return false;
+
+    if (result > 0)  // nothing more to do
+      return true;
+  }
+}
+
+int Metadata::DoWrite(long long time_ns) {
+  bool done = true;
+
+  int result = DoWrite(time_ns, subtitles_, subtitles_num_);
+
+  if (result < 0)  // error
+    return result;
+
+  if (result == 0)  // did something
+    done = false;
+
+  //TODO(matthewjheaney): DoWrite for each metadata kind
+
+  return done ? 1 : 0;
+}
+
+int Metadata::DoWrite(long long time_ns,
+                      cues_t& cues,
+                      uint64 track_num) {
+  if (cues.empty())
+    return 1;  // nothing to do
+
+  const cue_t& c = cues.front();
+  const libwebvtt::presentation_t st_ms = c.start_time.presentation();
+  const long long st_ns = st_ms * 1000000LL;
+
+  if (time_ns >= 0 && st_ns > time_ns)
+    return 1;  // nothing to do (yet)
+
+  const libwebvtt::presentation_t sp_ms = c.stop_time.presentation();
+  const long long sp_ns = sp_ms * 1000000LL;
+
+  const long long dur_ns = sp_ns - st_ns;
+
+  if (dur_ns < 0) {
+    printf("\n Metadata has bad duration.\n");
+    return -1;  // error
+  }
+
+  string f;  // frame
+  MakeFrame(c, &f);
+
+  const uint8* const data = reinterpret_cast<const uint8*>(f.data());
+
+  if (!segment_->AddMetadata(data, f.length(), track_num, st_ns, dur_ns)) {
+    printf("\n Could not add metadata.\n");
+    return -1;  // error
+  }
+
+  cues.pop_front();
+
+  return 0;  // succeeded (did something)
+}
+
+void Metadata::MakeFrame(const cue_t& c, std::string* pf) {
+  string& f = *pf;
+
+  f.clear();
+
+  f.append(c.identifier);
+  f.push_back('\x0A');  // LF
+
+  const cue_t::settings_t& ss = c.settings;
+
+  if (!ss.empty())
+  {
+    typedef cue_t::settings_t::const_iterator iter_t;
+
+    iter_t i = ss.begin();
+    const iter_t j = ss.end();
+
+    for (;;) {
+      const libwebvtt::Setting& s = *i++;
+
+      f.append(s.name);
+      f.push_back(':');
+      f.append(s.value);
+
+      if (i == j)
+        break;
+
+      f.push_back(' ');
+    }
+  }
+
+  f.push_back('\x0A');  // LF
+
+  {
+    const cue_t::payload_t& pp = c.payload;
+    typedef cue_t::payload_t::const_iterator iter_t;
+
+    iter_t i = pp.begin();
+    const iter_t j = pp.end();
+
+    while (i != j) {
+      const string& p = *i++;
+      f.append(p);
+      f.push_back('\x0A');  // LF
+    }
+  }
+}
+
+}  // end anonymous namespace

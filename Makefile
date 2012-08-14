@@ -16,7 +16,7 @@ all: $(EXES)
 sample: sample.o $(LIBWEBMA)
 	$(CXX) $^ -o $@
 
-samplemuxer: sample_muxer.o $(LIBWEBMA)
+samplemuxer: sample_muxer.o $(LIBWEBMA) vttreader.o webvttparser.o sample_muxer_metadata.o
 	$(CXX) $^ -o $@
 
 dumpvtt: $(OBJECTS3)

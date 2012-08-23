@@ -6,7 +6,7 @@
 // in the file PATENTS.  All contributing project authors may
 // be found in the AUTHORS file in the root of the source tree.
 
-#include "webvttparser.h"  // NOLINT
+#include "./webvttparser.h"  // NOLINT
 #include <climits>
 
 using std::string;
@@ -27,8 +27,7 @@ Reader::Reader() {
 Reader::~Reader() {
 }
 
-Parser::Parser(Reader* r)
-  : reader_(r), unget_(-1) {
+Parser::Parser(Reader* r) : reader_(r), unget_(-1) {
 }
 
 int Parser::Init() {
@@ -112,7 +111,7 @@ int Parser::Parse(Cue* cue) {
   for (;;) {
     e = ParseLine(&line);
 
-    if (e)
+    if (e)  // EOF is OK here
       return e;
 
     if (!line.empty())
@@ -124,31 +123,43 @@ int Parser::Parse(Cue* cue) {
   // a timings line by scanning for the arrow token, the lexeme of which
   // may not appear in the cue identifier line.
 
-  string::size_type off = line.find("-->");
+  const char* const arrow_str = "-->";
+  string::size_type arrow_pos = line.find(arrow_str);
 
-  if (off != string::npos) {  // timings line
+  if (arrow_pos != string::npos) {
+    // We found a timings line, which implies that we don't have a cue
+    // identifier.
+
     cue->identifier.clear();
+
   } else {
+    // We did not find a timings line, so we assume that we have a cue
+    // identifier line, and then try again to find the cue timings on
+    // the next line.
+
     cue->identifier.swap(line);
 
     e = ParseLine(&line);
 
-    if (e)
+    if (e < 0)  // error
       return e;
 
-    off = line.find("-->");
+    if (e > 0)  // EOF
+      return -1;
 
-    if (off == string::npos)  // not a timings line
+    arrow_pos = line.find(arrow_str);
+
+    if (arrow_pos == string::npos)  // not a timings line
       return -1;
   }
 
-  e = ParseTimingsLine(line,
-                       off,
+  e = ParseTimingsLine(&line,
+                       arrow_pos,
                        &cue->start_time,
                        &cue->stop_time,
                        &cue->settings);
 
-  if (e)
+  if (e)  // error
     return e;
 
   // The cue payload comprises all the non-empty
@@ -280,24 +291,28 @@ int Parser::ParseLine(string* line) {
 }
 
 int Parser::ParseTimingsLine(
-  string& line,
+  string* line_ptr,
   string::size_type arrow_pos,
   Time* start_time,
   Time* stop_time,
   Cue::settings_t* settings) {
-  //
-  // Place a NUL character at the start of the arrow token, in
-  // order to demarcate the start time from remainder of line.
+  if (line_ptr == NULL)
+    return -1;
+
+  string& line = *line_ptr;
 
   if (arrow_pos == string::npos || arrow_pos >= line.length())
     return -1;
 
+  // Place a NUL character at the start of the arrow token, in
+  // order to demarcate the start time from remainder of line.
+
   line[arrow_pos] = kNUL;
   string::size_type idx = 0;
 
-  int e = ParseTime(line, idx, start_time);
+  int e = ParseTime(line, &idx, start_time);
 
-  if (e)
+  if (e)  // error
     return e;
 
   // Detect any junk that follows the start time,
@@ -316,14 +331,14 @@ int Parser::ParseTimingsLine(
   line.push_back(kNUL);
   idx = arrow_pos + 3;
 
-  e = ParseTime(line, idx, stop_time);
+  e = ParseTime(line, &idx, stop_time);
 
-  if (e)
+  if (e)  // error
     return e;
 
   e = ParseSettings(line, idx, settings);
 
-  if (e)
+  if (e)  // error
     return e;
 
   return 0;  // success
@@ -331,16 +346,20 @@ int Parser::ParseTimingsLine(
 
 int Parser::ParseTime(
   const string& line,
-  string::size_type& idx,
+  string::size_type* idx_ptr,
   Time* time) {
-  //
-  // WebVTT timestamp syntax comes in three flavors:
-  //  SS[.sss]
-  //  MM:SS[.sss]
-  //  HH:MM:SS[.sss]
+  if (idx_ptr == NULL)
+    return -1;
+
+  string::size_type& idx = *idx_ptr;
 
   if (idx == string::npos || idx >= line.length())
     return -1;
+
+  if (time == NULL)
+    return -1;
+
+  Time& t = *time;
 
   // Consume any whitespace that precedes the timestamp.
 
@@ -350,12 +369,15 @@ int Parser::ParseTime(
     ++idx;
   }
 
-  Time& t = *time;
+  // WebVTT timestamp syntax comes in three flavors:
+  //  SS[.sss]
+  //  MM:SS[.sss]
+  //  HH:MM:SS[.sss]
 
   // Parse a generic number value.  We don't know which component
   // of the time we have yet, until we do more parsing.
 
-  int val = ParseNumber(line, idx);
+  int val = ParseNumber(line, &idx);
 
   if (val < 0)  // error
     return val;
@@ -376,7 +398,7 @@ int Parser::ParseTime(
 
     // Parse second value
 
-    val = ParseNumber(line, idx);
+    val = ParseNumber(line, &idx);
 
     if (val < 0)
       return val;
@@ -395,7 +417,7 @@ int Parser::ParseTime(
       // We have parsed the hours and minutes.
       // We must now parse the seconds.
 
-      val = ParseNumber(line, idx);
+      val = ParseNumber(line, &idx);
 
       if (val < 0)
         return val;
@@ -442,7 +464,7 @@ int Parser::ParseTime(
   } else {
     ++idx;  // consume FULL STOP
 
-    val = ParseNumber(line, idx);
+    val = ParseNumber(line, &idx);
 
     if (val < 0)
       return val;
@@ -473,14 +495,13 @@ int Parser::ParseSettings(
   const string& line,
   string::size_type idx,
   Cue::settings_t* settings) {
-  //
-  // Scanning starts at position idx, and stops when
-  // we consume a NUL character.
-
   settings->clear();
 
   if (idx == string::npos || idx >= line.length())
     return -1;
+
+  // Scanning starts at position idx, and stops when
+  // we consume a NUL character.
 
   for (;;) {
     // Parse the whitespace that precedes the NAME:VALUE pair.
@@ -545,7 +566,12 @@ int Parser::ParseSettings(
 }
 
 int Parser::ParseNumber(const std::string& line,
-                        std::string::size_type& idx) {
+                        string::size_type* idx_ptr) {
+  if (idx_ptr == NULL)
+    return -1;
+
+  string::size_type& idx = *idx_ptr;
+
   if (idx == string::npos || idx >= line.length())
     return -1;
 

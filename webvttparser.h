@@ -9,8 +9,8 @@
 #ifndef WEBVTTPARSER_H_  // NOLINT
 #define WEBVTTPARSER_H_
 
-#include <string>
 #include <list>
+#include <string>
 
 namespace libwebvtt {
 
@@ -75,7 +75,6 @@ struct Cue {
 class Parser {
  public:
   explicit Parser(Reader* r);
-  Reader* const reader_;
 
   // Pre-parse enough of the stream to determine whether
   // this is really a WEBVTT file. Returns 0 on success,
@@ -88,6 +87,8 @@ class Parser {
   int Parse(Cue* cue);
 
  private:
+  Reader* const reader_;
+
   // Provides one character's worth of look-back, to facilitate scanning.
   int unget_;
 
@@ -121,7 +122,7 @@ class Parser {
   // is the offset of the arrow token ("-->"), which indicates that this is
   // the timings line.  Returns negative if error, 0 on success.
   //
-  static int ParseTimingsLine(std::string& line,  // NOLINT
+  static int ParseTimingsLine(std::string* line,
                               std::string::size_type arrow_pos,
                               Time* start_time,
                               Time* stop_time,
@@ -133,7 +134,7 @@ class Parser {
   // characters consumed.  Returns negative if error, 0 on success.
   //
   static int ParseTime(const std::string& line,
-                       std::string::size_type& off,
+                       std::string::size_type* off,
                        Time* time);
 
   // Parse the cue settings from the timings line, starting at the
@@ -146,8 +147,9 @@ class Parser {
   // Parse a non-negative integer from the characters in |line| beginning
   // at offset |off|.  The function increments |off| by the number
   // of characters consumed.  Returns the value, or negative if error.
+  //
   static int ParseNumber(const std::string& line,
-                         std::string::size_type& off);
+                         std::string::size_type* off);
 
  private:
   Parser(const Parser&);

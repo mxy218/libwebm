@@ -341,6 +341,90 @@ uint64 WriteSimpleBlock(IMkvWriter* writer,
   return element_size;
 }
 
+uint64 WriteMetadata(IMkvWriter* writer,
+                     const uint8* data,
+                     uint64 length,
+                     uint64 track_number,
+                     int64 timecode,
+                     uint64 duration) {
+  // BlockGroup tag
+  // BlockGroup size
+  //   Block tag
+  //   Block size
+  //   (block)
+  //   Duration tag
+  //   Duration size
+  //   (duration)
+
+  const uint64 block_payload_size = 4 + length;
+  const int32 block_size = GetCodedUIntSize(block_payload_size);
+  const uint64 block_elem_size = 1 + block_size + block_payload_size;
+
+  const int32 duration_payload_size = GetUIntSize(duration);
+  const int32 duration_size = GetCodedUIntSize(duration_payload_size);
+  const uint64 duration_elem_size = 1 + duration_size + duration_payload_size;
+
+  const uint64 blockg_payload_size = block_elem_size + duration_elem_size;
+  const int32 blockg_size = GetCodedUIntSize(blockg_payload_size);
+  const uint64 blockg_elem_size = 1 + blockg_size + blockg_payload_size;
+
+  if (WriteID(writer, kMkvBlockGroup))
+    return 0;
+
+  if (WriteUInt(writer, blockg_payload_size))
+    return 0;
+
+  //  Write Block element
+
+  if (WriteID(writer, kMkvBlock))
+    return 0;
+
+  if (WriteUInt(writer, block_payload_size))
+    return 0;
+
+  // Byte 1 of 4
+
+  if (WriteUInt(writer, track_number))
+    return 0;
+
+  // Bytes 2 & 3 of 4
+
+  if (SerializeInt(writer, static_cast<uint64>(timecode), 2))
+    return 0;
+
+  // Byte 4 of 4
+
+  const uint64 flags = 0;
+
+  if (SerializeInt(writer, flags, 1))
+    return 0;
+
+  // Now write the actual frame (of metadata)
+
+  if (writer->Write(data, static_cast<uint32>(length)))
+    return 0;
+
+  // Write Duration element
+
+  if (WriteID(writer, kMkvDuration))
+    return 0;
+
+  if (WriteUInt(writer, duration_payload_size))
+    return 0;
+
+  if (SerializeInt(writer, duration, duration_payload_size))
+    return 0;
+
+  // Note that we don't write a reference time as part of the block
+  // group; no reference time(s) indicates that this block is a
+  // keyframe.  (Unlike the case for a SimpleBlock element, the header
+  // bits of the Block sub-element of a BlockGroup element do not
+  // indicate keyframe status.  The keyframe status is inferred from
+  // the absence of reference time sub-elements.)
+
+  return blockg_elem_size;
+}
+
 uint64 WriteVoidElement(IMkvWriter* writer, uint64 size) {
   if (!writer)
     return false;

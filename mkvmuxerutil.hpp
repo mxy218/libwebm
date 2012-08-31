@@ -68,6 +68,21 @@ uint64 WriteSimpleBlock(IMkvWriter* writer,
                         short timecode,
                         bool is_key);
 
+// Output a metadata keyframe, using a Block Group element.
+// Inputs:
+//   data:         Pointer to the (meta)data.
+//   length:       Length of the (meta)data.
+//   track_number: Track to add the data to. Value returned by Add track
+//                 functions.
+//   relative_timecode  Timecode of frame, relative to cluster timecode.
+//   duration_timecode  Duration of frame, using timecode units.
+uint64 WriteMetadata(IMkvWriter* writer,
+                     const uint8* data,
+                     uint64 length,
+                     uint64 track_number,
+                     int64 relative_timecode,
+                     uint64 duration_timecode);
+
 // Output a void element. |size| must be the entire size in bytes that will be
 // void. The function will calculate the size of the void header and subtract
 // it from |size|.

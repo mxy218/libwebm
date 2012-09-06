@@ -13,6 +13,7 @@
 #include <cstring>
 #include <ctime>
 #include <new>
+#include <limits>
 
 #include "mkvmuxerutil.hpp"
 #include "mkvwriter.hpp"
@@ -1024,28 +1025,27 @@ bool Cluster::Init(IMkvWriter* ptr_writer) {
 bool Cluster::AddFrame(const uint8* frame,
                        uint64 length,
                        uint64 track_number,
-                       int16 timecode,
+                       uint64 abs_timecode,
                        bool is_key) {
-  if (finalized_)
-    return false;
+  return DoWriteBlock(frame,
+                      length,
+                      track_number,
+                      abs_timecode,
+                      is_key ? 1 : 0,
+                      &WriteSimpleBlock);
+}
 
-  if (!header_written_)
-    if (!WriteClusterHeader())
-      return false;
-
-  const uint64 element_size = WriteSimpleBlock(writer_,
-                                               frame,
-                                               length,
-                                               static_cast<char>(track_number),
-                                               timecode,
-                                               is_key);
-  if (!element_size)
-    return false;
-
-  AddPayloadSize(element_size);
-  blocks_added_++;
-
-  return true;
+bool Cluster::AddMetadata(const uint8* frame,
+                          uint64 length,
+                          uint64 track_number,
+                          uint64 abs_timecode,
+                          uint64 duration_timecode) {
+  return DoWriteBlock(frame,
+                      length,
+                      track_number,
+                      abs_timecode,
+                      duration_timecode,
+                      &WriteMetadataBlock);
 }
 
 void Cluster::AddPayloadSize(uint64 size) {
@@ -1100,6 +1100,53 @@ bool Cluster::WriteClusterHeader() {
     return false;
   AddPayloadSize(EbmlElementSize(kMkvTimecode, timecode()));
   header_written_ = true;
+
+  return true;
+}
+
+bool Cluster::DoWriteBlock(
+    const uint8* frame,
+    uint64 length,
+    uint64 track_number,
+    uint64 abs_timecode,
+    uint64 generic_arg,
+    WriteBlock write_block) {
+  const int64 cluster_timecode = this->Cluster::timecode();
+  const int64 rel_timecode =
+    static_cast<int64>(abs_timecode) - cluster_timecode;
+
+  if (rel_timecode < 0)
+    return false;
+
+  if (rel_timecode > std::numeric_limits<int16>::max())
+    return false;
+
+  // To simplify things, we require that there be fewer than 127
+  // tracks -- this allows us to serialize the track number value for
+  // a stream using a single byte, per the Matroska encoding.
+
+  if (track_number == 0 || track_number > 0x7E)
+    return false;
+
+  if (finalized_)
+    return false;
+
+  if (!header_written_)
+    if (!WriteClusterHeader())
+      return false;
+
+  const uint64 element_size = (*write_block)(writer_,
+                                             frame,
+                                             length,
+                                             track_number,
+                                             rel_timecode,
+                                             generic_arg);
+
+  if (element_size == 0)
+    return false;
+
+  AddPayloadSize(element_size);
+  blocks_added_++;
 
   return true;
 }
@@ -1387,7 +1434,6 @@ Segment::Segment()
       max_cluster_duration_(kDefaultMaxClusterDuration),
       max_cluster_size_(0),
       mode_(kFile),
-      new_cluster_(true),
       new_cuepoint_(false),
       output_cues_(true),
       payload_pos_(0),
@@ -1442,7 +1488,7 @@ bool Segment::Init(IMkvWriter* ptr_writer) {
 }
 
 bool Segment::Finalize() {
-  if (!WriteFramesAll())
+  if (WriteFramesAll() < 0)
     return false;
 
   if (mode_ == kFile) {
@@ -1566,10 +1612,243 @@ uint64 Segment::AddAudioTrack(int32 sample_rate,
   return aud_track->number();
 }
 
+uint64 Segment::AddTrack(int track_type) {
+  Track* const track = new (std::nothrow) Track;  // NOLINT
+
+  if (!track)
+    return 0;
+
+  track->set_type(track_type);
+  tracks_.AddTrack(track, 0);
+
+  return track->number();
+}
+
+int Segment::TestFrame(uint64 track_number,
+                       uint64 frame_timestamp_ns,
+                       bool is_key) const {
+  // Here we are testing whether to create a new cluster, given
+  // a frame having time frame_ns.  There is a separate issue
+  // of whether this frame should be written to a newly-created
+  // cluster, or deferred in some cluster we create later.
+
+  // If no clusters have been created yet, then create a new
+  // cluster and write this frame immediately, in the new cluster.
+  // This path should only be followed once, the first time we
+  // attempt to write a frame.
+
+  if (cluster_list_size_ <= 0)
+    return 1;  // put this frame in new cluster
+
+  // There exists at least one cluster. We must compare the frame
+  // to the last cluster, in order to determine whether the frame
+  // is written to the existing cluster, or that a new cluster
+  // should be created.
+
+  const uint64 ns_per_tc = segment_info_.timecode_scale();
+  const uint64 frame_timecode = frame_timestamp_ns / ns_per_tc;
+
+  const Cluster* const cluster = cluster_list_[cluster_list_size_-1];
+
+  const uint64 cluster_timecode = cluster->timecode();
+  const int64 delta_timecode =
+    static_cast<int64>(frame_timecode) - static_cast<int64>(cluster_timecode);
+
+  // The frame we're testing has a timestamp equal to the cluster's
+  // timestamp.  This happens because a webvtt cue triggerred the
+  // creation of a new webm cluster, and the next frame in the stream
+  // (the one we're testing here) happens to be a video keyframe (say).
+  // In this case you don't want to create a new cluster; you want to
+  // force this frame to be written to the existing cluster.
+
+  if (delta_timecode <= 0)
+    return 0;  // put this frame in current cluster
+
+  // If the frame has a timestamp significantly larger than the last
+  // cluster (in Matroska, cluster-relative timestamps are serialized
+  // using a 16-bit sign integer), then we cannot write this frame
+  // that cluster, and so we must create a new cluster.  There is a
+  // snag however, because if we have queued (audio) frames, then the
+  // new cluster will have a time corresponding to the first queued
+  // frame, and so we cannot simply include this frame in that new
+  // cluster (because we must compare the time of this frame to that
+  // of the new cluster, as we're doing here).  Hence we return 2,
+  // instructing the caller to create a new cluster, but in addition
+  // loop again, forcing another comparison of timestamps.
+
+  // Note that if there are no queued frames, there's no need to make
+  // another pass, because the timestamp of the newly created cluster
+  // will be synthesized from the frame we're testing here.  (Such an
+  // optimization can be done by the caller.)
+
+  // Note that these circumlocuations (here and below) are necessary
+  // because we don't consider queued frames here.
+
+  if (delta_timecode > std::numeric_limits<int16>::max())
+    return 2;  // create a new cluster, but put this frame in next one
+
+  // We decide to create a new cluster when we have a video keyframe.
+  // This will flush queued (audio) frames, and write the the keyframe
+  // immediately, in the newly-created cluster.
+
+  if (is_key && tracks_.TrackIsVideo(track_number))
+    return 1;  // put this frame in new cluster
+
+  // Create a new cluster if we have accumulated too many frames
+  // already, where "too many" is defined as "the total time of frames
+  // in the cluster exceeds a threshold".  As above, we might have
+  // frames enqueued, so we must make another pass in order to force
+  // the times to be compared again.  (If the newly-created cluster is
+  // not "too large", then the second time TestFrame is called, it
+  // will return 0 and so the frame will get emitted.)
+
+  const uint64 delta_ns = delta_timecode * ns_per_tc;
+
+  if (max_cluster_duration_ > 0 && delta_ns >= max_cluster_duration_)
+    return 2;  // create a new cluster, but re-test
+
+  // This is similar to the case above, with the difference that a new
+  // cluster is created when the size of the current cluster exceeds a
+  // threshold.
+
+  const uint64 cluster_size = cluster->payload_size();
+
+  if (max_cluster_size_ > 0 && cluster_size >= max_cluster_size_)
+    return 2;  // create a new cluster, but put this frame in next one
+
+  // There's no need to create a new cluster, so emit this frame.
+
+  return 0;
+}
+
+bool Segment::MakeNewCluster(uint64 frame_timestamp_ns) {
+  const int32 new_size = cluster_list_size_ + 1;
+
+  if (new_size > cluster_list_capacity_) {
+    // Add more clusters.
+    const int32 new_capacity =
+      (cluster_list_capacity_ <= 0) ? 1 : cluster_list_capacity_ * 2;
+
+    Cluster** const clusters =
+      new (std::nothrow) Cluster*[new_capacity];  // NOLINT
+
+    if (!clusters)
+      return false;
+
+    for (int32 i = 0; i < cluster_list_size_; ++i) {
+      clusters[i] = cluster_list_[i];
+    }
+
+    delete [] cluster_list_;
+
+    cluster_list_ = clusters;
+    cluster_list_capacity_ = new_capacity;
+  }
+
+  if (!WriteFramesLessThan(frame_timestamp_ns))
+    return false;
+
+  if (mode_ == kFile) {
+    if (cluster_list_size_ > 0) {
+      // Update old cluster's size
+      Cluster* const old_cluster = cluster_list_[cluster_list_size_-1];
+
+      if (!old_cluster || !old_cluster->Finalize())
+        return false;
+    }
+
+    if (output_cues_)
+      new_cuepoint_ = true;
+  }
+
+  if (chunking_ && cluster_list_size_ > 0) {
+    chunk_writer_cluster_->Close();
+    chunk_count_++;
+
+    if (!UpdateChunkName("chk", &chunk_name_))
+      return false;
+    if (!chunk_writer_cluster_->Open(chunk_name_))
+      return false;
+  }
+
+  const uint64 ns_per_tc = segment_info_.timecode_scale();
+  const uint64 frame_timecode = frame_timestamp_ns / ns_per_tc;
+
+  uint64 cluster_timecode;
+
+  if (frames_size_ <= 0) {  // nothing queued
+    cluster_timecode = frame_timecode;
+  } else {
+    const Frame* const f = frames_[0];  // earliest queued frame
+    const uint64 ns = f->timestamp();
+    const uint64 tc = ns / ns_per_tc;
+
+    cluster_timecode = (tc <= frame_timecode) ? tc : frame_timecode;
+  }
+
+  Cluster*& cluster = cluster_list_[cluster_list_size_];
+  const int64 offset = MaxOffset();
+  cluster = new (std::nothrow) Cluster(cluster_timecode, offset);  // NOLINT
+
+  if (!cluster)
+    return false;
+
+  if (!cluster->Init(writer_cluster_))
+    return false;
+
+  cluster_list_size_ = new_size;
+
+  return true;
+}
+
+bool Segment::NewCluster(uint64 track_number,
+                         uint64 frame_ns,
+                         bool is_key) {
+  for (;;) {
+    // Based on the characteristics of the current frame and current
+    // cluster, decide whether to create a new cluster.
+
+    const int result = TestFrame(track_number, frame_ns, is_key);
+
+    // A non-zero result means create a new cluster.
+
+    if (result > 0 && !MakeNewCluster(frame_ns))
+      return false;
+
+    // Write extant audio frames.
+
+    const int frame_count = WriteFramesAll();
+
+    if (frame_count < 0)  // error
+      return false;
+
+    // We have to write the current frame to some cluster, either to
+    // the current cluster (if TestFrame returns 0) or to a newly
+    // created cluster (if TestFrame returns 1).
+
+    // If TestFrame returned 2, we create a new cluster, but we must
+    // perform another test, so we can't simply emit the current frame
+    // immediately (we might have to create yet another new cluster).
+    // We need to re-test because emitting the queued audio frames
+    // creates a cluster having characteristics unknown at the time of
+    // the original test. However, if there we no extant audio frames,
+    // another test will simply return 0 (meaning: "emit current frame
+    // immediately, in current cluster"), so we optimize-away the test
+    // by returning when the frame count is 0.
+
+    if (result <= 1 || frame_count <= 0)  // emit this frame now
+      return true;
+
+    // We created a new cluster, and wrote some audio frames to the
+    // cluster, so we make another pass, to compare the current frame
+    // to the new cluster.
+  }
+}
+
 bool Segment::AddFrame(const uint8* frame,
                        uint64 length,
                        uint64 track_number,
-                       uint64 timestamp,
+                       uint64 timestamp,  // ns
                        bool is_key) {
   if (!frame)
     return false;
@@ -1598,109 +1877,7 @@ bool Segment::AddFrame(const uint8* frame,
     return true;
   }
 
-  // Check to see if the muxer needs to start a new cluster.
-  if (is_key && tracks_.TrackIsVideo(track_number)) {
-    new_cluster_ = true;
-  } else if (cluster_list_size_ > 0) {
-    const Cluster* const cluster = cluster_list_[cluster_list_size_-1];
-
-    if (!cluster)
-      return false;
-
-    const uint64 cluster_ts =
-        cluster->timecode() * segment_info_.timecode_scale();
-
-    if (max_cluster_duration_ > 0 &&
-        (timestamp - cluster_ts) >= max_cluster_duration_) {
-      new_cluster_ = true;
-    } else if (max_cluster_size_ > 0 && cluster_list_size_ > 0) {
-      if (cluster->payload_size() >= max_cluster_size_) {
-        new_cluster_ = true;
-      }
-    }
-  }
-
-  if (new_cluster_) {
-    const int32 new_size = cluster_list_size_ + 1;
-
-    if (new_size > cluster_list_capacity_) {
-      // Add more clusters.
-      const int32 new_capacity =
-          (!cluster_list_capacity_) ? 2 : cluster_list_capacity_ * 2;
-
-      if (new_capacity < 1)
-        return false;
-
-      Cluster** const clusters =
-          new (std::nothrow) Cluster*[new_capacity];  // NOLINT
-      if (!clusters)
-        return false;
-
-      for (int32 i = 0; i < cluster_list_size_; ++i) {
-        clusters[i] = cluster_list_[i];
-      }
-
-      delete [] cluster_list_;
-
-      cluster_list_ = clusters;
-      cluster_list_capacity_ = new_capacity;
-    }
-
-    if (!WriteFramesLessThan(timestamp))
-      return false;
-
-    if (mode_ == kFile) {
-      if (cluster_list_size_ > 0) {
-        // Update old cluster's size
-        Cluster* const old_cluster = cluster_list_[cluster_list_size_-1];
-
-        if (!old_cluster || !old_cluster->Finalize())
-          return false;
-      }
-
-      if (output_cues_)
-        new_cuepoint_ = true;
-    }
-
-    if (chunking_ && cluster_list_size_ > 0) {
-      chunk_writer_cluster_->Close();
-      chunk_count_++;
-
-      if (!UpdateChunkName("chk", &chunk_name_))
-        return false;
-      if (!chunk_writer_cluster_->Open(chunk_name_))
-        return false;
-    }
-
-    uint64 audio_timecode = 0;
-    uint64 timecode = timestamp / segment_info_.timecode_scale();
-    if (frames_size_ > 0) {
-      audio_timecode =
-          frames_[0]->timestamp() / segment_info_.timecode_scale();
-
-      // Update the cluster's timecode to match the first audio frame.
-      if (audio_timecode < timecode)
-        timecode = audio_timecode;
-    }
-
-    cluster_list_[cluster_list_size_] =
-        new (std::nothrow) Cluster(timecode, MaxOffset());  // NOLINT
-
-    if (!cluster_list_[cluster_list_size_])
-      return false;
-
-    const bool cluster_init_ok =
-        cluster_list_[cluster_list_size_]->Init(writer_cluster_);
-
-    if (!cluster_init_ok)
-      return false;
-
-    cluster_list_size_ = new_size;
-    new_cluster_ = false;
-  }
-
-  // Write any audio frames left.
-  if (!WriteFramesAll())
+  if (!NewCluster(track_number, timestamp, is_key))
     return false;
 
   if (cluster_list_size_ < 1)
@@ -1710,10 +1887,14 @@ bool Segment::AddFrame(const uint8* frame,
   if (!cluster)
     return false;
 
-  int64 block_timecode = timestamp / segment_info_.timecode_scale();
-  block_timecode -= static_cast<int64>(cluster->timecode());
+  const uint64 timecode_scale = segment_info_.timecode_scale();
+  const uint64 abs_timecode = timestamp / timecode_scale;
 
-  if (block_timecode < 0)
+  if (!cluster->AddFrame(frame,
+                         length,
+                         track_number,
+                         abs_timecode,
+                         is_key))
     return false;
 
   if (new_cuepoint_ && cues_track_ == track_number) {
@@ -1721,15 +1902,51 @@ bool Segment::AddFrame(const uint8* frame,
       return false;
   }
 
-  if (!cluster->AddFrame(frame,
-                         length,
-                         track_number,
-                         static_cast<int16>(block_timecode),
-                         is_key))
-    return false;
-
   if (timestamp > last_timestamp_)
     last_timestamp_ = timestamp;
+
+  return true;
+}
+
+bool Segment::AddMetadata(const uint8* frame,
+                          uint64 length,
+                          uint64 track_number,
+                          uint64 timestamp_ns,
+                          uint64 duration_ns) {
+  if (!frame)
+    return false;
+
+  if (!CheckHeaderInfo())
+    return false;
+
+  // Check for non-monotonically increasing timestamps.
+  if (timestamp_ns < last_timestamp_)
+    return false;
+
+  if (!NewCluster(track_number, timestamp_ns, true))
+    return false;
+
+  if (cluster_list_size_ < 1)
+    return false;
+
+  Cluster* const cluster = cluster_list_[cluster_list_size_-1];
+
+  if (!cluster)
+    return false;
+
+  const uint64 timecode_scale = segment_info_.timecode_scale();
+  const uint64 abs_timecode = timestamp_ns / timecode_scale;
+  const uint64 duration_timecode = duration_ns / timecode_scale;
+
+  if (!cluster->AddMetadata(frame,
+                            length,
+                            track_number,
+                            abs_timecode,
+                            duration_timecode))
+    return false;
+
+  if (timestamp_ns > last_timestamp_)
+    last_timestamp_ = timestamp_ns;
 
   return true;
 }
@@ -2017,48 +2234,48 @@ bool Segment::QueueFrame(Frame* frame) {
   return true;
 }
 
-bool Segment::WriteFramesAll() {
-  if (frames_) {
-    if (cluster_list_size_ < 1)
-      return false;
+int Segment::WriteFramesAll() {
+  if (frames_ == NULL)
+    return 0;
 
-    Cluster* const cluster = cluster_list_[cluster_list_size_-1];
+  if (cluster_list_size_ < 1)
+    return -1;
 
-    if (!cluster)
-      return false;
+  Cluster* const cluster = cluster_list_[cluster_list_size_-1];
 
-    for (int32 i = 0; i < frames_size_; ++i) {
-      Frame* const frame = frames_[i];
+  if (!cluster)
+    return -1;
 
-      int64 block_timecode =
-          frame->timestamp() / segment_info_.timecode_scale();
-      block_timecode -= static_cast<int64>(cluster->timecode());
+  const uint64 ns_per_tc = segment_info_.timecode_scale();
 
-      if (block_timecode < 0)
-        return false;
+  for (int32 i = 0; i < frames_size_; ++i) {
+    Frame*& frame = frames_[i];
+    const uint64 frame_timestamp = frame->timestamp();  // ns
+    const uint64 frame_timecode = frame_timestamp / ns_per_tc;
 
-      if (new_cuepoint_ && cues_track_ == frame->track_number()) {
-        if (!AddCuePoint(frame->timestamp()))
-          return false;
-      }
+    if (!cluster->AddFrame(frame->frame(),
+                           frame->length(),
+                           frame->track_number(),
+                           frame_timecode,
+                           frame->is_key()))
+      return -1;
 
-      if (!cluster->AddFrame(frame->frame(),
-                             frame->length(),
-                             frame->track_number(),
-                             static_cast<int16>(block_timecode),
-                             frame->is_key()))
-        return false;
-
-      if (frame->timestamp() > last_timestamp_)
-        last_timestamp_ = frame->timestamp();
-
-      delete frame;
+    if (new_cuepoint_ && cues_track_ == frame->track_number()) {
+      if (!AddCuePoint(frame_timestamp))
+        return -1;
     }
 
-    frames_size_ = 0;
+    if (frame_timestamp > last_timestamp_)
+      last_timestamp_ = frame_timestamp;
+
+    delete frame;
+    frame = NULL;
   }
 
-  return true;
+  const int result = frames_size_;
+  frames_size_ = 0;
+
+  return result;
 }
 
 bool Segment::WriteFramesLessThan(uint64 timestamp) {
@@ -2070,10 +2287,10 @@ bool Segment::WriteFramesLessThan(uint64 timestamp) {
       return false;
 
     Cluster* const cluster = cluster_list_[cluster_list_size_-1];
-
     if (!cluster)
       return false;
 
+    const uint64 timecode_scale = segment_info_.timecode_scale();
     int32 shift_left = 0;
 
     // TODO(fgalligan): Change this to use the durations of frames instead of
@@ -2085,29 +2302,24 @@ bool Segment::WriteFramesLessThan(uint64 timestamp) {
         break;
 
       const Frame* const frame_prev = frames_[i-1];
-
-      int64 block_timecode =
-          frame_prev->timestamp() / segment_info_.timecode_scale();
-      block_timecode -= static_cast<int64>(cluster->timecode());
-
-      if (block_timecode < 0)
-        return false;
-
-      if (new_cuepoint_ && cues_track_ == frame_prev->track_number()) {
-        if (!AddCuePoint(frame_prev->timestamp()))
-          return false;
-      }
+      const uint64 frame_timestamp = frame_prev->timestamp();
+      const uint64 frame_timecode = frame_timestamp / timecode_scale;
 
       if (!cluster->AddFrame(frame_prev->frame(),
                              frame_prev->length(),
                              frame_prev->track_number(),
-                             static_cast<int16>(block_timecode),
+                             frame_timecode,
                              frame_prev->is_key()))
         return false;
 
+      if (new_cuepoint_ && cues_track_ == frame_prev->track_number()) {
+        if (!AddCuePoint(frame_timestamp))
+          return false;
+      }
+
       ++shift_left;
-      if (frame_prev->timestamp() > last_timestamp_)
-        last_timestamp_ = frame_prev->timestamp();
+      if (frame_timestamp > last_timestamp_)
+        last_timestamp_ = frame_timestamp;
 
       delete frame_prev;
     }

@@ -489,14 +489,35 @@ class Cluster {
   //   frame: Pointer to the data
   //   length: Length of the data
   //   track_number: Track to add the data to. Value returned by Add track
-  //                 functions.
-  //   timestamp:    Timecode of the frame relative to the cluster timecode.
+  //                 functions.  The range of allowed values is [0, 126].
+  //   timecode:     Absolute (not relative to cluster) timestamp of the
+  //                 frame, expressed in timecode units.
   //   is_key:       Flag telling whether or not this frame is a key frame.
   bool AddFrame(const uint8* frame,
                 uint64 length,
                 uint64 track_number,
-                short timecode,
+                uint64 timecode,  // timecode units (absolute)
                 bool is_key);
+
+  // Writes a frame of metadata to the output medium; returns true on
+  // success.
+  // Inputs:
+  //   frame: Pointer to the data
+  //   length: Length of the data
+  //   track_number: Track to add the data to. Value returned by Add track
+  //                 functions.  The range of allowed values is [0, 126].
+  //   timecode:     Absolute (not relative to cluster) timestamp of the
+  //                 metadata frame, expressed in timecode units.
+  //   duration:     Duration of metadata frame, in timecode units.
+  //
+  // The metadata frame is written as a block group, with a duration
+  // sub-element but no reference time sub-elements (indicating that
+  // it is considered a keyframe, per Matroska semantics).
+  bool AddMetadata(const uint8* frame,
+                   uint64 length,
+                   uint64 track_number,
+                   uint64 timecode,  // timecode units (absolute)
+                   uint64 duration);  // timecode units
 
   // Increments the size of the cluster's data in bytes.
   void AddPayloadSize(uint64 size);
@@ -514,6 +535,23 @@ class Cluster {
   uint64 timecode() const { return timecode_; }
 
  private:
+  //  Signature that matches either of WriteSimpleBlock or WriteMetadataBlock
+  //  in the muxer utilities package.
+  typedef uint64 (*WriteBlock)(IMkvWriter* writer,
+                               const uint8* data,
+                               uint64 length,
+                               uint64 track_number,
+                               int64 timecode,
+                               uint64 generic_arg);
+
+  //  Used to implement AddFrame and AddMetadata.
+  bool DoWriteBlock(const uint8* frame,
+                    uint64 length,
+                    uint64 track_number,
+                    uint64 absolute_timecode,
+                    uint64 generic_arg,
+                    WriteBlock write_block);
+  
   // Outputs the Cluster header to |writer_|. Returns true on success.
   bool WriteClusterHeader();
 
@@ -649,6 +687,11 @@ class Segment {
   // |ptr_writer| is NULL.
   bool Init(IMkvWriter* ptr_writer);
 
+  // Adds a generic track to the segment.  Returns the number of the track
+  // on success, 0 on error.  |type| is the track type; for metadata, that
+  // would be either 0x11 or 0x21.
+  uint64 AddTrack(int track_type);
+
   // Adds an audio track to the segment. Returns the number of the track on
   // success, 0 on error.
   uint64 AddAudioTrack(int32 sample_rate, int32 channels);
@@ -670,8 +713,28 @@ class Segment {
   bool AddFrame(const uint8* frame,
                 uint64 length,
                 uint64 track_number,
-                uint64 timestamp,
+                uint64 timestamp_ns,
                 bool is_key);
+
+  // Writes a frame of metadata to the output medium; returns true on
+  // success.
+  // Inputs:
+  //   frame: Pointer to the data
+  //   length: Length of the data
+  //   track_number: Track to add the data to. Value returned by Add track
+  //                 functions.
+  //   timecode:     Absolute timestamp of the metadata frame, expressed
+  //                 in nanosecond units.
+  //   duration:     Duration of metadata frame, in nanosecond units.
+  //
+  // The metadata frame is written as a block group, with a duration
+  // sub-element but no reference time sub-elements (indicating that
+  // it is considered a keyframe, per Matroska semantics).
+  bool AddMetadata(const uint8* frame,
+                   uint64 length,
+                   uint64 track_number,
+                   uint64 timestamp_ns,
+                   uint64 duration_ns);
 
   // Adds a video track to the segment. Returns the number of the track on
   // success, 0 on error.
@@ -755,9 +818,9 @@ class Segment {
   // Adds the frame to our frame array.
   bool QueueFrame(Frame* frame);
 
-  // Output all frames that are queued. Returns true on success and if there
-  // are no frames queued.
-  bool WriteFramesAll();
+  // Output all frames that are queued. Returns -1 on error, otherwise
+  // it returns the number of frames written.
+  int WriteFramesAll();
 
   // Output all frames that are queued that have an end time that is less
   // then |timestamp|. Returns true on success and if there are no frames
@@ -767,6 +830,23 @@ class Segment {
   // Outputs the segment header, Segment Information element, SeekHead element,
   // and Tracks element to |writer_|.
   bool WriteSegmentHeader();
+
+  // Given a frame with the specified timestamp (nanosecond units) and
+  // keyframe status, determine whether a new cluster should be
+  // created, before writing enqueued frames and the frame itself. The
+  // function returns one of the following values:
+  //  0 = do not create a new cluster, and write frame to the existing cluster
+  //  1 = create a new cluster, and write frame to that new cluster
+  //  2 = create a new cluster, and re-run test with the new cluster
+  int TestFrame(uint64 track_num, uint64 timestamp_ns, bool key) const;
+
+  // Create a new cluster, using the earlier of the first enqueued
+  // frame, or the indicated time. Returns true on success.
+  bool MakeNewCluster(uint64 timestamp_ns);
+
+  // Calls TestFrame and MakeNewFrame in a loop, creating one or more
+  // clusters as necessary.  Returns true on success.
+  bool NewCluster(uint64 track_num, uint64 timestamp_ns, bool key);
 
   // WebM elements
   Cues cues_;
@@ -845,10 +925,6 @@ class Segment {
   // The mode that segment is in. If set to |kLive| the writer must not
   // seek backwards.
   Mode mode_;
-
-  // Flag telling the muxer that a new cluster should be started with the next
-  // frame.
-  bool new_cluster_;
 
   // Flag telling the muxer that a new cue point should be added.
   bool new_cuepoint_;

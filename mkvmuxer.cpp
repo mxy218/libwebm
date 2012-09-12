@@ -2057,7 +2057,7 @@ bool Segment::QueueFrame(Frame* frame) {
 int Segment::WriteFramesAll() {
   if (frames_ == NULL)
     return 0;
-  
+
   if (cluster_list_size_ < 1)
     return -1;
 

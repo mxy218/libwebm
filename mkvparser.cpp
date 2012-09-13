@@ -747,7 +747,7 @@ long long Segment::CreateInstance(
     if ((total >= 0) && (available > total))
         return -1;
 
-    const long long end = (total >= 0) ? total : available;
+    const long long end = (total >= 0) ? total : LLONG_MAX;
     //TODO: this might need to be liberalized
 
     //I would assume that in practice this loop would execute
@@ -774,8 +774,11 @@ long long Segment::CreateInstance(
         long len;
         long long result = GetUIntLength(pReader, pos, len);
 
-        if (result)  //error, or too few available bytes
+        if (result < 0)  //error
             return result;
+
+        if (result > 0)  //underflow
+            return (pos + 1);
 
         if ((pos + len) > end)
             return E_FILE_FORMAT_INVALID;
@@ -795,8 +798,11 @@ long long Segment::CreateInstance(
 
         result = GetUIntLength(pReader, pos, len);
 
-        if (result)  //error, or too few available bytes
+        if (result < 0)  //error
             return result;
+
+        if (result > 0)  //underflow
+            return (pos + 1);
 
         if ((pos + len) > end)
             return E_FILE_FORMAT_INVALID;
@@ -845,6 +851,9 @@ long long Segment::CreateInstance(
 
         if ((pos + size) > end)
             return E_FILE_FORMAT_INVALID;
+
+        if ((pos + len) > available)
+            return pos + len;
 
         pos += size;  //consume payload
     }

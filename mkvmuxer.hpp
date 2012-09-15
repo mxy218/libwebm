@@ -668,14 +668,10 @@ class Segment {
   bool Init(IMkvWriter* ptr_writer);
 
   // Adds an audio track to the segment. Returns the number of the track on
-  // success, 0 on error.
-  uint64 AddAudioTrack(int32 sample_rate, int32 channels);
-
-  // Adds an audio track to the segment. Returns the number of the track on
   // success, 0 on error. |number| is the number to use for the audio track.
   // |number| must be >= 0. If |number| == 0 then the muxer will decide on
   // the track number.
-  uint64 AddAudioTrack(int32 sample_rate, int32 channels, int32 number);
+  uint64 AddAudioTrack(int32 sample_rate, int32 channels, int32 number = 0);
 
   // Adds a frame to be output in the file. Returns true on success.
   // Inputs:
@@ -692,14 +688,10 @@ class Segment {
                 bool is_key);
 
   // Adds a video track to the segment. Returns the number of the track on
-  // success, 0 on error.
-  uint64 AddVideoTrack(int32 width, int32 height);
-
-  // Adds a video track to the segment. Returns the number of the track on
   // success, 0 on error. |number| is the number to use for the video track.
   // |number| must be >= 0. If |number| == 0 then the muxer will decide on
   // the track number.
-  uint64 AddVideoTrack(int32 width, int32 height, int32 number);
+  uint64 AddVideoTrack(int32 width, int32 height, int32 number = 0);
 
   // Sets which track to use for the Cues element. Must have added the track
   // before calling this function. Returns true on success. |track_number| is

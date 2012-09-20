@@ -1386,6 +1386,22 @@ bool SegmentInfo::Write(IMkvWriter* writer) {
   return true;
 }
 
+void SegmentInfo::set_muxing_app(const char* app) {
+  if (app) {
+    delete [] muxing_app_;
+
+    const size_t length = strlen(app) + 1;
+    muxing_app_ = new (std::nothrow) char[length];  // NOLINT
+    if (muxing_app_) {
+#ifdef _MSC_VER
+      strcpy_s(muxing_app_, length, app);
+#else
+      strcpy(muxing_app_, app);
+#endif
+    }
+  }
+}
+
 void SegmentInfo::set_writing_app(const char* app) {
   if (app) {
     delete [] writing_app_;

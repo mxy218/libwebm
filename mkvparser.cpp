@@ -4760,6 +4760,29 @@ Track::~Track()
     delete [] content_encoding_entries_;
 }
 
+long Track::Create(
+    Segment* pSegment,
+    const Info& i,
+    long long elem_st,
+    long long elem_sz,
+    Track*& pTrack)
+{
+    if (pTrack)
+        return -1;
+
+    pTrack = new (std::nothrow) Track(pSegment, elem_st, elem_sz);
+
+    if (pTrack == NULL)
+        return -1;  //generic error
+
+    const int status = i.Copy(pTrack->m_info);
+
+    if (status)
+        return status;
+
+    return 0;  //success
+}
+
 Track::Info::Info():
     nameAsUTF8(NULL),
     codecId(NULL),
@@ -5098,6 +5121,26 @@ long Track::GetNext(
     return 1;
 }
 
+bool Track::VetEntry(const BlockEntry* pBlockEntry) const
+{
+    assert(pBlockEntry);
+
+    const Block* const pBlock = pBlockEntry->GetBlock();
+    assert(pBlock);
+    assert(pBlock->GetTrackNumber() == m_info.number);
+
+    return true;
+}
+
+long Track::Seek(
+    long long /* time_ns */ ,
+    const BlockEntry*& pResult) const
+{
+    // TODO(matthewjheaney): need to implement this?
+    pResult = NULL;
+    return -1;  // generic error
+}
+
 const ContentEncoding*
 Track::GetContentEncodingByIndex(unsigned long idx) const {
   const ptrdiff_t count =
@@ -5316,15 +5359,8 @@ long VideoTrack::Parse(
 
 bool VideoTrack::VetEntry(const BlockEntry* pBlockEntry) const
 {
-    assert(pBlockEntry);
-
-    const Block* const pBlock = pBlockEntry->GetBlock();
-    assert(pBlock);
-    assert(pBlock->GetTrackNumber() == m_info.number);
-
-    return pBlock->IsKey();
+    return Track::VetEntry(pBlockEntry) && pBlockEntry->GetBlock()->IsKey();
 }
-
 
 long VideoTrack::Seek(
     long long time_ns,
@@ -5545,18 +5581,6 @@ long AudioTrack::Parse(
     pTrack->m_bitDepth = bit_depth;
 
     return 0;  //success
-}
-
-
-bool AudioTrack::VetEntry(const BlockEntry* pBlockEntry) const
-{
-    assert(pBlockEntry);
-
-    const Block* const pBlock = pBlockEntry->GetBlock();
-    assert(pBlock);
-    assert(pBlock->GetTrackNumber() == m_info.number);
-
-    return true;
 }
 
 
@@ -5991,18 +6015,7 @@ long Tracks::ParseTrackEntry(
     if (i.type <= 0)  //not specified
         return E_FILE_FORMAT_INVALID;
 
-    if ((i.type != Track::kVideo) && (i.type != Track::kAudio))
-    {
-        //TODO(matthewjheaney): go ahead and create a "generic" track
-        //object, so that GetTrackByXXX always returns something, even
-        //if the object it returns has a type that is not kVideo or kAudio.
-
-        return 0;  //no error
-    }
-
     i.lacing = (lacing > 0) ? true : false;
-
-    long status;
 
     if (i.type == Track::kVideo)
     {
@@ -6016,13 +6029,26 @@ long Tracks::ParseTrackEntry(
 
         VideoTrack* p = NULL;
 
-        status = VideoTrack::Parse(m_pSegment, i, elem_st, elem_sz, p);
-        pTrack = p;
-    }
-    else
-    {
-        assert(i.type == Track::kAudio);
+        const long status = VideoTrack::Parse(m_pSegment,
+                                              i,
+                                              elem_st,
+                                              elem_sz,
+                                              p);
 
+        if (status)
+            return status;
+
+        pTrack = p;
+        assert(pTrack);
+
+        if (e.start >= 0)
+            pTrack->ParseContentEncodingsEntry(e.start, e.size);
+
+        return 0;
+    }
+
+    if (i.type == Track::kAudio)
+    {
         if (a.start < 0)
             return E_FILE_FORMAT_INVALID;
 
@@ -6033,18 +6059,44 @@ long Tracks::ParseTrackEntry(
 
         AudioTrack* p = NULL;
 
-        status = AudioTrack::Parse(m_pSegment, i, elem_st, elem_sz, p);
+        const long status = AudioTrack::Parse(m_pSegment,
+                                              i,
+                                              elem_st,
+                                              elem_sz,
+                                              p);
+
+        if (status)
+            return status;
+
         pTrack = p;
+        assert(pTrack);
+
+        if (e.start >= 0)
+            pTrack->ParseContentEncodingsEntry(e.start, e.size);
+
+        return 0;
     }
+
+    // neither video nor audio - probably metadata
+
+    if (a.start >= 0)
+        return E_FILE_FORMAT_INVALID;
+
+    if (v.start >= 0)
+        return E_FILE_FORMAT_INVALID;
+
+    if (e.start >= 0)
+        return E_FILE_FORMAT_INVALID;
+
+    i.settings.start = -1;
+    i.settings.size = 0;
+
+    const long status = Track::Create(m_pSegment, i, elem_st, elem_sz, pTrack);
 
     if (status)
         return status;
 
     assert(pTrack);
-
-    if (e.start >= 0)
-        pTrack->ParseContentEncodingsEntry(e.start, e.size);
-
     return 0;  //success
 }
 

@@ -4760,6 +4760,35 @@ Track::~Track()
     delete [] content_encoding_entries_;
 }
 
+long Track::Create(
+    Segment* pSegment,
+    const Info& info,
+    long long element_start,
+    long long element_size,
+    Track*& pResult)
+{
+    if (pResult)
+        return -1;
+
+    Track* const pTrack = new (std::nothrow) Track(pSegment,
+                                                   element_start,
+                                                   element_size);
+
+    if (pTrack == NULL)
+        return -1;  //generic error
+
+    const int status = info.Copy(pTrack->m_info);
+
+    if (status)  // error
+    {
+        delete pTrack;
+        return status;
+    }
+
+    pResult = pTrack;
+    return 0;  //success
+}
+
 Track::Info::Info():
     nameAsUTF8(NULL),
     codecId(NULL),
@@ -5098,6 +5127,31 @@ long Track::GetNext(
     return 1;
 }
 
+bool Track::VetEntry(const BlockEntry* pBlockEntry) const
+{
+    assert(pBlockEntry);
+    const Block* const pBlock = pBlockEntry->GetBlock();
+    assert(pBlock);
+    assert(pBlock->GetTrackNumber() == m_info.number);
+
+    // This function is used during a seek to determine whether the
+    // frame is a valid seek target.  This default function simply
+    // returns true, which means all frames are valid seek targets.
+    // It gets overridden by the VideoTrack class, because only video
+    // keyframes can be used as seek target.
+
+    return true;
+}
+
+long Track::Seek(
+    long long /* time_ns */ ,
+    const BlockEntry*& pResult) const
+{
+    // TODO(matthewjheaney): need to implement this?
+    pResult = NULL;
+    return -1;  // generic error
+}
+
 const ContentEncoding*
 Track::GetContentEncodingByIndex(unsigned long idx) const {
   const ptrdiff_t count =
@@ -5221,15 +5275,15 @@ VideoTrack::VideoTrack(
 
 long VideoTrack::Parse(
     Segment* pSegment,
-    const Info& i,
-    long long elem_st,
-    long long elem_sz,
-    VideoTrack*& pTrack)
+    const Info& info,
+    long long element_start,
+    long long element_size,
+    VideoTrack*& pResult)
 {
-    if (pTrack)
+    if (pResult)
         return -1;
 
-    if (i.type != Track::kVideo)
+    if (info.type != Track::kVideo)
         return -1;
 
     long long width = 0;
@@ -5238,7 +5292,7 @@ long VideoTrack::Parse(
 
     IMkvReader* const pReader = pSegment->m_pReader;
 
-    const Settings& s = i.settings;
+    const Settings& s = info.settings;
     assert(s.start >= 0);
     assert(s.size >= 0);
 
@@ -5296,35 +5350,34 @@ long VideoTrack::Parse(
 
     assert(pos == stop);
 
-    pTrack = new (std::nothrow) VideoTrack(pSegment, elem_st, elem_sz);
+    VideoTrack* const pTrack = new (std::nothrow) VideoTrack(pSegment,
+                                                             element_start,
+                                                             element_size);
 
     if (pTrack == NULL)
         return -1;  //generic error
 
-    const int status = i.Copy(pTrack->m_info);
+    const int status = info.Copy(pTrack->m_info);
 
-    if (status)
+    if (status)  // error
+    {
+        delete pTrack;
         return status;
+    }
 
     pTrack->m_width = width;
     pTrack->m_height = height;
     pTrack->m_rate = rate;
 
+    pResult = pTrack;
     return 0;  //success
 }
 
 
 bool VideoTrack::VetEntry(const BlockEntry* pBlockEntry) const
 {
-    assert(pBlockEntry);
-
-    const Block* const pBlock = pBlockEntry->GetBlock();
-    assert(pBlock);
-    assert(pBlock->GetTrackNumber() == m_info.number);
-
-    return pBlock->IsKey();
+    return Track::VetEntry(pBlockEntry) && pBlockEntry->GetBlock()->IsKey();
 }
-
 
 long VideoTrack::Seek(
     long long time_ns,
@@ -5459,20 +5512,20 @@ AudioTrack::AudioTrack(
 
 long AudioTrack::Parse(
     Segment* pSegment,
-    const Info& i,
-    long long elem_st,
-    long long elem_sz,
-    AudioTrack*& pTrack)
+    const Info& info,
+    long long element_start,
+    long long element_size,
+    AudioTrack*& pResult)
 {
-    if (pTrack)
+    if (pResult)
         return -1;
 
-    if (i.type != Track::kAudio)
+    if (info.type != Track::kAudio)
         return -1;
 
     IMkvReader* const pReader = pSegment->m_pReader;
 
-    const Settings& s = i.settings;
+    const Settings& s = info.settings;
     assert(s.start >= 0);
     assert(s.size >= 0);
 
@@ -5481,7 +5534,7 @@ long AudioTrack::Parse(
 
     const long long stop = pos + s.size;
 
-    double rate = 8000.0;
+    double rate = 8000.0;  // MKV default
     long long channels = 1;
     long long bit_depth = 0;
 
@@ -5530,33 +5583,27 @@ long AudioTrack::Parse(
 
     assert(pos == stop);
 
-    pTrack = new (std::nothrow) AudioTrack(pSegment, elem_st, elem_sz);
+    AudioTrack* const pTrack = new (std::nothrow) AudioTrack(pSegment,
+                                                             element_start,
+                                                             element_size);
 
     if (pTrack == NULL)
         return -1;  //generic error
 
-    const int status = i.Copy(pTrack->m_info);
+    const int status = info.Copy(pTrack->m_info);
 
     if (status)
+    {
+        delete pTrack;
         return status;
+    }
 
     pTrack->m_rate = rate;
     pTrack->m_channels = channels;
     pTrack->m_bitDepth = bit_depth;
 
+    pResult = pTrack;
     return 0;  //success
-}
-
-
-bool AudioTrack::VetEntry(const BlockEntry* pBlockEntry) const
-{
-    assert(pBlockEntry);
-
-    const Block* const pBlock = pBlockEntry->GetBlock();
-    assert(pBlock);
-    assert(pBlock->GetTrackNumber() == m_info.number);
-
-    return true;
 }
 
 
@@ -5991,18 +6038,7 @@ long Tracks::ParseTrackEntry(
     if (i.type <= 0)  //not specified
         return E_FILE_FORMAT_INVALID;
 
-    if ((i.type != Track::kVideo) && (i.type != Track::kAudio))
-    {
-        //TODO(matthewjheaney): go ahead and create a "generic" track
-        //object, so that GetTrackByXXX always returns something, even
-        //if the object it returns has a type that is not kVideo or kAudio.
-
-        return 0;  //no error
-    }
-
     i.lacing = (lacing > 0) ? true : false;
-
-    long status;
 
     if (i.type == Track::kVideo)
     {
@@ -6016,13 +6052,26 @@ long Tracks::ParseTrackEntry(
 
         VideoTrack* p = NULL;
 
-        status = VideoTrack::Parse(m_pSegment, i, elem_st, elem_sz, p);
-        pTrack = p;
-    }
-    else
-    {
-        assert(i.type == Track::kAudio);
+        const long status = VideoTrack::Parse(m_pSegment,
+                                              i,
+                                              elem_st,
+                                              elem_sz,
+                                              p);
 
+        if (status)
+            return status;
+
+        pTrack = p;
+        assert(pTrack);
+
+        if (e.start >= 0)
+            pTrack->ParseContentEncodingsEntry(e.start, e.size);
+
+        return 0;
+    }
+
+    if (i.type == Track::kAudio)
+    {
         if (a.start < 0)
             return E_FILE_FORMAT_INVALID;
 
@@ -6033,18 +6082,44 @@ long Tracks::ParseTrackEntry(
 
         AudioTrack* p = NULL;
 
-        status = AudioTrack::Parse(m_pSegment, i, elem_st, elem_sz, p);
+        const long status = AudioTrack::Parse(m_pSegment,
+                                              i,
+                                              elem_st,
+                                              elem_sz,
+                                              p);
+
+        if (status)
+            return status;
+
         pTrack = p;
+        assert(pTrack);
+
+        if (e.start >= 0)
+            pTrack->ParseContentEncodingsEntry(e.start, e.size);
+
+        return 0;
     }
+
+    // neither video nor audio - probably metadata
+
+    if (a.start >= 0)
+        return E_FILE_FORMAT_INVALID;
+
+    if (v.start >= 0)
+        return E_FILE_FORMAT_INVALID;
+
+    if (e.start >= 0)
+        return E_FILE_FORMAT_INVALID;
+
+    i.settings.start = -1;
+    i.settings.size = 0;
+
+    const long status = Track::Create(m_pSegment, i, elem_st, elem_sz, pTrack);
 
     if (status)
         return status;
 
     assert(pTrack);
-
-    if (e.start >= 0)
-        pTrack->ParseContentEncodingsEntry(e.start, e.size);
-
     return 0;  //success
 }
 

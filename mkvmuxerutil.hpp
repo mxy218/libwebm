@@ -96,6 +96,9 @@ uint64 WriteVoidElement(IMkvWriter* writer, uint64 size);
 // and |revision|.
 void GetVersion(int32* major, int32* minor, int32* build, int32* revision);
 
+// Returns a random number to be used for UID.
+uint64 MakeUID(unsigned int* seed);
+
 }  //end namespace mkvmuxer
 
 #endif // MKVMUXERUTIL_HPP

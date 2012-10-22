@@ -8,6 +8,7 @@
 
 #include "mkvmuxer.hpp"
 
+#include <cassert>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -427,14 +428,14 @@ uint64 ContentEncoding::EncryptionSize() const {
 //
 // Track Class
 
-Track::Track()
+Track::Track(unsigned int* seed)
     : codec_id_(NULL),
       codec_private_(NULL),
       language_(NULL),
       name_(NULL),
       number_(0),
       type_(0),
-      uid_(MakeUID()),
+      uid_(MakeUID(seed)),
       codec_private_length_(0),
       content_encoding_entries_(NULL),
       content_encoding_entries_size_(0) {
@@ -679,33 +680,13 @@ void Track::set_name(const char* name) {
   }
 }
 
-bool Track::is_seeded_ = false;
-
-uint64 Track::MakeUID() {
-  if (!is_seeded_) {
-    srand(static_cast<uint32>(time(NULL)));
-    is_seeded_ = true;
-  }
-
-  uint64 track_uid = 0;
-  for (int32 i = 0; i < 7; ++i) {  // avoid problems with 8-byte values
-    track_uid <<= 8;
-
-    const int32 nn = rand();
-    const int32 n = 0xFF & (nn >> 4);  // throw away low-order bits
-
-    track_uid |= n;
-  }
-
-  return track_uid;
-}
-
 ///////////////////////////////////////////////////////////////
 //
 // VideoTrack Class
 
-VideoTrack::VideoTrack()
-    : display_height_(0),
+VideoTrack::VideoTrack(unsigned int* seed)
+    : Track(seed),
+      display_height_(0),
       display_width_(0),
       frame_rate_(0.0),
       height_(0),
@@ -796,8 +777,9 @@ uint64 VideoTrack::VideoPayloadSize() const {
 //
 // AudioTrack Class
 
-AudioTrack::AudioTrack()
-    : bit_depth_(0),
+AudioTrack::AudioTrack(unsigned int* seed)
+    : Track(seed),
+      bit_depth_(0),
       channels_(1),
       sample_rate_(0.0) {
 }
@@ -1008,7 +990,332 @@ bool Tracks::Write(IMkvWriter* writer) const {
 
 ///////////////////////////////////////////////////////////////
 //
-// Cluster Class
+// Chapter Class
+
+bool Chapter::SetId(const char* id) {
+  if (id_) {
+    delete[] id_;
+    id_ = NULL;
+  }
+
+  return StrCpy(id, &id_);
+}
+
+void Chapter::SetTime(const Segment& segment,
+                      uint64 start_ns,
+                      uint64 end_ns) {
+  const SegmentInfo* const info = segment.GetSegmentInfo();
+  const uint64 timecode_scale = info->timecode_scale();
+  start_timecode_ = start_ns / timecode_scale;
+  end_timecode_ = end_ns / timecode_scale;
+}
+
+bool Chapter::AddTitle(const char* title) {
+  if (!ExpandDisplaysArray())
+    return false;
+
+  Display& d = displays_[displays_count_];
+
+  if (!d.Init(title))
+    return false;
+
+  ++displays_count_;
+  return true;
+}
+
+Chapter::Chapter() {
+}
+
+Chapter::~Chapter() {
+}
+
+void Chapter::Init(unsigned int* seed) {
+  id_ = NULL;
+  displays_ = NULL;
+  displays_size_ = 0;
+  displays_count_ = 0;
+  uid_ = MakeUID(seed);
+}
+
+void Chapter::ShallowCopy(Chapter* dst) const {
+  dst->id_ = id_;
+  dst->start_timecode_ = start_timecode_;
+  dst->end_timecode_ = end_timecode_;
+  dst->uid_ = uid_;
+  dst->displays_ = displays_;
+  dst->displays_size_ = displays_size_;
+  dst->displays_count_ = displays_count_;
+}
+
+void Chapter::Clear() {
+  delete[] id_;
+
+  for (int idx = 0; idx < displays_count_; ++idx) {
+    Display& d = displays_[idx++];
+    d.Clear();
+  }
+}
+
+bool Chapter::ExpandDisplaysArray() {
+  if (displays_size_ > displays_count_)
+    return true;  // nothing to do yet
+
+  const unsigned size = (displays_size_ == 0) ? 1 : 2 * displays_size_;
+
+  Display* const displays = new (std::nothrow) Display[size];  // NOLINT
+  if (displays == NULL)
+    return false;
+
+  for (int idx = 0; idx < displays_count_; ++idx) {
+    displays[idx] = displays_[idx];
+  }
+
+  delete[] displays_;
+
+  displays_ = displays;
+  displays_size_ = size;
+
+  return true;
+}
+
+bool Chapter::StrCpy(const char* src, char** dst_ptr) {
+  if (dst_ptr == NULL)
+    return false;
+
+  char*& dst = *dst_ptr;
+  dst = NULL;
+
+  if (src == NULL) {
+    dst = NULL;
+    return true;
+  }
+
+  const size_t size = strlen(src) + 1;
+
+  dst = new (std::nothrow) char[size];  // NOLINT
+  if (dst == NULL)
+    return false;
+
+  strcpy(dst, src);  // NOLINT
+  return true;
+}
+
+uint64 Chapter::WriteAtom(IMkvWriter* writer) const {
+  uint64 payload_size =
+      // TODO(matthewjheaney): resolve ID issue
+      EbmlElementSize(kMkvChapterUID, uid_) +
+      EbmlElementSize(kMkvChapterTimeStart, start_timecode_) +
+      EbmlElementSize(kMkvChapterTimeEnd, end_timecode_);
+
+  for (int idx = 0; idx < displays_count_; ++idx) {
+    const Display& d = displays_[idx];
+    payload_size += d.WriteDisplay(NULL);
+  }
+
+  const uint64 atom_size =
+      EbmlMasterElementSize(kMkvChapterAtom, payload_size) +
+      payload_size;
+
+  if (writer == NULL)
+    return atom_size;
+
+  const int64 start = writer->Position();
+
+  if (!WriteEbmlMasterElement(writer, kMkvChapterAtom, payload_size))
+    return 0;
+
+  if (!WriteEbmlElement(writer, kMkvChapterUID, uid_))
+    return 0;
+
+  if (!WriteEbmlElement(writer, kMkvChapterTimeStart, start_timecode_))
+    return 0;
+
+  if (!WriteEbmlElement(writer, kMkvChapterTimeEnd, end_timecode_))
+    return 0;
+
+  for (int idx = 0; idx < displays_count_; ++idx) {
+    const Display& d = displays_[idx];
+
+    if (!d.WriteDisplay(writer))
+      return 0;
+  }
+
+  const int64 stop = writer->Position();
+
+  if (stop >= start && uint64(stop - start) != atom_size) {
+    assert(false);
+    return 0;
+  }
+
+  return atom_size;
+}
+
+bool Chapter::Display::Init(const char* title) {
+  title_ = NULL;
+
+  if (!StrCpy(title, &title_))
+    return false;
+
+  return true;
+}
+
+void Chapter::Display::Clear() {
+  delete[] title_;
+  title_ = NULL;
+}
+
+uint64 Chapter::Display::WriteDisplay(IMkvWriter* writer) const {
+  const uint64 payload_size =
+      EbmlElementSize(kMkvChapterString, title_);
+
+  const uint64 display_size =
+      EbmlMasterElementSize(kMkvChapterDisplay, payload_size) +
+      payload_size;
+
+  if (writer == NULL)
+    return display_size;
+
+  const int64 start = writer->Position();
+
+  if (!WriteEbmlMasterElement(writer, kMkvChapterDisplay, payload_size))
+    return 0;
+
+  if (!WriteEbmlElement(writer, kMkvChapterString, title_))
+    return 0;
+
+  const int64 stop = writer->Position();
+
+  if (stop >= start && uint64(stop - start) != display_size) {
+    assert(false);
+    return 0;
+  }
+
+  return display_size;
+}
+
+///////////////////////////////////////////////////////////////
+//
+// Chapters Class
+
+Chapters::Chapters()
+    : chapters_size_(0),
+      chapters_count_(0),
+      chapters_(NULL) {
+}
+
+Chapters::~Chapters() {
+  while (chapters_count_ > 0) {
+    Chapter& chapter = chapters_[--chapters_count_];
+    chapter.Clear();
+  }
+
+  delete[] chapters_;
+  chapters_ = NULL;
+}
+
+unsigned Chapters::Count() const {
+  return chapters_count_;
+}
+
+Chapter* Chapters::AddChapter(unsigned int* seed) {
+  if (!ExpandChaptersArray())
+    return NULL;
+
+  Chapter& chapter = chapters_[chapters_count_++];
+  chapter.Init(seed);
+
+  return &chapter;
+}
+
+bool Chapters::Write(IMkvWriter* writer) const {
+  if (writer == NULL)
+    return false;
+
+  const uint64 payload_size = WriteEdition(NULL);  // return size only
+
+  if (!WriteEbmlMasterElement(writer, kMkvChapters, payload_size))
+    return false;
+
+  const int64 start = writer->Position();
+
+  if (WriteEdition(writer) == 0)  // error
+    return false;
+
+  const int64 stop = writer->Position();
+
+  if (stop >= start && uint64(stop - start) != payload_size) {
+    assert(false);
+    return false;
+  }
+
+  return true;
+}
+
+bool Chapters::ExpandChaptersArray() {
+  if (chapters_size_ > chapters_count_)
+    return true;  // nothing to do yet
+
+  const int size = (chapters_size_ == 0) ? 1 : 2 * chapters_size_;
+
+  Chapter* const chapters = new (std::nothrow) Chapter[size];  // NOLINT
+  if (chapters == NULL)
+    return false;
+
+  for (int idx = 0; idx < chapters_count_; ++idx) {
+    const Chapter& src = chapters_[idx];
+    Chapter* const dst = chapters + idx;
+    src.ShallowCopy(dst);
+  }
+
+  delete[] chapters_;
+
+  chapters_ = chapters;
+  chapters_size_ = size;
+
+  return true;
+}
+
+uint64 Chapters::WriteEdition(IMkvWriter* writer) const {
+  uint64 payload_size = 0;
+
+  for (int idx = 0; idx < chapters_count_; ++idx) {
+    const Chapter& chapter = chapters_[idx];
+    payload_size += chapter.WriteAtom(NULL);
+  }
+
+  const uint64 edition_size =
+      EbmlMasterElementSize(kMkvEditionEntry, payload_size) +
+      payload_size;
+
+  if (writer == NULL)  // return size only
+    return edition_size;
+
+  const int64 start = writer->Position();
+
+  if (!WriteEbmlMasterElement(writer, kMkvEditionEntry, payload_size))
+    return 0;  // error
+
+  for (int idx = 0; idx < chapters_count_; ++idx) {
+    const Chapter& chapter = chapters_[idx];
+
+    const uint64 chapter_size = chapter.WriteAtom(writer);
+    if (chapter_size == 0)  // error
+      return 0;
+  }
+
+  const int64 stop = writer->Position();
+
+  if (stop >= start && uint64(stop - start) != edition_size) {
+    assert(false);
+    return 0;
+  }
+
+  return edition_size;
+}
+
+///////////////////////////////////////////////////////////////
+//
+// Cluster class
 
 Cluster::Cluster(uint64 timecode, int64 cues_pos)
     : blocks_added_(0),
@@ -1477,6 +1784,8 @@ Segment::Segment()
       writer_cluster_(NULL),
       writer_cues_(NULL),
       writer_header_(NULL) {
+  const time_t curr_time = time(NULL);
+  seed_ = static_cast<unsigned int>(curr_time);
 }
 
 Segment::~Segment() {
@@ -1608,7 +1917,7 @@ bool Segment::Finalize() {
 }
 
 Track* Segment::AddTrack(int32 number) {
-  Track* const track = new (std::nothrow) Track;  // NOLINT
+  Track* const track = new (std::nothrow) Track(&seed_);  // NOLINT
 
   if (!track)
     return NULL;
@@ -1621,20 +1930,24 @@ Track* Segment::AddTrack(int32 number) {
   return track;
 }
 
+Chapter* Segment::AddChapter() {
+  return chapters_.AddChapter(&seed_);
+}
+
 uint64 Segment::AddVideoTrack(int32 width, int32 height, int32 number) {
-  VideoTrack* const vid_track = new (std::nothrow) VideoTrack();  // NOLINT
-  if (!vid_track)
+  VideoTrack* const track = new (std::nothrow) VideoTrack(&seed_);  // NOLINT
+  if (!track)
     return 0;
 
-  vid_track->set_type(Tracks::kVideo);
-  vid_track->set_codec_id(Tracks::kVp8CodecId);
-  vid_track->set_width(width);
-  vid_track->set_height(height);
+  track->set_type(Tracks::kVideo);
+  track->set_codec_id(Tracks::kVp8CodecId);
+  track->set_width(width);
+  track->set_height(height);
 
-  tracks_.AddTrack(vid_track, number);
+  tracks_.AddTrack(track, number);
   has_video_ = true;
 
-  return vid_track->number();
+  return track->number();
 }
 
 bool Segment::AddCuePoint(uint64 timestamp, uint64 track) {
@@ -1663,18 +1976,18 @@ bool Segment::AddCuePoint(uint64 timestamp, uint64 track) {
 uint64 Segment::AddAudioTrack(int32 sample_rate,
                               int32 channels,
                               int32 number) {
-  AudioTrack* const aud_track = new (std::nothrow) AudioTrack();  // NOLINT
-  if (!aud_track)
+  AudioTrack* const track = new (std::nothrow) AudioTrack(&seed_);  // NOLINT
+  if (!track)
     return 0;
 
-  aud_track->set_type(Tracks::kAudio);
-  aud_track->set_codec_id(Tracks::kVorbisCodecId);
-  aud_track->set_sample_rate(sample_rate);
-  aud_track->set_channels(channels);
+  track->set_type(Tracks::kAudio);
+  track->set_codec_id(Tracks::kVorbisCodecId);
+  track->set_sample_rate(sample_rate);
+  track->set_channels(channels);
 
-  tracks_.AddTrack(aud_track, number);
+  tracks_.AddTrack(track, number);
 
-  return aud_track->number();
+  return track->number();
 }
 
 bool Segment::AddFrame(const uint8* frame,
@@ -1919,6 +2232,13 @@ bool Segment::WriteSegmentHeader() {
     return false;
   if (!tracks_.Write(writer_header_))
     return false;
+
+  if (chapters_.Count() > 0) {
+    if (!seek_head_.AddSeekEntry(kMkvChapters, MaxOffset()))
+      return false;
+    if (!chapters_.Write(writer_header_))
+      return false;
+  }
 
   if (chunking_ && (mode_ == kLive || !writer_header_->Seekable())) {
     if (!chunk_writer_header_)

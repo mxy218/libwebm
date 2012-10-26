@@ -33,6 +33,16 @@ Code-Review+2: Frank Galligan <fgalligan@google.com>
 Verified+1: Frank Galligan <fgalligan@google.com>
 Code-Review+1: James Zern <jzern@google.com>
 Submitted-by: Frank Galligan <fgalligan@google.com>
+Submitted-at: Thu, 26 Jan 2012 07:16:57 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/14796
+Project: webm/libwebm
+Branch: refs/heads/master
+
+Code-Review+1: Tom Finegan <tomfinegan@google.com>
+Code-Review+2: Frank Galligan <fgalligan@google.com>
+Verified+1: Frank Galligan <fgalligan@google.com>
+Code-Review+1: James Zern <jzern@google.com>
+Submitted-by: Frank Galligan <fgalligan@google.com>
 Submitted-at: Thu, 26 Jan 2012 06:16:57 -0800
 Reviewed-on: https://gerrit.chromium.org/gerrit/14796
 Project: webm/libwebm

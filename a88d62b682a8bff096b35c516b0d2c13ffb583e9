@@ -38,6 +38,15 @@ Code-Review+2: Tom Finegan <tomfinegan@google.com>
 Verified+1: Tom Finegan <tomfinegan@google.com>
 Verified+1: Frank Galligan <fgalligan@google.com>
 Submitted-by: Tom Finegan <tomfinegan@google.com>
+Submitted-at: Thu, 16 Feb 2012 14:52:50 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/16064
+Project: webm/libwebm
+Branch: refs/heads/master
+
+Code-Review+2: Tom Finegan <tomfinegan@google.com>
+Verified+1: Tom Finegan <tomfinegan@google.com>
+Verified+1: Frank Galligan <fgalligan@google.com>
+Submitted-by: Tom Finegan <tomfinegan@google.com>
 Submitted-at: Thu, 16 Feb 2012 13:52:50 -0800
 Reviewed-on: https://gerrit.chromium.org/gerrit/16064
 Project: webm/libwebm

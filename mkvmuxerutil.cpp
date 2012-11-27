@@ -6,6 +6,12 @@
 // in the file PATENTS.  All contributing project authors may
 // be found in the AUTHORS file in the root of the source tree.
 
+#ifdef _MSC_VER
+// Remembering to define _CRT_RAND_S prior
+// to inclusion statement.
+#define _CRT_RAND_S
+#endif
+
 #include "mkvmuxerutil.hpp"
 
 #include <cmath>
@@ -508,7 +514,14 @@ mkvmuxer::uint64 mkvmuxer::MakeUID(unsigned int* seed) {
   for (int i = 0; i < 7; ++i) {  // avoid problems with 8-byte values
     uid <<= 8;
 
+#ifdef _MSC_VER
+    const errno_t err = rand_s(seed);
+    if (err != 0)
+      return 0;
+    const int32 nn = *seed;
+#elif
     const int32 nn = rand_r(seed);
+#endif
     const int32 n = 0xFF & (nn >> 4);  // throw away low-order bits
 
     uid |= n;

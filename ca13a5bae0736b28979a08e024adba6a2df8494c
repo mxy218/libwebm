@@ -3,6 +3,16 @@ Verified+1: Tom Finegan <tomfinegan@google.com>
 Code-Review+1: Frank Galligan <fgalligan@google.com>
 Code-Review+1: Matthew Heaney <matthewjheaney@google.com>
 Submitted-by: Tom Finegan <tomfinegan@google.com>
+Submitted-at: Wed, 30 May 2012 10:04:03 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/23899
+Project: webm/libwebm
+Branch: refs/heads/master
+
+Code-Review+2: Tom Finegan <tomfinegan@google.com>
+Verified+1: Tom Finegan <tomfinegan@google.com>
+Code-Review+1: Frank Galligan <fgalligan@google.com>
+Code-Review+1: Matthew Heaney <matthewjheaney@google.com>
+Submitted-by: Tom Finegan <tomfinegan@google.com>
 Submitted-at: Wed, 30 May 2012 11:04:03 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/23899
 Project: webm/libwebm

@@ -3,6 +3,16 @@ Code-Review+1: James Zern <jzern@google.com>
 Code-Review+2: Matthew Heaney <matthewjheaney@google.com>
 Verified+1: Matthew Heaney <matthewjheaney@google.com>
 Submitted-by: Matthew Heaney <matthewjheaney@google.com>
+Submitted-at: Thu, 06 Sep 2012 09:24:38 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/31982
+Project: webm/libwebm
+Branch: refs/heads/master
+
+Code-Review+1: Frank Galligan <fgalligan@google.com>
+Code-Review+1: James Zern <jzern@google.com>
+Code-Review+2: Matthew Heaney <matthewjheaney@google.com>
+Verified+1: Matthew Heaney <matthewjheaney@google.com>
+Submitted-by: Matthew Heaney <matthewjheaney@google.com>
 Submitted-at: Thu, 06 Sep 2012 10:24:38 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/31982
 Project: webm/libwebm

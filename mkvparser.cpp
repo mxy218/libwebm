@@ -6537,7 +6537,7 @@ long Tracks::ParseTrackEntry(
 
         if (id == 0x60)  // VideoSettings ID
         {
-            if (size <= 0)
+            if (size < 0)
                 return E_FILE_FORMAT_INVALID;
 
             v.start = start;
@@ -6545,7 +6545,7 @@ long Tracks::ParseTrackEntry(
         }
         else if (id == 0x61)  // AudioSettings ID
         {
-            if (size <= 0)
+            if (size < 0)
                 return E_FILE_FORMAT_INVALID;
 
             a.start = start;
@@ -6553,7 +6553,7 @@ long Tracks::ParseTrackEntry(
         }
         else if (id == 0x2D80) // ContentEncodings ID
         {
-            if (size <= 0)
+            if (size < 0)
                 return E_FILE_FORMAT_INVALID;
 
             e.start = start;
@@ -6561,7 +6561,7 @@ long Tracks::ParseTrackEntry(
         }
         else if (id == 0x33C5)  //Track UID
         {
-            if ((size <= 0) || (size > 8))
+            if ((size < 0) || (size > 8))
                 return E_FILE_FORMAT_INVALID;
 
             info.uid = 0;
@@ -6637,28 +6637,31 @@ long Tracks::ParseTrackEntry(
             info.codecPrivate = NULL;
             info.codecPrivateSize = 0;
 
-            if (size <= 0)
+            if (size < 0)
                 return E_FILE_FORMAT_INVALID;
 
             const size_t buflen = static_cast<size_t>(size);
 
-            typedef unsigned char* buf_t;
-
-            const buf_t buf = new (std::nothrow) unsigned char[buflen];
-
-            if (buf == NULL)
-                return -1;
-
-            const int status = pReader->Read(pos, buflen, buf);
-
-            if (status)
+            if (buflen)
             {
-                delete[] buf;
-                return status;
-            }
+                typedef unsigned char* buf_t;
 
-            info.codecPrivate = buf;
-            info.codecPrivateSize = buflen;
+                const buf_t buf = new (std::nothrow) unsigned char[buflen];
+
+                if (buf == NULL)
+                    return -1;
+
+                const int status = pReader->Read(pos, buflen, buf);
+
+                if (status)
+                {
+                    delete[] buf;
+                    return status;
+                }
+
+                info.codecPrivate = buf;
+                info.codecPrivateSize = buflen;
+            }
         }
         else if (id == 0x058688)  //Codec Name
         {

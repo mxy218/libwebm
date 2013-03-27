@@ -125,4 +125,9 @@ int MkvReader::Read(long long offset, long len, unsigned char* buffer)
     return 0;  //success
 }
 
+bool MkvReader::IsOpen() const
+{
+    return m_file;
+}
+
 }  //end namespace mkvparser

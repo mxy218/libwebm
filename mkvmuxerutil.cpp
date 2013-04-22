@@ -461,6 +461,121 @@ uint64 WriteMetadataBlock(IMkvWriter* writer,
   return blockg_elem_size;
 }
 
+// Writes a WebM Block with Additional. The structure is as follows
+// Indentation shows sub-levels
+// BlockGroup
+//  Block
+//    Data
+//  BlockAdditions
+//    BlockMore
+//      BlockAddID
+//        1 (Denotes Alpha)
+//      BlockAdditional
+//        Data
+uint64 WriteBlockWithAdditional(IMkvWriter* writer,
+                                const uint8* data,
+                                uint64 length,
+                                const uint8* additional,
+                                uint64 additional_length,
+                                uint64 track_number,
+                                int64 timecode,
+                                uint64 is_key) {
+  if (!data || !additional || length < 1 || additional_length < 1)
+    return 0;
+
+  const uint64 block_payload_size = 4 + length;
+  const int32 block_size = GetCodedUIntSize(block_payload_size);
+  const uint64 block_elem_size = 1 + block_size + block_payload_size;
+
+  const uint64 block_additional_payload_size = additional_length;
+  const int32 block_additional_size = GetCodedUIntSize(
+                                          block_additional_payload_size);
+  const uint64 block_additional_elem_size = 1 + block_additional_size +
+                                            block_additional_payload_size;
+
+  const uint64 block_addid_payload_size = 8;
+  const int32 block_addid_size = GetCodedUIntSize(block_addid_payload_size);
+  const uint64 block_addid_elem_size = 1 + block_addid_size +
+                                       block_addid_payload_size;
+
+  const uint64 block_more_payload_size = block_addid_elem_size +
+                                         block_additional_elem_size;
+  const int32 block_more_size = GetCodedUIntSize(block_more_payload_size);
+  const uint64 block_more_elem_size = 1 + block_more_size +
+                                      block_more_payload_size;
+
+  const uint64 block_additions_payload_size = block_more_elem_size;
+  const int32 block_additions_size = GetCodedUIntSize(
+                                         block_additions_payload_size);
+  const uint64 block_additions_elem_size = 2 + block_additions_size +
+                                           block_additions_payload_size;
+
+  const uint64 block_group_payload_size = block_elem_size +
+                                          block_additions_elem_size;
+  const int32 block_group_size = GetCodedUIntSize(block_group_payload_size);
+  const uint64 block_group_elem_size = 1 + block_group_size +
+                                       block_group_payload_size;
+
+  if (WriteID(writer, kMkvBlockGroup))
+    return 0;
+
+  if (WriteUInt(writer, block_group_payload_size))
+    return 0;
+
+  if (WriteID(writer, kMkvBlock))
+    return 0;
+
+  if (WriteUInt(writer, block_payload_size))
+    return 0;
+
+  if (WriteUInt(writer, track_number))
+    return 0;
+
+  if (SerializeInt(writer, timecode, 2))
+    return 0;
+
+  uint64 flags = 0;
+  if (is_key)
+    flags |= 0x80;
+  if (SerializeInt(writer, flags, 1))
+    return 0;
+
+  if (writer->Write(data, static_cast<uint32>(length)))
+    return 0;
+
+  if (WriteID(writer, kMkvBlockAdditions))
+    return 0;
+
+  if (WriteUInt(writer, block_additions_payload_size))
+    return 0;
+
+  if (WriteID(writer, kMkvBlockMore))
+    return 0;
+
+  if (WriteUInt(writer, block_more_payload_size))
+    return 0;
+
+  if (WriteID(writer, kMkvBlockAddID))
+    return 0;
+
+  if (WriteUInt(writer, block_addid_payload_size))
+    return 0;
+
+  if (SerializeInt(writer, 1, block_addid_payload_size))
+    return 0;
+
+  if (WriteID(writer, kMkvBlockAdditional))
+    return 0;
+
+  if (WriteUInt(writer, block_additional_payload_size))
+    return 0;
+
+  if (writer->Write(additional, static_cast<uint32>(additional_length)))
+    return 0;
+
+  return block_group_elem_size;
+}
+
 uint64 WriteVoidElement(IMkvWriter* writer, uint64 size) {
   if (!writer)
     return false;

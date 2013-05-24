@@ -7,6 +7,7 @@
 // be found in the AUTHORS file in the root of the source tree.
 
 #include "mkvmuxer.hpp"
+#include "mkvreaderwriter.hpp"
 
 #include <cstdio>
 #include <cstdlib>
@@ -87,6 +88,23 @@ bool WriteEbmlHeader(IMkvWriter* writer) {
   if (!WriteEbmlElement(writer, kMkvDocTypeReadVersion, 2ULL))
     return false;
 
+  return true;
+}
+
+bool ChunkedCopy(IMkvReaderWriter* source, IMkvWriter* dst,
+                 int64 start, int64 end) {
+// TODO(vigneshv): Check if this is a reasonable value.
+#define buf_size 2048
+  uint8 buf[buf_size];
+  int parts = ((end - start) / buf_size) + ((end - start) % buf_size ? 1 : 0);
+  for (int i = 0; i < parts; ++i) {
+    int len = (i != parts - 1) ? buf_size : (end - start) % buf_size;
+    if (source->Read(start + (i * buf_size), len, buf)) {
+       fprintf(stderr, "Error reading");
+       return false;
+    }
+    dst->Write(buf, len);
+  }
   return true;
 }
 
@@ -249,7 +267,7 @@ bool Cues::AddCue(CuePoint* cue) {
   return true;
 }
 
-const CuePoint* Cues::GetCueByIndex(int32 index) const {
+CuePoint* Cues::GetCueByIndex(int32 index) const {
   if (cue_entries_ == NULL)
     return NULL;
 
@@ -257,6 +275,14 @@ const CuePoint* Cues::GetCueByIndex(int32 index) const {
     return NULL;
 
   return cue_entries_[index];
+}
+
+uint64 Cues::Size() {
+  uint64 size = 0;
+  for (int32 i = 0; i < cue_entries_size_; ++i)
+    size += GetCueByIndex(i)->Size();
+  size += EbmlMasterElementSize(kMkvCues, size);
+  return size;
 }
 
 bool Cues::Write(IMkvWriter* writer) const {
@@ -1722,6 +1748,29 @@ bool SeekHead::AddSeekEntry(uint32 id, uint64 pos) {
   return false;
 }
 
+int32 SeekHead::MaxNumEntries() {
+  return kSeekEntryCount;
+}
+
+uint32 SeekHead::getId(int index) {
+  if (index >= kSeekEntryCount)
+    return -1;
+  return seek_entry_id_[index];
+}
+
+uint64 SeekHead::getPosition(int index) {
+  if (index >= kSeekEntryCount)
+    return -1;
+  return seek_entry_pos_[index];
+}
+
+void SeekHead::setSeekEntry(int index, uint32 id, uint64 position) {
+  if (index < kSeekEntryCount) {
+    seek_entry_id_[index] = id;
+    seek_entry_pos_[index] = position;
+  }
+}
+
 uint64 SeekHead::MaxEntrySize() const {
   const uint64 max_entry_payload_size =
       EbmlElementSize(kMkvSeekID, 0xffffffffULL) +
@@ -1914,6 +1963,7 @@ Segment::Segment()
       cluster_list_(NULL),
       cluster_list_capacity_(0),
       cluster_list_size_(0),
+      cues_position_(kAfterClusters),
       cues_track_(0),
       force_new_cluster_(false),
       frames_(NULL),
@@ -1972,15 +2022,65 @@ Segment::~Segment() {
     delete chunk_writer_header_;
   }
 }
+// This function recursively computes the correct cluster offsets (this is done
+// to move the Cues before Clusters). It recursively updates the change in size
+// (which indicates a change in cluster offset) until no sizes change.
+void Segment::AdjustCuesHelper(uint64 diff, int index) {
+  CuePoint* cue_point = cues_.GetCueByIndex(index);
+  uint64 size = cue_point->Size();
+  uint64 cluster_pos = cue_point->cluster_pos() + diff;
+  cue_point->set_cluster_pos(cluster_pos);  // update the new cluster position
+  diff = cue_point->Size() - size;
+  if (diff > 0) {
+    for (int i = 0; i < cues_.cue_entries_size(); ++i) {
+      AdjustCuesHelper(diff, i);  // recursively update the change in size
+    }
+  }
+}
+
+void Segment::AdjustCues() {
+  uint64 cue_size = cues_.Size();
+  for (int i = 0; i < cues_.cue_entries_size(); i++)
+    AdjustCuesHelper(cue_size, i);
+  // Adjust the Seek Entry to reflect the change in position of Cluster and
+  // Cues
+  int cluster_id, cues_id;
+  for (int i = 0; i < seek_head_.MaxNumEntries(); ++i) {
+    if (seek_head_.getId(i) == kMkvCluster)
+      cluster_id = i;
+    if (seek_head_.getId(i) == kMkvCues)
+      cues_id = i;
+  }
+  seek_head_.setSeekEntry(cues_id, kMkvCues,
+                          seek_head_.getPosition(cluster_id));
+  seek_head_.setSeekEntry(cluster_id, kMkvCluster,
+                          cues_.Size() + seek_head_.getPosition(cues_id));
+}
 
 bool Segment::Init(IMkvWriter* ptr_writer) {
   if (!ptr_writer) {
     return false;
   }
-  writer_cluster_ = ptr_writer;
-  writer_cues_ = ptr_writer;
-  writer_header_ = ptr_writer;
+  writer_ = ptr_writer;
+  if (cues_position_ == kAfterClusters) {
+    writer_cluster_ = writer_;
+    writer_cues_ = writer_;
+    writer_header_ = writer_;
+  } else {
+    writer_cluster_ = writer_temp_;
+    writer_cues_ = writer_temp_;
+    writer_header_ = writer_temp_;
+  }
   return segment_info_.Init();
+}
+
+bool Segment::WriteCuesBeforeClusters(IMkvReaderWriter* ptr_writer) {
+  if (!ptr_writer || writer_cluster_ || writer_cues_ || writer_header_) {
+    return false;
+  }
+  writer_temp_ = ptr_writer;
+  cues_position_ = kBeforeClusters;
+  return true;
 }
 
 bool Segment::Finalize() {
@@ -2007,7 +2107,6 @@ bool Segment::Finalize() {
     if (!segment_info_.Finalize(writer_header_))
       return false;
 
-    // TODO(fgalligan): Add support for putting the Cues at the front.
     if (output_cues_)
       if (!seek_head_.AddSeekEntry(kMkvCues, MaxOffset()))
         return false;
@@ -2026,12 +2125,29 @@ bool Segment::Finalize() {
         return false;
     }
 
+    int64 current_offset = writer_cluster_->Position();
+    int64 cluster_offset = cluster_list_[0]->size_position() -
+                           GetUIntSize(kMkvCluster);
+    if (cues_position_ == kBeforeClusters) {
+      writer_cluster_ = writer_;
+      writer_cues_ = writer_;
+      writer_header_ = writer_;
+      ChunkedCopy(writer_temp_, writer_cluster_, 0, cluster_offset);
+      AdjustCues();
+    }
+
+    // Write the seek headers and cues
     if (output_cues_)
       if (!cues_.Write(writer_cues_))
         return false;
 
     if (!seek_head_.Finalize(writer_header_))
       return false;
+
+    if (cues_position_ == kBeforeClusters) {
+      ChunkedCopy(writer_temp_, writer_cluster_,
+                  cluster_offset, current_offset);
+    }
 
     if (writer_header_->Seekable()) {
       if (size_position_ == -1)

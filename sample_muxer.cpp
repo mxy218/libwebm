@@ -18,6 +18,7 @@
 
 // libwebm muxer includes
 #include "mkvmuxer.hpp"
+#include "mkvreaderwriter.hpp"
 #include "mkvwriter.hpp"
 #include "mkvmuxerutil.hpp"
 
@@ -53,6 +54,8 @@ void Usage() {
   printf("\n");
   printf("Cues options:\n");
   printf("  -output_cues_block_number <int> >0 outputs cue block number\n");
+  printf("  -cues_position <int> >0; 0 indicates cues after clusters. 1"
+          " indicates cues before clusters\n");
   printf("\n");
   printf("Metadata options:\n");
   printf("  -webvtt-subtitles <vttfile>    "
@@ -145,6 +148,7 @@ int main(int argc, char* argv[]) {
   bool output_audio = true;
   bool live_mode = false;
   bool output_cues = true;
+  bool cues_position = false; // false = cues will be placed in the end
   bool cues_on_video_track = true;
   bool cues_on_audio_track = false;
   uint64 max_cluster_duration = 0;
@@ -182,6 +186,8 @@ int main(int argc, char* argv[]) {
       live_mode = strtol(argv[++i], &end, 10) == 0 ? false : true;
     } else if (!strcmp("-output_cues", argv[i]) && i < argc_check) {
       output_cues = strtol(argv[++i], &end, 10) == 0 ? false : true;
+    } else if (!strcmp("-cues_position", argv[i]) && i < argc_check) {
+      cues_position = strtol(argv[++i], &end, 10) == 0 ? false : true;
     } else if (!strcmp("-cues_on_video_track", argv[i]) && i < argc_check) {
       cues_on_video_track = strtol(argv[++i], &end, 10) == 0 ? false : true;
       if (cues_on_video_track)
@@ -267,6 +273,15 @@ int main(int argc, char* argv[]) {
   // Set Segment element attributes
   mkvmuxer::Segment muxer_segment;
 
+  mkvmuxer::MkvReaderWriter writer_temp;
+  if (cues_position) {
+    // TODO(vigneshv): Replace this with a platform independent temp file
+    if (!writer_temp.Open("/tmp/tmp.webm")) {
+      printf("\n Filename is invalid or error while opening.\n");
+      return EXIT_FAILURE;
+    }
+    muxer_segment.WriteCuesBeforeClusters(&writer_temp);
+  }
   if (!muxer_segment.Init(&writer)) {
     printf("\n Could not initialize muxer segment!\n");
     return EXIT_FAILURE;
@@ -511,6 +526,8 @@ int main(int argc, char* argv[]) {
   delete parser_segment;
 
   writer.Close();
+  if (cues_position)
+    writer_temp.Close();
   reader.Close();
 
   return EXIT_SUCCESS;

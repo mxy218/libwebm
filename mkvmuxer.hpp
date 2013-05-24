@@ -9,6 +9,7 @@
 #ifndef MKVMUXER_HPP
 #define MKVMUXER_HPP
 
+#include "mkvparser.hpp"
 #include "mkvmuxertypes.hpp"
 
 // For a description of the WebM elements see
@@ -51,9 +52,16 @@ class IMkvWriter {
   LIBWEBM_DISALLOW_COPY_AND_ASSIGN(IMkvWriter);
 };
 
+class IMkvReaderWriter : public mkvparser::IMkvReader, public IMkvWriter {
+};
+
 // Writes out the EBML header for a WebM file. This function must be called
 // before any other libwebm writing functions are called.
 bool WriteEbmlHeader(IMkvWriter* writer);
+
+// Copies in Chunk from source to destination between the given byte positions
+bool ChunkedCopy(IMkvReaderWriter* source, IMkvWriter* dst,
+                 int64 start, int64 end);
 
 ///////////////////////////////////////////////////////////////
 // Class to hold data the will be written to a block.
@@ -152,10 +160,13 @@ class Cues {
 
   // Returns the cue point by index. Returns NULL if there is no cue point
   // match.
-  const CuePoint* GetCueByIndex(int32 index) const;
+  CuePoint* GetCueByIndex(int32 index) const;
 
   // Output the Cues element to the writer. Returns true on success.
   bool Write(IMkvWriter* writer) const;
+
+  // Returns the total size of the Cues element
+  uint64 Size();
 
   int32 cue_entries_size() const { return cue_entries_size_; }
   void set_output_block_number(bool output_block_number) {
@@ -728,6 +739,7 @@ class Cluster {
   // Returns the size in bytes for the entire Cluster element.
   uint64 Size() const;
 
+  int64 size_position() const { return size_position_; }
   int32 blocks_added() const { return blocks_added_; }
   uint64 payload_size() const { return payload_size_; }
   int64 position_for_cues() const { return position_for_cues_; }
@@ -826,6 +838,20 @@ class SeekHead {
   // a SeekHead element later. Returns true on success.
   bool Write(IMkvWriter* writer);
 
+  // Returns the cap on number of seek entries.
+  int32 MaxNumEntries();
+
+  // Returns the id of the Seek Entry at the given index. Returns -1 if index is
+  // out of range.
+  uint32 GetId(int index);
+
+  // Returns the position of the Seek Entry at the given index. Returns -1 if
+  // index is out of range.
+  uint64 GetPosition(int index);
+
+  // Sets the Seek Entry id and position at given index.
+  void SetSeekEntry(int index, uint32 id, uint64 position);
+
  private:
    // We are going to put a cap on the number of Seek Entries.
   const static int32 kSeekEntryCount = 5;
@@ -901,6 +927,11 @@ class Segment {
     kFile = 0x2
   };
 
+  enum CuesPosition {
+    kAfterClusters = 0x0,  // Position Cues after Clusters
+    kBeforeClusters = 0x1  // Position Cues before Clusters
+  };
+
   const static uint64 kDefaultMaxClusterDuration = 30000000000ULL;
 
   Segment();
@@ -909,6 +940,9 @@ class Segment {
   // Initializes |SegmentInfo| and returns result. Always returns false when
   // |ptr_writer| is NULL.
   bool Init(IMkvWriter* ptr_writer);
+
+  //
+  bool WriteCuesBeforeClusters(IMkvReaderWriter* ptr_writer);
 
   // Adds a generic track to the segment.  Returns the newly-allocated
   // track object (which is owned by the segment) on success, NULL on
@@ -1034,6 +1068,7 @@ class Segment {
   uint64 max_cluster_size() const { return max_cluster_size_; }
   void set_mode(Mode mode) { mode_ = mode; }
   Mode mode() const { return mode_; }
+  CuesPosition cues_position() const { return cues_position_; }
   bool output_cues() const { return output_cues_; }
   const SegmentInfo* segment_info() const { return &segment_info_; }
 
@@ -1088,6 +1123,13 @@ class Segment {
   // was necessary but creation was not successful.
   bool DoNewClusterProcessing(uint64 track_num, uint64 timestamp_ns, bool key);
 
+  // Adjusts Cue Point values (to place Cues before Clusters) so that they
+  // reflect the correct offsets.
+  void AdjustCues();
+
+  // Helper function for AdjustCues
+  void AdjustCuesHelper(uint64 diff, int index, uint64* cue_size);
+
   // Seeds the random number generator used to make UIDs.
   unsigned int seed_;
 
@@ -1131,6 +1173,10 @@ class Segment {
 
   // Number of clusters in the cluster list.
   int32 cluster_list_size_;
+
+  // Flag indicating whether the Cues should be written before or after the
+  // Clusters
+  CuesPosition cues_position_;
 
   // Track number that is associated with the cues element for this segment.
   uint64 cues_track_;
@@ -1190,6 +1236,10 @@ class Segment {
   IMkvWriter* writer_cluster_;
   IMkvWriter* writer_cues_;
   IMkvWriter* writer_header_;
+
+  // Pointer to actual writer object and temp writer object
+  IMkvWriter* writer_;
+  IMkvReaderWriter* writer_temp_;
 
   LIBWEBM_DISALLOW_COPY_AND_ASSIGN(Segment);
 };

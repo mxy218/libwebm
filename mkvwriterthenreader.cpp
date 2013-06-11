@@ -6,7 +6,7 @@
 // in the file PATENTS.  All contributing project authors may
 // be found in the AUTHORS file in the root of the source tree.
 
-#include "mkvreadablewriter.hpp"
+#include "mkvwriterthenreader.hpp"
 
 #ifdef _MSC_VER
 #include <share.h>  // for _SH_DENYWR
@@ -17,15 +17,16 @@
 
 namespace mkvmuxer {
 
-MkvReadableWriter::MkvReadableWriter() : file_(NULL) {
+MkvWriterThenReader::MkvWriterThenReader() : file_(NULL),
+                                             writes_allowed_(true) {
 }
 
-MkvReadableWriter::~MkvReadableWriter() {
+MkvWriterThenReader::~MkvWriterThenReader() {
   Close();
 }
 
-int32 MkvReadableWriter::Write(const void* buffer, uint32 length) {
-  if (file_ == NULL)
+int32 MkvWriterThenReader::Write(const void* buffer, uint32 length) {
+  if (file_ == NULL || !writes_allowed_)
     return -1;
 
   if (length == 0)
@@ -39,7 +40,7 @@ int32 MkvReadableWriter::Write(const void* buffer, uint32 length) {
   return (bytes_written == length) ? 0 : -1;
 }
 
-bool MkvReadableWriter::Open(const char* filename, bool create_temp_file) {
+bool MkvWriterThenReader::Open(const char* filename, bool create_temp_file) {
   if (filename == NULL && !create_temp_file)
     return false;
 
@@ -56,14 +57,14 @@ bool MkvReadableWriter::Open(const char* filename, bool create_temp_file) {
   return true;
 }
 
-void MkvReadableWriter::Close() {
+void MkvWriterThenReader::Close() {
   if (file_ != NULL) {
     fclose(file_);
     file_ = NULL;
   }
 }
 
-int64 MkvReadableWriter::Position() const {
+int64 MkvWriterThenReader::Position() const {
   if (file_ == NULL)
     return 0;
 
@@ -74,7 +75,7 @@ int64 MkvReadableWriter::Position() const {
 #endif
 }
 
-int32 MkvReadableWriter::Position(int64 position) {
+int32 MkvWriterThenReader::Position(int64 position) {
   if (file_ == NULL)
     return -1;
 
@@ -85,20 +86,18 @@ int32 MkvReadableWriter::Position(int64 position) {
 #endif
 }
 
-bool MkvReadableWriter::Seekable() const {
+bool MkvWriterThenReader::Seekable() const {
   return true;
 }
 
-void MkvReadableWriter::ElementStartNotify(uint64, int64) {
+void MkvWriterThenReader::ElementStartNotify(uint64, int64) {
 }
 
-int MkvReadableWriter::Length(long long* total, long long* available) {
+int MkvWriterThenReader::Length(int64* total, int64* available) {
     return 0;
 }
 
-int MkvReadableWriter::Read(long long offset,
-                          long len,
-                          unsigned char* buffer) {
+int MkvWriterThenReader::Read(int64 offset, int32 len, uint8* buffer) {
   if (file_ == NULL)
     return -1;
 
@@ -107,6 +106,9 @@ int MkvReadableWriter::Read(long long offset,
 
   if (len < 0)
     return -1;
+
+  if (writes_allowed_)
+    writes_allowed_ = false;
 
   if (len == 0)
     return 0;

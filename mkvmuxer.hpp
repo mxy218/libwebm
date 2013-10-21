@@ -73,8 +73,16 @@ class Frame {
   // Copies |frame| data into |frame_|. Returns true on success.
   bool Init(const uint8* frame, uint64 length);
 
+  // Copies |additional| data into |additional_|. Returns true on success.
+  bool InitAdditional(const uint8* additional, uint64 length, uint64 add_id);
+
   const uint8* frame() const { return frame_; }
   uint64 length() const { return length_; }
+  const uint8* additional() const { return additional_; }
+  uint64 additional_length() const { return additional_length_; }
+  uint64 add_id() const { return add_id_; }
+  void set_duration(uint64 duration) { duration_ = duration; }
+  uint64 duration() { return duration_; }
   void set_track_number(uint64 track_number) { track_number_ = track_number; }
   uint64 track_number() const { return track_number_; }
   void set_timestamp(uint64 timestamp) { timestamp_ = timestamp; }
@@ -83,6 +91,18 @@ class Frame {
   bool is_key() const { return is_key_; }
 
  private:
+  // Id of the Additional data.
+  uint64 add_id_;
+
+  // Pointer to additional data. Owned by this class.
+  uint8* additional_;
+
+  // Length of the additional data.
+  uint64 additional_length_;
+
+  // Duration of the frame in nanoseconds.
+  uint64 duration_;
+
   // Pointer to the data. Owned by this class.
   uint8* frame_;
 
@@ -998,6 +1018,19 @@ class Segment {
                    uint64 timestamp_ns,
                    uint64 duration_ns);
 
+  // Writes a frame with additional data to the output medium; returns true on
+  // success.
+  // Inputs:
+  //   frame: Pointer to the data.
+  //   length: Length of the data.
+  //   additional: Pointer to additional data.
+  //   additional_length: Length of additional data.
+  //   add_id: Additional ID which identifies the type of additional data.
+  //   track_number: Track to add the data to. Value returned by Add track
+  //                 functions.
+  //   timestamp:    Absolute timestamp of the frame, expressed in nanosecond
+  //                 units.
+  //   is_key:       Flag telling whether or not this frame is a key frame.
   bool AddFrameWithAdditional(const uint8* frame,
                               uint64 length,
                               const uint8* additional,
@@ -1006,6 +1039,12 @@ class Segment {
                               uint64 track_number,
                               uint64 timestamp,
                               bool is_key);
+
+  // Writes a Frame to the output medium. Chooses the correct way of writing
+  // the frame (Block vs SimpleBlock) based on the parameters passed.
+  // Inputs:
+  //   frame: frame object
+  bool AddGenericFrame(Frame* frame);
 
   // Adds a video track to the segment. Returns the number of the track on
   // success, 0 on error. |number| is the number to use for the video track.
@@ -1221,6 +1260,9 @@ class Segment {
 
   // Flag telling if the segment's header has been written.
   bool header_written_;
+
+  // Duration of the last block in nanoseconds.
+  uint64 last_block_duration_;
 
   // Last timestamp in nanoseconds added to a cluster.
   uint64 last_timestamp_;

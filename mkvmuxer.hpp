@@ -710,8 +710,8 @@ class Cluster {
                               uint64 abs_timecode,
                               bool is_key);
 
-  // Writes a frame of metadata to the output medium; returns true on
-  // success.
+  // Despite the name, it is used to add a frame with duratrion element in
+  // it.
   // Inputs:
   //   frame: Pointer to the data
   //   length: Length of the data
@@ -721,7 +721,7 @@ class Cluster {
   //                 metadata frame, expressed in timecode units.
   //   duration:     Duration of metadata frame, in timecode units.
   //
-  // The metadata frame is written as a block group, with a duration
+  // The output frame is written as a block group, with a duration
   // sub-element but no reference time sub-elements (indicating that
   // it is considered a keyframe, per Matroska semantics).
   bool AddMetadata(const uint8* frame,
@@ -745,6 +745,7 @@ class Cluster {
   uint64 payload_size() const { return payload_size_; }
   int64 position_for_cues() const { return position_for_cues_; }
   uint64 timecode() const { return timecode_; }
+  uint64 last_block_duration() const { return last_block_duration_; }
 
  private:
   //  Signature that matches either of WriteSimpleBlock or WriteMetadataBlock
@@ -798,6 +799,9 @@ class Cluster {
 
   // Flag telling if the cluster's header has been written.
   bool header_written_;
+
+  // Duration of the last block of the cluster.
+  uint64 last_block_duration_;
 
   // The size of the cluster elements in bytes.
   uint64 payload_size_;
@@ -998,6 +1002,19 @@ class Segment {
                    uint64 timestamp_ns,
                    uint64 duration_ns);
 
+  // Writes a frame with additional data to the output medium; returns true on
+  // success.
+  // Inputs:
+  //   frame: Pointer to the data.
+  //   length: Length of the data.
+  //   additional: Pointer to additional data.
+  //   additional_length: Length of additional data.
+  //   add_id: Additional ID which identifies the type of additional data.
+  //   track_number: Track to add the data to. Value returned by Add track
+  //                 functions.
+  //   timestamp:    Absolute timestamp of the metadata frame, expressed
+  //                 in nanosecond units.
+  //   is_key:       Flag telling whether or not this frame is a key frame.
   bool AddFrameWithAdditional(const uint8* frame,
                               uint64 length,
                               const uint8* additional,
@@ -1006,6 +1023,34 @@ class Segment {
                               uint64 track_number,
                               uint64 timestamp,
                               bool is_key);
+
+  // Writes a Frame to the output medium. Chooses the correct way of writing
+  // the frame (BlockGroup or SimpleBlock) based on the parameters passed.
+  // Inputs:
+  //   frame: Pointer to the data.
+  //   length: Length of the data.
+  //   additional: Pointer to additional data.
+  //   additional_length: Length of additional data.
+  //   add_id: Additional ID which identifies the type of additional data.
+  //   track_number: Track to add the data to. Value returned by Add track
+  //                 functions.
+  //   timestamp:    Absolute timestamp of the metadata frame, expressed
+  //                 in nanosecond units.
+  //   is_key:       Flag telling whether or not this frame is a key frame.
+  //   duration:     Duration of metadata frame, in nanosecond units.
+  //
+  // The metadata frame is written as a block group, with a duration
+  // sub-element but no reference time sub-elements (indicating that
+  // it is considered a keyframe, per Matroska semantics).
+  bool AddGenericFrame(const uint8* frame,
+                       uint64 length,
+                       const uint8* additional,
+                       uint64 additional_length,
+                       uint64 add_id,
+                       uint64 track_number,
+                       uint64 timestamp,
+                       bool is_key,
+                       uint64 duration);
 
   // Adds a video track to the segment. Returns the number of the track on
   // success, 0 on error. |number| is the number to use for the video track.

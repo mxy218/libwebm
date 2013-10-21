@@ -480,13 +480,24 @@ int main(int argc, char* argv[]) {
           if (track_type == Track::kAudio)
             track_num = aud_track;
 
-          if (!muxer_segment.AddFrame(data,
-                                      frame.len,
-                                      track_num,
-                                      time_ns,
-                                      is_key)) {
-            printf("\n Could not add frame.\n");
-            return EXIT_FAILURE;
+          if (time_ns == 32440000000) {
+            if (!muxer_segment.AddLastFrame(data,
+                                            frame.len,
+                                            track_num,
+                                            time_ns,
+                                            40000000)) {
+              printf("\n Could not add frame with duration.\n");
+              return EXIT_FAILURE;
+            }
+          } else {
+            if (!muxer_segment.AddFrame(data,
+                                        frame.len,
+                                        track_num,
+                                        time_ns,
+                                        is_key)) {
+              printf("\n Could not add frame.\n");
+              return EXIT_FAILURE;
+            }
           }
         }
       }

@@ -1417,6 +1417,7 @@ Cluster::Cluster(uint64 timecode, int64 cues_pos)
     : blocks_added_(0),
       finalized_(false),
       header_written_(false),
+      last_block_duration_(0),
       payload_size_(0),
       position_for_cues_(cues_pos),
       size_position_(-1),
@@ -1440,6 +1441,9 @@ bool Cluster::AddFrame(const uint8* frame,
                        uint64 track_number,
                        uint64 abs_timecode,
                        bool is_key) {
+  // This has to be reset here in case there has been a call to
+  // AddFrameWithDuration with a block that is not the last one.
+  last_block_duration_ = 0;
   return DoWriteBlock(frame,
                       length,
                       track_number,
@@ -1456,6 +1460,9 @@ bool Cluster::AddFrameWithAdditional(const uint8* frame,
                                      uint64 track_number,
                                      uint64 abs_timecode,
                                      bool is_key) {
+  // This has to be reset here in case there has been a call to
+  // AddFrameWithDuration with a block that is not the last one.
+  last_block_duration_ = 0;
   return DoWriteBlockWithAdditional(frame,
                                     length,
                                     additional,
@@ -1472,6 +1479,20 @@ bool Cluster::AddMetadata(const uint8* frame,
                           uint64 track_number,
                           uint64 abs_timecode,
                           uint64 duration_timecode) {
+  return DoWriteBlock(frame,
+                      length,
+                      track_number,
+                      abs_timecode,
+                      duration_timecode,
+                      &WriteMetadataBlock);
+}
+
+bool Cluster::AddFrameWithDuration(const uint8* frame,
+                                   uint64 length,
+                                   uint64 track_number,
+                                   uint64 abs_timecode,
+                                   uint64 duration_timecode) {
+  last_block_duration_ = duration_timecode;
   return DoWriteBlock(frame,
                       length,
                       track_number,
@@ -2140,7 +2161,8 @@ bool Segment::Finalize() {
     }
 
     const double duration =
-        static_cast<double>(last_timestamp_) / segment_info_.timecode_scale();
+        static_cast<double>(last_timestamp_) / segment_info_.timecode_scale() +
+        cluster_list_[cluster_list_size_ - 1]->last_block_duration();
     segment_info_.set_duration(duration);
     if (!segment_info_.Finalize(writer_header_))
       return false;
@@ -2413,11 +2435,12 @@ bool Segment::AddFrameWithAdditional(const uint8* frame,
   return true;
 }
 
-bool Segment::AddMetadata(const uint8* frame,
-                          uint64 length,
-                          uint64 track_number,
-                          uint64 timestamp_ns,
-                          uint64 duration_ns) {
+bool Segment::AddFrameWithDuration(const uint8* frame,
+                                   uint64 length,
+                                   uint64 track_number,
+                                   uint64 timestamp_ns,
+                                   uint64 duration_ns,
+                                   bool is_last_frame) {
   if (!frame)
     return false;
 
@@ -2443,17 +2466,52 @@ bool Segment::AddMetadata(const uint8* frame,
   const uint64 abs_timecode = timestamp_ns / timecode_scale;
   const uint64 duration_timecode = duration_ns / timecode_scale;
 
-  if (!cluster->AddMetadata(frame,
-                            length,
-                            track_number,
-                            abs_timecode,
-                            duration_timecode))
-    return false;
+  if (is_last_frame) {
+    if (!cluster->AddFrameWithDuration(frame,
+                                       length,
+                                       track_number,
+                                       abs_timecode,
+                                       duration_timecode))
+      return false;
+  } else {
+    if (!cluster->AddMetadata(frame,
+                              length,
+                              track_number,
+                              abs_timecode,
+                              duration_timecode))
+      return false;
+  }
 
   if (timestamp_ns > last_timestamp_)
     last_timestamp_ = timestamp_ns;
 
   return true;
+}
+
+bool Segment::AddMetadata(const uint8* frame,
+                          uint64 length,
+                          uint64 track_number,
+                          uint64 timestamp_ns,
+                          uint64 duration_ns) {
+  return AddFrameWithDuration(frame,
+                              length,
+                              track_number,
+                              timestamp_ns,
+                              duration_ns,
+                              false);
+}
+
+bool Segment::AddLastFrame(const uint8* frame,
+                           uint64 length,
+                           uint64 track_number,
+                           uint64 timestamp_ns,
+                           uint64 duration_ns) {
+  return AddFrameWithDuration(frame,
+                              length,
+                              track_number,
+                              timestamp_ns,
+                              duration_ns,
+                              true);
 }
 
 void Segment::OutputCues(bool output_cues) {

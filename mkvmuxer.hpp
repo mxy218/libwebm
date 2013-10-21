@@ -730,6 +730,26 @@ class Cluster {
                    uint64 timecode,  // timecode units (absolute)
                    uint64 duration);  // timecode units
 
+  // Writes a frame with Duration to the output medium; returns true on
+  // success.
+  // Inputs:
+  //   frame: Pointer to the data
+  //   length: Length of the data
+  //   track_number: Track to add the data to. Value returned by Add track
+  //                 functions.  The range of allowed values is [1, 126].
+  //   timecode:     Absolute (not relative to cluster) timestamp of the
+  //                 metadata frame, expressed in timecode units.
+  //   duration:     Duration of metadata frame, in timecode units.
+  //
+  // The metadata frame is written as a block group, with a duration
+  // sub-element but no reference time sub-elements (indicating that
+  // it is considered a keyframe, per Matroska semantics).
+  bool AddFrameWithDuration(const uint8* frame,
+                            uint64 length,
+                            uint64 track_number,
+                            uint64 timecode,  // timecode units (absolute)
+                            uint64 duration);  // timecode units
+
   // Increments the size of the cluster's data in bytes.
   void AddPayloadSize(uint64 size);
 
@@ -745,6 +765,7 @@ class Cluster {
   uint64 payload_size() const { return payload_size_; }
   int64 position_for_cues() const { return position_for_cues_; }
   uint64 timecode() const { return timecode_; }
+  uint64 last_block_duration() const { return last_block_duration_; }
 
  private:
   //  Signature that matches either of WriteSimpleBlock or WriteMetadataBlock
@@ -798,6 +819,9 @@ class Cluster {
 
   // Flag telling if the cluster's header has been written.
   bool header_written_;
+
+  // Duration of the last block of the cluster.
+  uint64 last_block_duration_;
 
   // The size of the cluster elements in bytes.
   uint64 payload_size_;
@@ -1007,6 +1031,12 @@ class Segment {
                               uint64 timestamp,
                               bool is_key);
 
+  bool AddLastFrame(const uint8* frame,
+                    uint64 length,
+                    uint64 track_number,
+                    uint64 timestamp_ns,
+                    uint64 duration_ns);
+
   // Adds a video track to the segment. Returns the number of the track on
   // success, 0 on error. |number| is the number to use for the video track.
   // |number| must be >= 0. If |number| == 0 then the muxer will decide on
@@ -1147,6 +1177,15 @@ class Segment {
   // index - index in the list of Cues which is currently being adjusted.
   // cue_size - size of the Cues element.
   void MoveCuesBeforeClustersHelper(uint64 diff, int index, uint64* cue_size);
+
+  // Adds a new Frame with the Duration element in it. Could be either a Metadata
+  // block or the last block of video.
+  bool AddFrameWithDuration(const uint8* frame,
+                            uint64 length,
+                            uint64 track_number,
+                            uint64 timestamp_ns,
+                            uint64 duration_ns,
+                            bool is_last_frame);
 
   // Seeds the random number generator used to make UIDs.
   unsigned int seed_;

@@ -1107,6 +1107,10 @@ void Chapter::set_time(const Segment& segment,
   end_timecode_ = end_ns / timecode_scale;
 }
 
+void Chapter::set_uid(const uint64 uid) {
+  uid_ = uid;
+}
+
 bool Chapter::add_string(const char* title,
                          const char* language,
                          const char* country) {

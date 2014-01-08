@@ -5517,7 +5517,9 @@ Track::Info::Info():
     codecId(NULL),
     codecNameAsUTF8(NULL),
     codecPrivate(NULL),
-    codecPrivateSize(0)
+    codecPrivateSize(0),
+    codecDelay(0),
+    seekPreRoll(0)
 {
 }
 
@@ -5581,6 +5583,8 @@ int Track::Info::Copy(Info& dst) const
     dst.type = type;
     dst.number = number;
     dst.defaultDuration = defaultDuration;
+    dst.codecDelay = codecDelay;
+    dst.seekPreRoll = seekPreRoll;
     dst.uid = uid;
     dst.lacing = lacing;
     dst.settings = settings;
@@ -5682,6 +5686,16 @@ bool Track::GetLacing() const
 unsigned long long Track::GetDefaultDuration() const
 {
     return m_info.defaultDuration;
+}
+
+unsigned long long Track::GetCodecDelay() const
+{
+    return m_info.codecDelay;
+}
+
+unsigned long long Track::GetSeekPreRoll() const
+{
+    return m_info.seekPreRoll;
 }
 
 long Track::GetFirst(const BlockEntry*& pBlockEntry) const
@@ -6765,6 +6779,15 @@ long Tracks::ParseTrackEntry(
 
             if (status)
                 return status;
+        }
+        else if (id == 0x16AA)  //Codec Delay
+        {
+            info.codecDelay = UnserializeUInt(pReader, pos, size);
+
+        }
+        else if (id == 0x16BB) //Seek Pre Roll
+        {
+            info.seekPreRoll = UnserializeUInt(pReader, pos, size);
         }
 
         pos += size;  //consume payload

@@ -355,6 +355,8 @@ public:
     const unsigned char* GetCodecPrivate(size_t&) const;
     bool GetLacing() const;
     unsigned long long GetDefaultDuration() const;
+    unsigned long long GetCodecDelay() const;
+    unsigned long long GetSeekPreRoll() const;
 
     const BlockEntry* GetEOS() const;
 
@@ -371,14 +373,12 @@ public:
         ~Info();
         int Copy(Info&) const;
         void Clear();
-    private:
-        Info(const Info&);
-        Info& operator=(const Info&);
-    public:
         long type;
         long number;
         unsigned long long uid;
         unsigned long long defaultDuration;
+        unsigned long long codecDelay;
+        unsigned long long seekPreRoll;
         char* nameAsUTF8;
         char* language;
         char* codecId;
@@ -387,7 +387,10 @@ public:
         size_t codecPrivateSize;
         bool lacing;
         Settings settings;
+
     private:
+        Info(const Info&);
+        Info& operator=(const Info&);
         int CopyStr(char* Info::*str, Info&) const;
     };
 

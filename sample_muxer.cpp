@@ -347,6 +347,12 @@ int main(int argc, char* argv[]) {
       if (track_name)
         video->set_name(track_name);
 
+      const int kVp9IdLength = 5;  // length of "V_VP9"
+      if (!strncmp(pVideoTrack->GetCodecId(), mkvmuxer::Tracks::kVp9CodecId,
+                   kVp9IdLength)) {
+        video->set_codec_id(mkvmuxer::Tracks::kVp9CodecId);
+      }
+
       if (display_width > 0)
         video->set_display_width(display_width);
       if (display_height > 0)
@@ -384,6 +390,12 @@ int main(int argc, char* argv[]) {
 
       if (track_name)
         audio->set_name(track_name);
+
+      const int kOpusIdLength = 6;  // length of "A_OPUS"
+      if (!strncmp(pAudioTrack->GetCodecId(), mkvmuxer::Tracks::kOpusCodecId,
+                   kOpusIdLength)) {
+        audio->set_codec_id(mkvmuxer::Tracks::kOpusCodecId);
+      }
 
       size_t private_size;
       const unsigned char* const private_data =

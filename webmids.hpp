@@ -57,6 +57,7 @@ enum MkvId {
   kMkvBlockMore               = 0xA6,
   kMkvBlockAddID              = 0xEE,
   kMkvBlockAdditional         = 0xA5,
+  kMkvDiscardPadding          = 0x75A2,
   //Track
   kMkvTracks                  = 0x1654AE6B,
   kMkvTrackEntry              = 0xAE,
@@ -73,8 +74,8 @@ enum MkvId {
   kMkvCodecID                 = 0x86,
   kMkvCodecPrivate            = 0x63A2,
   kMkvCodecName               = 0x258688,
-  kMkvMaxBlockAdditionID      = 0x55EE,
   kMkvCodecDelay              = 0x56AA,
+  kMkvMaxBlockAdditionID      = 0x55EE,
   kMkvSeekPreRoll             = 0x56BB,
   //video
   kMkvVideo                   = 0xE0,

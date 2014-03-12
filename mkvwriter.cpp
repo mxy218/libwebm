@@ -16,7 +16,10 @@
 
 namespace mkvmuxer {
 
-MkvWriter::MkvWriter() : file_(NULL) {
+MkvWriter::MkvWriter() : file_(NULL), is_wrapped_(false) {
+}
+
+MkvWriter::MkvWriter(FILE* fp): file_(fp), is_wrapped_(true) {
 }
 
 MkvWriter::~MkvWriter() {
@@ -56,10 +59,10 @@ bool MkvWriter::Open(const char* filename) {
 }
 
 void MkvWriter::Close() {
-  if (file_) {
+  if (file_ && !is_wrapped_) {
     fclose(file_);
-    file_ = NULL;
   }
+  file_ = NULL;
 }
 
 int64 MkvWriter::Position() const {

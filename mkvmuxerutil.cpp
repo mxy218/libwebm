@@ -160,13 +160,21 @@ int32 SerializeFloat(IMkvWriter* writer, float f) {
   if (!writer)
     return -1;
 
-  const uint32& val = reinterpret_cast<const uint32&>(f);
+  // This union is merely used to avoid a reinterpret_cast from float& to
+  // uint32& which will result in violation of strict aliasing.
+  union U32 {
+    uint32 u32;
+    float f;
+  };
+
+  U32 val;
+  val.f = f;
 
   for (int32 i = 1; i <= 4; ++i) {
     const int32 byte_count = 4 - i;
     const int32 bit_count = byte_count * 8;
 
-    const uint32 bb = val >> bit_count;
+    const uint32 bb = val.u32 >> bit_count;
     const uint8 b = static_cast<uint8>(bb);
 
     const int32 status = writer->Write(&b, 1);

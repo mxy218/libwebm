@@ -292,7 +292,7 @@ bool WriteEbmlElement(IMkvWriter* writer, uint64 type, const char* value) {
   if (WriteID(writer, type))
     return false;
 
-  const int32 length = strlen(value);
+  const uint64 length = strlen(value);
   if (WriteUInt(writer, length))
     return false;
 

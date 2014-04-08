@@ -10,25 +10,20 @@
 
 #ifdef _MSC_VER
 // Disable MSVC warnings that suggest making code non-portable.
-#pragma warning(disable:4996)
+#pragma warning(disable : 4996)
 #endif
 
 namespace libwebvtt {
 
-VttReader::VttReader() : file_(NULL) {
-}
+VttReader::VttReader() : file_(NULL) {}
 
-VttReader::~VttReader() {
-  Close();
-}
+VttReader::~VttReader() { Close(); }
 
 int VttReader::Open(const char* filename) {
-  if (filename == NULL || file_ != NULL)
-    return -1;
+  if (filename == NULL || file_ != NULL) return -1;
 
   file_ = fopen(filename, "rb");
-  if (file_ == NULL)
-    return -1;
+  if (file_ == NULL) return -1;
 
   return 0;  // success
 }
@@ -41,8 +36,7 @@ void VttReader::Close() {
 }
 
 int VttReader::GetChar(char* c) {
-  if (c == NULL || file_ == NULL)
-    return -1;
+  if (c == NULL || file_ == NULL) return -1;
 
   const int result = fgetc(file_);
   if (result != EOF) {
@@ -50,11 +44,9 @@ int VttReader::GetChar(char* c) {
     return 0;  // success
   }
 
-  if (ferror(file_))
-    return -1;  // error
+  if (ferror(file_)) return -1;  // error
 
-  if (feof(file_))
-    return 1;  // EOF
+  if (feof(file_)) return 1;  // EOF
 
   return -1;  // weird
 }

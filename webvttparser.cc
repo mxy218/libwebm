@@ -11,23 +11,14 @@
 
 namespace libwebvtt {
 
-enum {
-  kNUL = '\x00',
-  kSPACE = ' ',
-  kTAB = '\x09',
-  kLF = '\x0A',
-  kCR = '\x0D'
-};
+enum { kNUL = '\x00', kSPACE = ' ', kTAB = '\x09', kLF = '\x0A', kCR = '\x0D' };
 
-Reader::~Reader() {
-}
+Reader::~Reader() {}
 
-LineReader::~LineReader() {
-}
+LineReader::~LineReader() {}
 
 int LineReader::GetLine(std::string* line_ptr) {
-  if (line_ptr == NULL)
-    return -1;
+  if (line_ptr == NULL) return -1;
 
   std::string& ln = *line_ptr;
   ln.clear();
@@ -59,11 +50,9 @@ int LineReader::GetLine(std::string* line_ptr) {
     // We have a character, so we must first determine
     // whether we have reached end-of-line.
 
-    if (c == kLF)
-      return 0;  // handle the easy end-of-line case immediately
+    if (c == kLF) return 0;  // handle the easy end-of-line case immediately
 
-    if (c == kCR)
-      break;  // handle the hard end-of-line case outside of loop
+    if (c == kCR) break;  // handle the hard end-of-line case outside of loop
 
     if (c == '\xFE' || c == '\xFF')  // not UTF-8
       return -1;
@@ -72,8 +61,7 @@ int LineReader::GetLine(std::string* line_ptr) {
     // cap the line length at some arbitrarily-large value:
     enum { kMaxLineLength = 10000 };  // arbitrary
 
-    if (ln.length() >= kMaxLineLength)
-      return -1;
+    if (ln.length() >= kMaxLineLength) return -1;
 
     // We don't have an end-of-line character, so accumulate
     // the character in our line buffer.
@@ -95,17 +83,14 @@ int LineReader::GetLine(std::string* line_ptr) {
 
   // If next character in the stream is not a LF, return it
   // to the stream (because it's part of the next line).
-  if (c != kLF)
-    UngetChar(c);
+  if (c != kLF) UngetChar(c);
 
   return 0;
 }
 
-Parser::Parser(Reader* r) : reader_(r), unget_(-1) {
-}
+Parser::Parser(Reader* r) : reader_(r), unget_(-1) {}
 
-Parser::~Parser() {
-}
+Parser::~Parser() {}
 
 int Parser::Init() {
   int e = ParseBOM();
@@ -132,8 +117,7 @@ int Parser::Init() {
     if (e > 0)  // EOF
       return -1;
 
-    if (c != *p)
-      return -1;
+    if (c != *p) return -1;
   }
 
   std::string line;
@@ -143,7 +127,7 @@ int Parser::Init() {
   if (e < 0)  // error
     return e;
 
-  if (e > 0)  // EOF
+  if (e > 0)   // EOF
     return 0;  // weird but valid
 
   if (!line.empty()) {
@@ -151,8 +135,7 @@ int Parser::Init() {
 
     const char c = line[0];
 
-    if (c != kSPACE && c != kTAB)
-      return -1;
+    if (c != kSPACE && c != kTAB) return -1;
   }
 
   // The WebVTT spec requires that the "WEBVTT" line
@@ -164,18 +147,16 @@ int Parser::Init() {
   if (e < 0)  // error
     return e;
 
-  if (e > 0)  // EOF
+  if (e > 0)   // EOF
     return 0;  // weird but we allow it
 
-  if (!line.empty())
-    return -1;
+  if (!line.empty()) return -1;
 
   return 0;  // success
 }
 
 int Parser::Parse(Cue* cue) {
-  if (cue == NULL)
-    return -1;
+  if (cue == NULL) return -1;
 
   // Parse first non-blank line
 
@@ -188,8 +169,7 @@ int Parser::Parse(Cue* cue) {
     if (e)  // EOF is OK here
       return e;
 
-    if (!line.empty())
-      break;
+    if (!line.empty()) break;
   }
 
   // A WebVTT cue comprises an optional cue identifier line followed
@@ -226,10 +206,7 @@ int Parser::Parse(Cue* cue) {
       return -1;
   }
 
-  e = ParseTimingsLine(&line,
-                       arrow_pos,
-                       &cue->start_time,
-                       &cue->stop_time,
+  e = ParseTimingsLine(&line, arrow_pos, &cue->start_time, &cue->stop_time,
                        &cue->settings);
 
   if (e)  // error
@@ -247,14 +224,12 @@ int Parser::Parse(Cue* cue) {
     if (e < 0)  // error
       return e;
 
-    if (line.empty())
-      break;
+    if (line.empty()) break;
 
     p.push_back(line);
   }
 
-  if (p.empty())
-    return -1;
+  if (p.empty()) return -1;
 
   return 0;  // success
 }
@@ -269,9 +244,7 @@ int Parser::GetChar(char* c) {
   return reader_->GetChar(c);
 }
 
-void Parser::UngetChar(char c) {
-  unget_ = static_cast<unsigned char>(c);
-}
+void Parser::UngetChar(char c) { unget_ = static_cast<unsigned char>(c); }
 
 int Parser::ParseBOM() {
   // Explanation of UTF-8 BOM:
@@ -303,19 +276,14 @@ int Parser::ParseBOM() {
   return 0;  // success
 }
 
-int Parser::ParseTimingsLine(
-    std::string* line_ptr,
-    std::string::size_type arrow_pos,
-    Time* start_time,
-    Time* stop_time,
-    Cue::settings_t* settings) {
-  if (line_ptr == NULL)
-    return -1;
+int Parser::ParseTimingsLine(std::string* line_ptr,
+                             std::string::size_type arrow_pos, Time* start_time,
+                             Time* stop_time, Cue::settings_t* settings) {
+  if (line_ptr == NULL) return -1;
 
   std::string& line = *line_ptr;
 
-  if (arrow_pos == std::string::npos || arrow_pos >= line.length())
-    return -1;
+  if (arrow_pos == std::string::npos || arrow_pos >= line.length()) return -1;
 
   // Place a NUL character at the start of the arrow token, in
   // order to demarcate the start time from remainder of line.
@@ -330,8 +298,7 @@ int Parser::ParseTimingsLine(
   // but precedes the arrow symbol.
 
   while (char c = line[idx]) {
-    if (c != kSPACE && c != kTAB)
-      return -1;
+    if (c != kSPACE && c != kTAB) return -1;
     ++idx;
   }
 
@@ -353,26 +320,20 @@ int Parser::ParseTimingsLine(
   return 0;  // success
 }
 
-int Parser::ParseTime(
-    const std::string& line,
-    std::string::size_type* idx_ptr,
-    Time* time) {
-  if (idx_ptr == NULL)
-    return -1;
+int Parser::ParseTime(const std::string& line, std::string::size_type* idx_ptr,
+                      Time* time) {
+  if (idx_ptr == NULL) return -1;
 
   std::string::size_type& idx = *idx_ptr;
 
-  if (idx == std::string::npos || idx >= line.length())
-    return -1;
+  if (idx == std::string::npos || idx >= line.length()) return -1;
 
-  if (time == NULL)
-    return -1;
+  if (time == NULL) return -1;
 
   // Consume any whitespace that precedes the timestamp.
 
   while (char c = line[idx]) {
-    if (c != kSPACE && c != kTAB)
-      break;
+    if (c != kSPACE && c != kTAB) break;
     ++idx;
   }
 
@@ -409,8 +370,7 @@ int Parser::ParseTime(
 
     val = ParseNumber(line, &idx);
 
-    if (val < 0)
-      return val;
+    if (val < 0) return val;
 
     if (val >= 60)  // either MM or SS
       return -1;
@@ -428,8 +388,7 @@ int Parser::ParseTime(
 
       val = ParseNumber(line, &idx);
 
-      if (val < 0)
-        return val;
+      if (val < 0) return val;
 
       if (val >= 60)  // SS part of HH:MM:SS
         return -1;
@@ -486,11 +445,9 @@ int Parser::ParseTime(
 
     val = ParseNumber(line, &idx);
 
-    if (val < 0)
-      return val;
+    if (val < 0) return val;
 
-    if (val >= 1000)
-      return -1;
+    if (val >= 1000) return -1;
 
     if (val < 10)
       t.milliseconds = val * 100;
@@ -505,20 +462,16 @@ int Parser::ParseTime(
 
   c = line[idx];
 
-  if (c != kNUL && c != kSPACE && c != kTAB)
-    return -1;
+  if (c != kNUL && c != kSPACE && c != kTAB) return -1;
 
   return 0;  // success
 }
 
-int Parser::ParseSettings(
-    const std::string& line,
-    std::string::size_type idx,
-    Cue::settings_t* settings) {
+int Parser::ParseSettings(const std::string& line, std::string::size_type idx,
+                          Cue::settings_t* settings) {
   settings->clear();
 
-  if (idx == std::string::npos || idx >= line.length())
-    return -1;
+  if (idx == std::string::npos || idx >= line.length()) return -1;
 
   for (;;) {
     // We must parse a line comprising a sequence of 0 or more
@@ -529,10 +482,9 @@ int Parser::ParseSettings(
       const char c = line[idx];
 
       if (c == kNUL)  // end-of-line
-        return 0;  // success
+        return 0;     // success
 
-      if (c != kSPACE && c != kTAB)
-        break;
+      if (c != kSPACE && c != kTAB) break;
 
       ++idx;  // consume whitespace
     }
@@ -551,16 +503,14 @@ int Parser::ParseSettings(
       if (c == ':')  // we have reached end of NAME part
         break;
 
-      if (c == kNUL || c == kSPACE || c == kTAB)
-        return -1;
+      if (c == kNUL || c == kSPACE || c == kTAB) return -1;
 
       s.name.push_back(c);
 
       ++idx;
     }
 
-    if (s.name.empty())
-      return -1;
+    if (s.name.empty()) return -1;
 
     ++idx;  // consume colon
 
@@ -569,8 +519,7 @@ int Parser::ParseSettings(
     for (;;) {
       const char c = line[idx];
 
-      if (c == kNUL || c == kSPACE || c == kTAB)
-        break;
+      if (c == kNUL || c == kSPACE || c == kTAB) break;
 
       if (c == ':')  // suspicious when part of VALUE
         return -1;   // TODO(matthewjheaney): verify this behavior
@@ -580,24 +529,19 @@ int Parser::ParseSettings(
       ++idx;
     }
 
-    if (s.value.empty())
-      return -1;
+    if (s.value.empty()) return -1;
   }
 }
 
-int Parser::ParseNumber(
-    const std::string& line,
-    std::string::size_type* idx_ptr) {
-  if (idx_ptr == NULL)
-    return -1;
+int Parser::ParseNumber(const std::string& line,
+                        std::string::size_type* idx_ptr) {
+  if (idx_ptr == NULL) return -1;
 
   std::string::size_type& idx = *idx_ptr;
 
-  if (idx == std::string::npos || idx >= line.length())
-    return -1;
+  if (idx == std::string::npos || idx >= line.length()) return -1;
 
-  if (!isdigit(line[idx]))
-    return -1;
+  if (!isdigit(line[idx])) return -1;
 
   int result = 0;
 
@@ -605,13 +549,11 @@ int Parser::ParseNumber(
     const char c = line[idx];
     const int i = c - '0';
 
-    if (result > INT_MAX / 10)
-      return -1;
+    if (result > INT_MAX / 10) return -1;
 
     result *= 10;
 
-    if (result > INT_MAX - i)
-      return -1;
+    if (result > INT_MAX - i) return -1;
 
     result += i;
 
@@ -622,51 +564,36 @@ int Parser::ParseNumber(
 }
 
 bool Time::operator==(const Time& rhs) const {
-  if (hours != rhs.hours)
-    return false;
+  if (hours != rhs.hours) return false;
 
-  if (minutes != rhs.minutes)
-    return false;
+  if (minutes != rhs.minutes) return false;
 
-  if (seconds != rhs.seconds)
-    return false;
+  if (seconds != rhs.seconds) return false;
 
   return (milliseconds == rhs.milliseconds);
 }
 
 bool Time::operator<(const Time& rhs) const {
-  if (hours < rhs.hours)
-    return true;
+  if (hours < rhs.hours) return true;
 
-  if (hours > rhs.hours)
-    return false;
+  if (hours > rhs.hours) return false;
 
-  if (minutes < rhs.minutes)
-    return true;
+  if (minutes < rhs.minutes) return true;
 
-  if (minutes > rhs.minutes)
-    return false;
+  if (minutes > rhs.minutes) return false;
 
-  if (seconds < rhs.seconds)
-    return true;
+  if (seconds < rhs.seconds) return true;
 
-  if (seconds > rhs.seconds)
-    return false;
+  if (seconds > rhs.seconds) return false;
 
   return (milliseconds < rhs.milliseconds);
 }
 
-bool Time::operator>(const Time& rhs) const {
-  return rhs.operator<(*this);
-}
+bool Time::operator>(const Time& rhs) const { return rhs.operator<(*this); }
 
-bool Time::operator<=(const Time& rhs) const {
-  return !this->operator>(rhs);
-}
+bool Time::operator<=(const Time& rhs) const { return !this->operator>(rhs); }
 
-bool Time::operator>=(const Time& rhs) const {
-  return !this->operator<(rhs);
-}
+bool Time::operator>=(const Time& rhs) const { return !this->operator<(rhs); }
 
 presentation_t Time::presentation() const {
   const presentation_t h = 1000LL * 3600LL * presentation_t(hours);
@@ -711,9 +638,7 @@ Time Time::operator+(presentation_t d) const {
   return t;
 }
 
-Time& Time::operator-=(presentation_t d) {
-  return this->operator+=(-d);
-}
+Time& Time::operator-=(presentation_t d) { return this->operator+=(-d); }
 
 presentation_t Time::operator-(const Time& t) const {
   const presentation_t rhs = t.presentation();

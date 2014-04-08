@@ -16,20 +16,18 @@
 
 #ifdef _MSC_VER
 // Disable MSVC warnings that suggest making code non-portable.
-#pragma warning(disable:4996)
+#pragma warning(disable : 4996)
 #endif
 
 static const wchar_t* utf8towcs(const char* str) {
-  if (str == NULL)
-    return NULL;
+  if (str == NULL) return NULL;
 
   // TODO: this probably requires that the locale be
   // configured somehow:
 
   const size_t size = mbstowcs(NULL, str, 0);
 
-  if (size == 0)
-    return NULL;
+  if (size == 0) return NULL;
 
   wchar_t* const val = new wchar_t[size + 1];
 
@@ -41,15 +39,12 @@ static const wchar_t* utf8towcs(const char* str) {
 
 bool InputHasCues(const mkvparser::Segment* const segment) {
   const mkvparser::Cues* const cues = segment->GetCues();
-  if (cues == NULL)
-    return false;
+  if (cues == NULL) return false;
 
-  while (!cues->DoneParsing())
-    cues->LoadCuePoint();
+  while (!cues->DoneParsing()) cues->LoadCuePoint();
 
   const mkvparser::CuePoint* const cue_point = cues->GetFirst();
-  if (cue_point == NULL)
-    return false;
+  if (cue_point == NULL) return false;
 
   return true;
 }
@@ -203,7 +198,7 @@ int main(int argc, char* argv[]) {
 
     if (trackType == mkvparser::Track::kVideo) {
       const VideoTrack* const pVideoTrack =
-          static_cast<const VideoTrack* >(pTrack);
+          static_cast<const VideoTrack*>(pTrack);
 
       const long long width = pVideoTrack->GetWidth();
       printf("\t\tVideo Width\t\t: %lld\n", width);
@@ -217,7 +212,7 @@ int main(int argc, char* argv[]) {
 
     if (trackType == mkvparser::Track::kAudio) {
       const AudioTrack* const pAudioTrack =
-          static_cast<const AudioTrack* >(pTrack);
+          static_cast<const AudioTrack*>(pTrack);
 
       const long long channels = pAudioTrack->GetChannels();
       printf("\t\tAudio Channels\t\t: %lld\n", channels);
@@ -285,7 +280,7 @@ int main(int argc, char* argv[]) {
                pBlock->IsKey() ? "I" : "P", time_ns, discard_padding);
 
         for (int i = 0; i < frameCount; ++i) {
-          const Block::Frame &theFrame = pBlock->GetFrame(i);
+          const Block::Frame& theFrame = pBlock->GetFrame(i);
           const long size = theFrame.len;
           const long long offset = theFrame.pos;
           printf("\t\t\t %15ld,%15llx\n", size, offset);
@@ -321,12 +316,12 @@ int main(int argc, char* argv[]) {
         if (track_pos != NULL) {
           const char track_type =
               (track->GetType() == mkvparser::Track::kVideo) ? 'V' : 'A';
-          printf("\t\t\tCue Point %4d Track %3lu(%c) Time %14lld "
-                 "Block %4lld Pos %8llx\n",
-                 cue_point_num,
-                 track_num, track_type,
-                 cue->GetTime(pSegment.get()),
-                 track_pos->m_block, track_pos->m_pos);
+          printf(
+              "\t\t\tCue Point %4d Track %3lu(%c) Time %14lld "
+              "Block %4lld Pos %8llx\n",
+              cue_point_num, track_num, track_type,
+              cue->GetTime(pSegment.get()), track_pos->m_block,
+              track_pos->m_pos);
         }
       }
 

@@ -568,7 +568,8 @@ ContentEncoding* Track::GetContentEncodingByIndex(uint32 index) const {
 uint64 Track::PayloadSize() const {
   uint64 size = EbmlElementSize(kMkvTrackNumber, number_);
   size += EbmlElementSize(kMkvTrackUID, uid_);
-  size += EbmlElementSize(kMkvTrackType, type_);
+  if (type_)
+    size += EbmlElementSize(kMkvTrackType, type_);
   if (codec_id_)
     size += EbmlElementSize(kMkvCodecID, codec_id_);
   if (codec_private_)
@@ -621,7 +622,8 @@ bool Track::Write(IMkvWriter* writer) const {
 
   uint64 size = EbmlElementSize(kMkvTrackNumber, number_);
   size += EbmlElementSize(kMkvTrackUID, uid_);
-  size += EbmlElementSize(kMkvTrackType, type_);
+  if (type_)
+    size += EbmlElementSize(kMkvTrackType, type_);
   if (codec_id_)
     size += EbmlElementSize(kMkvCodecID, codec_id_);
   if (codec_private_)
@@ -648,8 +650,10 @@ bool Track::Write(IMkvWriter* writer) const {
     return false;
   if (!WriteEbmlElement(writer, kMkvTrackUID, uid_))
     return false;
-  if (!WriteEbmlElement(writer, kMkvTrackType, type_))
-    return false;
+  if (type_) {
+    if (!WriteEbmlElement(writer, kMkvTrackType, type_))
+      return false;
+  }
   if (max_block_additional_id_) {
     if (!WriteEbmlElement(writer, kMkvMaxBlockAdditionID,
                           max_block_additional_id_)) {

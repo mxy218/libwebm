@@ -769,7 +769,7 @@ class Cluster {
   // sub-element but no reference time sub-elements (indicating that
   // it is considered a keyframe, per Matroska semantics).
   bool AddMetadata(const uint8* frame, uint64 length, uint64 track_number,
-                   uint64 timecode,   // timecode units (absolute)
+                   uint64 timecode,  // timecode units (absolute)
                    uint64 duration);  // timecode units
 
   // Increments the size of the cluster's data in bytes.

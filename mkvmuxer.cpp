@@ -2276,6 +2276,10 @@ bool Segment::AddFrame(const uint8* frame, uint64 length, uint64 track_number,
   if (timestamp < last_timestamp_)
     return false;
 
+  // Check if the track number is valid.
+  if (!tracks_.GetTrackByNumber(track_number))
+    return false;
+
   // If the segment has a video track hold onto audio frames to make sure the
   // audio that is associated with the start time of a video key-frame is
   // muxed into the same cluster.
@@ -2333,6 +2337,10 @@ bool Segment::AddFrameWithAdditional(const uint8* frame, uint64 length,
 
   // Check for non-monotonically increasing timestamps.
   if (timestamp < last_timestamp_)
+    return false;
+
+  // Check if the track number is valid.
+  if (!tracks_.GetTrackByNumber(track_number))
     return false;
 
   // If the segment has a video track hold onto audio frames to make sure the
@@ -2395,6 +2403,10 @@ bool Segment::AddFrameWithDiscardPadding(const uint8* frame, uint64 length,
   if (timestamp < last_timestamp_)
     return false;
 
+  // Check if the track_number is valid.
+  if (!tracks_.GetTrackByNumber(track_number))
+    return false;
+
   // If the segment has a video track hold onto audio frames to make sure the
   // audio that is associated with the start time of a video key-frame is
   // muxed into the same cluster.
@@ -2453,6 +2465,10 @@ bool Segment::AddMetadata(const uint8* frame, uint64 length,
 
   // Check for non-monotonically increasing timestamps.
   if (timestamp_ns < last_timestamp_)
+    return false;
+
+  // Check if the track number is valid.
+  if (!tracks_.GetTrackByNumber(track_number))
     return false;
 
   if (!DoNewClusterProcessing(track_number, timestamp_ns, true))

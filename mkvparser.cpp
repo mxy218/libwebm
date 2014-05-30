@@ -6563,7 +6563,7 @@ long Cluster::ParseSimpleBlock(long long block_size, long long& pos,
   if (pos >= block_stop)
     return E_FILE_FORMAT_INVALID;
 
-  const int lacing = int(flags & 0x06) >> 1;
+  const int lacing = int(flags & 0x60) >> 5;
 
   if ((lacing != 0) && (block_stop > avail)) {
     len = static_cast<long>(block_stop - pos);
@@ -6801,7 +6801,7 @@ long Cluster::ParseBlockGroup(long long payload_size, long long& pos,
     if (pos >= block_stop)
       return E_FILE_FORMAT_INVALID;
 
-    const int lacing = int(flags & 0x06) >> 1;
+    const int lacing = int(flags & 0x60) >> 5;
 
     if ((lacing != 0) && (block_stop > avail)) {
       len = static_cast<long>(block_stop - pos);
@@ -8015,7 +8015,7 @@ long Block::Parse(const Cluster* pCluster) {
   if (status)
     return E_FILE_FORMAT_INVALID;
 
-  const int lacing = int(m_flags & 0x06) >> 1;
+  const int lacing = int(m_flags & 0x60) >> 5;
 
   ++pos;  // consume flags byte
 
@@ -8331,7 +8331,7 @@ void Block::SetKey(bool bKey) {
 bool Block::IsInvisible() const { return bool(int(m_flags & 0x08) != 0); }
 
 Block::Lacing Block::GetLacing() const {
-  const int value = int(m_flags & 0x06) >> 1;
+  const int value = int(m_flags & 0x60) >> 5;
   return static_cast<Lacing>(value);
 }
 

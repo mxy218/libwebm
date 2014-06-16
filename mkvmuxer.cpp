@@ -1636,7 +1636,7 @@ bool Cluster::DoWriteBlockWithDiscardPadding(
     const uint8* frame, uint64 length, int64 discard_padding,
     uint64 track_number, uint64 abs_timecode, uint64 generic_arg,
     WriteBlockDiscardPadding write_block) {
-  if (frame == NULL || length == 0 || discard_padding <= 0)
+  if (frame == NULL || length == 0)
     return false;
 
   if (!IsValidTrackNumber(track_number))

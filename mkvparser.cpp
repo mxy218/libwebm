@@ -1159,10 +1159,8 @@ long Segment::DoLoadCluster(long long& pos, long& len) {
   }
 
   if (status == 0) {  // no entries found
-    if (cluster_size < 0)
-      return E_FILE_FORMAT_INVALID;  // TODO: handle this
-
-    pos += cluster_size;
+    if (cluster_size >= 0)
+      pos += cluster_size;
 
     if ((total >= 0) && (pos >= total)) {
       m_pos = total;

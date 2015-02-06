@@ -3853,6 +3853,10 @@ Chapters::~Chapters() {
     Edition& e = m_editions[--m_editions_count];
     e.Clear();
   }
+  if (m_editions != NULL) {
+    delete[] m_editions;
+    m_editions = NULL;
+  }
 }
 
 long Chapters::Parse() {

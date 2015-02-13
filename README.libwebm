@@ -1,0 +1,7 @@
+Building Libwebm
+
+To build libwebm you must first create project files. To do this run cmake
+and pass it the path to your libwebm repo.
+
+Makefile.unix can be used as a fallback on systems that cmake does not
+support.

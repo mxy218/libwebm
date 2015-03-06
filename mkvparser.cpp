@@ -4460,7 +4460,7 @@ ContentEncoding::~ContentEncoding() {
 }
 
 const ContentEncoding::ContentCompression*
-ContentEncoding::GetCompressionByIndex(unsigned long idx) const {
+    ContentEncoding::GetCompressionByIndex(unsigned long idx) const {
   const ptrdiff_t count = compression_entries_end_ - compression_entries_;
   assert(count >= 0);
 
@@ -4705,7 +4705,7 @@ long ContentEncoding::ParseEncryptionEntry(long long start, long long size,
         return E_FILE_FORMAT_INVALID;
     } else if (id == 0x7E2) {
       // ContentEncKeyID
-      delete[] encryption -> key_id;
+      delete[] encryption->key_id;
       encryption->key_id = NULL;
       encryption->key_id_len = 0;
 
@@ -4729,7 +4729,7 @@ long ContentEncoding::ParseEncryptionEntry(long long start, long long size,
       encryption->key_id_len = buflen;
     } else if (id == 0x7E3) {
       // ContentSignature
-      delete[] encryption -> signature;
+      delete[] encryption->signature;
       encryption->signature = NULL;
       encryption->signature_len = 0;
 
@@ -4753,7 +4753,7 @@ long ContentEncoding::ParseEncryptionEntry(long long start, long long size,
       encryption->signature_len = buflen;
     } else if (id == 0x7E4) {
       // ContentSigKeyID
-      delete[] encryption -> sig_key_id;
+      delete[] encryption->sig_key_id;
       encryption->sig_key_id = NULL;
       encryption->sig_key_id_len = 0;
 

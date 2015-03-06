@@ -2959,7 +2959,8 @@ bool Segment::CheckHeaderInfo() {
 void Segment::UpdateDocTypeVersion() {
   for (uint32 index = 0; index < tracks_.track_entries_size(); ++index) {
     const Track* track = tracks_.GetTrackByIndex(index);
-    if (track == NULL) break;
+    if (track == NULL)
+      break;
     if ((track->codec_delay() || track->seek_pre_roll()) &&
         doc_type_version_ < 4) {
       doc_type_version_ = 4;

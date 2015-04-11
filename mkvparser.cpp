@@ -2182,7 +2182,9 @@ void Cues::Init() const {
     assert((pos + len) <= stop);
 
     pos += len;  // consume Size field
-    assert((pos + size) <= stop);
+    if (pos + size > stop) {
+      return;
+    }
 
     if (id == 0x3B)  // CuePoint ID
       PreloadCuePoint(cue_points_size, idpos);
@@ -2246,7 +2248,10 @@ bool Cues::LoadCuePoint() const {
     assert((m_pos + len) <= stop);
 
     m_pos += len;  // consume Size field
-    assert((m_pos + size) <= stop);
+    if (m_pos + size > stop) {
+      m_pos = stop;
+      return false;
+    }
 
     if (id != 0x3B) {  // CuePoint ID
       m_pos += size;  // consume payload

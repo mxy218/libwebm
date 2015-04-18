@@ -6919,7 +6919,7 @@ long Block::Parse(const Cluster* pCluster) {
 
     const long long frame_size = stop - pos;
 
-    if (frame_size > LONG_MAX)
+    if (frame_size > LONG_MAX || frame_size <= 0)
       return E_FILE_FORMAT_INVALID;
 
     f.len = static_cast<long>(frame_size);
@@ -6979,6 +6979,9 @@ long Block::Parse(const Cluster* pCluster) {
 
       f.pos = 0;  // patch later
 
+      if (frame_size <= 0)
+        return E_FILE_FORMAT_INVALID;
+
       f.len = frame_size;
       size += frame_size;  // contribution of this frame
 
@@ -7003,7 +7006,7 @@ long Block::Parse(const Cluster* pCluster) {
 
       const long long frame_size = total_size - size;
 
-      if (frame_size > LONG_MAX)
+      if (frame_size > LONG_MAX || frame_size <= 0)
         return E_FILE_FORMAT_INVALID;
 
       f.len = static_cast<long>(frame_size);
@@ -7020,6 +7023,9 @@ long Block::Parse(const Cluster* pCluster) {
 
     assert(pos == stop);
   } else if (lacing == 2) {  // fixed-size lacing
+    if (pos >= stop)
+      return E_FILE_FORMAT_INVALID;
+
     const long long total_size = stop - pos;
 
     if ((total_size % m_frame_count) != 0)
@@ -7027,7 +7033,7 @@ long Block::Parse(const Cluster* pCluster) {
 
     const long long frame_size = total_size / m_frame_count;
 
-    if (frame_size > LONG_MAX)
+    if (frame_size > LONG_MAX || frame_size <= 0)
       return E_FILE_FORMAT_INVALID;
 
     Frame* pf = m_frames;
@@ -7056,7 +7062,7 @@ long Block::Parse(const Cluster* pCluster) {
 
     long long frame_size = ReadUInt(pReader, pos, len);
 
-    if (frame_size < 0)
+    if (frame_size <= 0)
       return E_FILE_FORMAT_INVALID;
 
     if (frame_size > LONG_MAX)
@@ -7118,7 +7124,7 @@ long Block::Parse(const Cluster* pCluster) {
 
       frame_size += delta_size;
 
-      if (frame_size < 0)
+      if (frame_size <= 0)
         return E_FILE_FORMAT_INVALID;
 
       if (frame_size > LONG_MAX)
@@ -7153,7 +7159,7 @@ long Block::Parse(const Cluster* pCluster) {
 
       frame_size = total_size - size;
 
-      if (frame_size > LONG_MAX)
+      if (frame_size > LONG_MAX || frame_size <= 0)
         return E_FILE_FORMAT_INVALID;
 
       curr.len = static_cast<long>(frame_size);

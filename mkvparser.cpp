@@ -7136,6 +7136,7 @@ long Block::Parse(const Cluster* pCluster) {
       --frame_count;
     }
 
+    if (frame_count > 0) // parse last frame
     {
       assert(pos <= stop);
       assert(pf < pf_end);
@@ -7174,7 +7175,8 @@ long Block::Parse(const Cluster* pCluster) {
       pos += f.len;
     }
 
-    assert(pos == stop);
+    if (pos != stop)
+      return E_FILE_FORMAT_INVALID;
   }
 
   return 0;  // success

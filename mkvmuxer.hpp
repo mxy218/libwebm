@@ -72,6 +72,9 @@ bool ChunkedCopy(mkvparser::IMkvReader* source, IMkvWriter* dst, int64 start,
 class Frame {
  public:
   Frame();
+
+  // Makes a deep copy of an existing frame.
+  explicit Frame(const Frame* const frame);
   ~Frame();
 
   // Copies |frame| data into |frame_|. Returns true on success.
@@ -93,10 +96,10 @@ class Frame {
   uint64 track_number() const { return track_number_; }
   void set_timestamp(uint64 timestamp) { timestamp_ = timestamp; }
   uint64 timestamp() const { return timestamp_; }
-  void set_discard_padding(uint64 discard_padding) {
+  void set_discard_padding(int64 discard_padding) {
     discard_padding_ = discard_padding;
   }
-  uint64 discard_padding() const { return discard_padding_; }
+  int64 discard_padding() const { return discard_padding_; }
 
  private:
   // Id of the Additional data.
@@ -717,32 +720,36 @@ class Chapters {
 //  |Init| must be called before any other method in this class.
 class Cluster {
  public:
-  Cluster(uint64 timecode, int64 cues_pos);
-  ~Cluster();
-
   // |timecode| is the absolute timecode of the cluster. |cues_pos| is the
   // position for the cluster within the segment that should be written in
-  // the cues element.
+  // the cues element. |timecode_scale| is the timecode scale of the segment.
+  Cluster(uint64 timecode, int64 cues_pos, uint64 timecode_scale);
+  ~Cluster();
+
   bool Init(IMkvWriter* ptr_writer);
 
   // Adds a frame to be output in the file. The frame is written out through
   // |writer_| if successful. Returns true on success.
+  bool AddFrame(const Frame* frame);
+
+  // Adds a frame to be output in the file. The frame is written out through
+  // |writer_| if successful. Returns true on success.
   // Inputs:
-  //   frame: Pointer to the data
+  //   data: Pointer to the data
   //   length: Length of the data
   //   track_number: Track to add the data to. Value returned by Add track
   //                 functions.  The range of allowed values is [1, 126].
   //   timecode:     Absolute (not relative to cluster) timestamp of the
   //                 frame, expressed in timecode units.
   //   is_key:       Flag telling whether or not this frame is a key frame.
-  bool AddFrame(const uint8* frame, uint64 length, uint64 track_number,
+  bool AddFrame(const uint8* data, uint64 length, uint64 track_number,
                 uint64 timecode,  // timecode units (absolute)
                 bool is_key);
 
   // Adds a frame to be output in the file. The frame is written out through
   // |writer_| if successful. Returns true on success.
   // Inputs:
-  //   frame: Pointer to the data
+  //   data: Pointer to the data
   //   length: Length of the data
   //   additional: Pointer to the additional data
   //   additional_length: Length of the additional data
@@ -752,7 +759,7 @@ class Cluster {
   //   abs_timecode: Absolute (not relative to cluster) timestamp of the
   //                 frame, expressed in timecode units.
   //   is_key:       Flag telling whether or not this frame is a key frame.
-  bool AddFrameWithAdditional(const uint8* frame, uint64 length,
+  bool AddFrameWithAdditional(const uint8* data, uint64 length,
                               const uint8* additional, uint64 additional_length,
                               uint64 add_id, uint64 track_number,
                               uint64 abs_timecode, bool is_key);
@@ -760,7 +767,7 @@ class Cluster {
   // Adds a frame to be output in the file. The frame is written out through
   // |writer_| if successful. Returns true on success.
   // Inputs:
-  //   frame: Pointer to the data.
+  //   data: Pointer to the data.
   //   length: Length of the data.
   //   discard_padding: DiscardPadding element value.
   //   track_number: Track to add the data to. Value returned by Add track
@@ -768,14 +775,14 @@ class Cluster {
   //   abs_timecode: Absolute (not relative to cluster) timestamp of the
   //                 frame, expressed in timecode units.
   //   is_key:       Flag telling whether or not this frame is a key frame.
-  bool AddFrameWithDiscardPadding(const uint8* frame, uint64 length,
+  bool AddFrameWithDiscardPadding(const uint8* data, uint64 length,
                                   int64 discard_padding, uint64 track_number,
                                   uint64 abs_timecode, bool is_key);
 
   // Writes a frame of metadata to the output medium; returns true on
   // success.
   // Inputs:
-  //   frame: Pointer to the data
+  //   data: Pointer to the data
   //   length: Length of the data
   //   track_number: Track to add the data to. Value returned by Add track
   //                 functions.  The range of allowed values is [1, 126].
@@ -786,7 +793,7 @@ class Cluster {
   // The metadata frame is written as a block group, with a duration
   // sub-element but no reference time sub-elements (indicating that
   // it is considered a keyframe, per Matroska semantics).
-  bool AddMetadata(const uint8* frame, uint64 length, uint64 track_number,
+  bool AddMetadata(const uint8* data, uint64 length, uint64 track_number,
                    uint64 timecode, uint64 duration);
 
   // Increments the size of the cluster's data in bytes.
@@ -799,43 +806,24 @@ class Cluster {
   // Returns the size in bytes for the entire Cluster element.
   uint64 Size() const;
 
+  // Given |abs_timecode|, calculates timecode relative to most recent timecode.
+  // Returns -1 on failure, or a relative timecode.
+  int64 GetRelativeTimecode(int64 abs_timecode) const;
+
   int64 size_position() const { return size_position_; }
   int32 blocks_added() const { return blocks_added_; }
   uint64 payload_size() const { return payload_size_; }
   int64 position_for_cues() const { return position_for_cues_; }
   uint64 timecode() const { return timecode_; }
+  uint64 timecode_scale() const { return timecode_scale_; }
 
  private:
-  //  Signature that matches either of WriteSimpleBlock or WriteMetadataBlock
-  //  in the muxer utilities package.
-  typedef uint64 (*WriteBlock)(IMkvWriter* writer, const uint8* data,
-                               uint64 length, uint64 track_number,
-                               int64 timecode, uint64 generic_arg);
-
-  //  Signature that matches WriteBlockWithAdditional
-  //  in the muxer utilities package.
-  typedef uint64 (*WriteBlockAdditional)(IMkvWriter* writer, const uint8* data,
-                                         uint64 length, const uint8* additional,
-                                         uint64 add_id,
-                                         uint64 additional_length,
-                                         uint64 track_number, int64 timecode,
-                                         uint64 is_key);
-
-  //  Signature that matches WriteBlockWithDiscardPadding
-  //  in the muxer utilities package.
-  typedef uint64 (*WriteBlockDiscardPadding)(IMkvWriter* writer,
-                                             const uint8* data, uint64 length,
-                                             int64 discard_padding,
-                                             uint64 track_number,
-                                             int64 timecode, uint64 is_key);
-
   // Utility method that confirms that blocks can still be added, and that the
-  // cluster header has been written. Used by |DoWriteBlock*|. Returns true
+  // cluster header has been written. Used by |DoWriteFrame*|. Returns true
   // when successful.
-  template <typename Type>
-  bool PreWriteBlock(Type* write_function);
+  bool PreWriteBlock();
 
-  // Utility method used by the |DoWriteBlock*| methods that handles the book
+  // Utility method used by the |DoWriteFrame*| methods that handles the book
   // keeping required after each block is written.
   void PostWriteBlock(uint64 element_size);
 
@@ -844,30 +832,8 @@ class Cluster {
   // a stream using a single byte, per the Matroska encoding.
   bool IsValidTrackNumber(uint64 track_number) const;
 
-  // Given |abs_timecode|, calculates timecode relative to most recent timecode.
-  // Returns -1 on failure, or a relative timecode.
-  int64 GetRelativeTimecode(int64 abs_timecode) const;
-
-  //  Used to implement AddFrame and AddMetadata.
-  bool DoWriteBlock(const uint8* frame, uint64 length, uint64 track_number,
-                    uint64 absolute_timecode, uint64 generic_arg,
-                    WriteBlock write_block);
-
-  // Used to implement AddFrameWithAdditional
-  bool DoWriteBlockWithAdditional(const uint8* frame, uint64 length,
-                                  const uint8* additional,
-                                  uint64 additional_length, uint64 add_id,
-                                  uint64 track_number, uint64 absolute_timecode,
-                                  uint64 generic_arg,
-                                  WriteBlockAdditional write_block);
-
-  // Used to implement AddFrameWithDiscardPadding
-  bool DoWriteBlockWithDiscardPadding(const uint8* frame, uint64 length,
-                                      int64 discard_padding,
-                                      uint64 track_number,
-                                      uint64 absolute_timecode,
-                                      uint64 generic_arg,
-                                      WriteBlockDiscardPadding write_block);
+  // Does some verification and calls WriteFrame.
+  bool DoWriteFrame(const Frame* const frame);
 
   // Outputs the Cluster header to |writer_|. Returns true on success.
   bool WriteClusterHeader();
@@ -892,6 +858,9 @@ class Cluster {
 
   // The absolute timecode of the cluster.
   const uint64 timecode_;
+
+  // The timecode scale of the Segment containing the cluster.
+  const uint64 timecode_scale_;
 
   // Pointer to the writer object. Not owned by this class.
   IMkvWriter* writer_;
@@ -1050,19 +1019,19 @@ class Segment {
 
   // Adds a frame to be output in the file. Returns true on success.
   // Inputs:
-  //   frame: Pointer to the data
+  //   data: Pointer to the data
   //   length: Length of the data
   //   track_number: Track to add the data to. Value returned by Add track
   //                 functions.
   //   timestamp:    Timestamp of the frame in nanoseconds from 0.
   //   is_key:       Flag telling whether or not this frame is a key frame.
-  bool AddFrame(const uint8* frame, uint64 length, uint64 track_number,
+  bool AddFrame(const uint8* data, uint64 length, uint64 track_number,
                 uint64 timestamp_ns, bool is_key);
 
   // Writes a frame of metadata to the output medium; returns true on
   // success.
   // Inputs:
-  //   frame: Pointer to the data
+  //   data: Pointer to the data
   //   length: Length of the data
   //   track_number: Track to add the data to. Value returned by Add track
   //                 functions.
@@ -1073,13 +1042,13 @@ class Segment {
   // The metadata frame is written as a block group, with a duration
   // sub-element but no reference time sub-elements (indicating that
   // it is considered a keyframe, per Matroska semantics).
-  bool AddMetadata(const uint8* frame, uint64 length, uint64 track_number,
+  bool AddMetadata(const uint8* data, uint64 length, uint64 track_number,
                    uint64 timestamp_ns, uint64 duration_ns);
 
   // Writes a frame with additional data to the output medium; returns true on
   // success.
   // Inputs:
-  //   frame: Pointer to the data.
+  //   data: Pointer to the data.
   //   length: Length of the data.
   //   additional: Pointer to additional data.
   //   additional_length: Length of additional data.
@@ -1089,7 +1058,7 @@ class Segment {
   //   timestamp:    Absolute timestamp of the frame, expressed in nanosecond
   //                 units.
   //   is_key:       Flag telling whether or not this frame is a key frame.
-  bool AddFrameWithAdditional(const uint8* frame, uint64 length,
+  bool AddFrameWithAdditional(const uint8* data, uint64 length,
                               const uint8* additional, uint64 additional_length,
                               uint64 add_id, uint64 track_number,
                               uint64 timestamp, bool is_key);
@@ -1097,7 +1066,7 @@ class Segment {
   // Writes a frame with DiscardPadding to the output medium; returns true on
   // success.
   // Inputs:
-  //   frame: Pointer to the data.
+  //   data: Pointer to the data.
   //   length: Length of the data.
   //   discard_padding: DiscardPadding element value.
   //   track_number: Track to add the data to. Value returned by Add track
@@ -1105,7 +1074,7 @@ class Segment {
   //   timestamp:    Absolute timestamp of the frame, expressed in nanosecond
   //                 units.
   //   is_key:       Flag telling whether or not this frame is a key frame.
-  bool AddFrameWithDiscardPadding(const uint8* frame, uint64 length,
+  bool AddFrameWithDiscardPadding(const uint8* data, uint64 length,
                                   int64 discard_padding, uint64 track_number,
                                   uint64 timestamp, bool is_key);
 

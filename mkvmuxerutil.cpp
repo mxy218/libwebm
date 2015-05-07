@@ -372,289 +372,168 @@ bool WriteEbmlDateElement(IMkvWriter* writer, uint64 type, int64 value) {
   return true;
 }
 
-uint64 WriteSimpleBlock(IMkvWriter* writer, const uint8* data, uint64 length,
-                        uint64 track_number, int64 timecode, uint64 is_key) {
-  if (!writer)
-    return false;
+uint64 WriteFrame(IMkvWriter* writer, const Frame* const frame,
+                  Cluster* cluster) {
+  if (!writer || !frame->frame() || frame->length() < 1)
+    return 0;
 
-  if (!data || length < 1)
-    return false;
+  if (frame->track_number() < 1 || frame->track_number() > 126)
+    return 0;
 
-  //  Here we only permit track number values to be no greater than
-  //  126, which the largest value we can store having a Matroska
-  //  integer representation of only 1 byte.
-
-  if (track_number < 1 || track_number > 126)
-    return false;
+  const uint64 duration = frame->duration() / cluster->timecode_scale();
 
   //  Technically the timestamp for a block can be less than the
   //  timestamp for the cluster itself (remember that block timestamp
   //  is a signed, 16-bit integer).  However, as a simplification we
   //  only permit non-negative cluster-relative timestamps for blocks.
-
-  if (timecode < 0 || timecode > kMaxBlockTimecode)
-    return false;
-
-  if (WriteID(writer, kMkvSimpleBlock))
+  const int64 timestamp = cluster->GetRelativeTimecode(
+      frame->timestamp() / cluster->timecode_scale());
+  if (timestamp < 0 || timestamp > kMaxBlockTimecode)
     return 0;
 
-  const int32 size = static_cast<int32>(length) + 4;
-  if (WriteUInt(writer, size))
-    return 0;
+  uint64 total_element_size;
 
-  if (WriteUInt(writer, static_cast<uint64>(track_number)))
-    return 0;
+  // If one of the following conditions are met, we write the frame as a Block:
+  //   - Frame has Additional Data.
+  //   - Frame has DiscardPadding != 0.
+  //   - Frame has Duration > 0.
+  // Otherwise, we write the frame as a SimpleBlock
+  if (frame->additional() != NULL || frame->discard_padding() != 0 ||
+      duration > 0) {
+    uint64 block_additional_elem_size = 0;
+    uint64 block_addid_elem_size = 0;
+    uint64 block_more_payload_size = 0;
+    uint64 block_more_elem_size = 0;
+    uint64 block_additions_payload_size = 0;
+    uint64 block_additions_elem_size = 0;
+    if (frame->additional() != NULL) {
+      block_additional_elem_size = EbmlElementSize(
+          kMkvBlockAdditional, frame->additional(), frame->additional_length());
+      block_addid_elem_size = EbmlElementSize(kMkvBlockAddID, frame->add_id());
 
-  if (SerializeInt(writer, timecode, 2))
-    return 0;
+      block_more_payload_size =
+          block_addid_elem_size + block_additional_elem_size;
+      block_more_elem_size =
+          EbmlMasterElementSize(kMkvBlockMore, block_more_payload_size) +
+          block_more_payload_size;
+      block_additions_payload_size = block_more_elem_size;
+      block_additions_elem_size =
+          EbmlMasterElementSize(kMkvBlockAdditions,
+                                block_additions_payload_size) +
+          block_additions_payload_size;
+    }
 
-  uint64 flags = 0;
-  if (is_key)
-    flags |= 0x80;
+    uint64 discard_padding_elem_size = 0;
+    if (frame->discard_padding() != 0) {
+      discard_padding_elem_size =
+          EbmlElementSize(kMkvDiscardPadding, frame->discard_padding());
+    }
 
-  if (SerializeInt(writer, flags, 1))
-    return 0;
+    uint64 block_duration_elem_size = 0;
+    if (duration > 0) {
+      block_duration_elem_size = EbmlElementSize(kMkvBlockDuration, duration);
+    }
 
-  if (writer->Write(data, static_cast<uint32>(length)))
-    return 0;
+    const uint64 block_payload_size = 4 + frame->length();
+    const uint64 block_elem_size =
+        EbmlMasterElementSize(kMkvBlock, block_payload_size) +
+        block_payload_size;
 
-  const uint64 element_size =
-      GetUIntSize(kMkvSimpleBlock) + GetCodedUIntSize(size) + 4 + length;
+    const uint64 block_group_payload_size =
+        block_elem_size + block_additions_elem_size + block_duration_elem_size +
+        discard_padding_elem_size;
+    total_element_size =
+        EbmlMasterElementSize(kMkvBlockGroup, block_group_payload_size) +
+        block_group_payload_size;
 
-  return element_size;
-}
+    if (!WriteEbmlMasterElement(writer, kMkvBlockGroup,
+                                block_group_payload_size)) {
+      return 0;
+    }
 
-// We must write the metadata (key)frame as a BlockGroup element,
-// because we need to specify a duration for the frame.  The
-// BlockGroup element comprises the frame itself and its duration,
-// and is laid out as follows:
-//
-//   BlockGroup tag
-//   BlockGroup size
-//     Block tag
-//     Block size
-//     (the frame is the block payload)
-//     Duration tag
-//     Duration size
-//     (duration payload)
-//
-uint64 WriteMetadataBlock(IMkvWriter* writer, const uint8* data, uint64 length,
-                          uint64 track_number, int64 timecode,
-                          uint64 duration) {
-  // We don't backtrack when writing to the stream, so we must
-  // pre-compute the BlockGroup size, by summing the sizes of each
-  // sub-element (the block and the duration).
+    if (!WriteEbmlMasterElement(writer, kMkvBlock, block_payload_size))
+      return 0;
 
-  // We use a single byte for the track number of the block, which
-  // means the block header is exactly 4 bytes.
+    if (WriteUInt(writer, frame->track_number()))
+      return 0;
 
-  // TODO(matthewjheaney): use EbmlMasterElementSize and WriteEbmlMasterElement
+    if (SerializeInt(writer, timestamp, 2))
+      return 0;
 
-  const uint64 block_payload_size = 4 + length;
-  const int32 block_size = GetCodedUIntSize(block_payload_size);
-  const uint64 block_elem_size = 1 + block_size + block_payload_size;
+    uint64 flags = 0;
+    if (frame->is_key())
+      flags |= 0x80;
+    if (SerializeInt(writer, flags, 1))
+      return 0;
 
-  const int32 duration_payload_size = GetUIntSize(duration);
-  const int32 duration_size = GetCodedUIntSize(duration_payload_size);
-  const uint64 duration_elem_size = 1 + duration_size + duration_payload_size;
+    if (writer->Write(frame->frame(), static_cast<uint32>(frame->length())))
+      return 0;
 
-  const uint64 blockg_payload_size = block_elem_size + duration_elem_size;
-  const int32 blockg_size = GetCodedUIntSize(blockg_payload_size);
-  const uint64 blockg_elem_size = 1 + blockg_size + blockg_payload_size;
+    if (frame->additional() != NULL) {
+      if (!WriteEbmlMasterElement(writer, kMkvBlockAdditions,
+                                  block_additions_payload_size))
+        return 0;
 
-  if (WriteID(writer, kMkvBlockGroup))  // 1-byte ID size
-    return 0;
+      if (!WriteEbmlMasterElement(writer, kMkvBlockMore,
+                                  block_more_payload_size)) {
+        return 0;
+      }
 
-  if (WriteUInt(writer, blockg_payload_size))
-    return 0;
+      if (!WriteEbmlElement(writer, kMkvBlockAddID, frame->add_id()))
+        return 0;
 
-  //  Write Block element
+      if (!WriteEbmlElement(writer, kMkvBlockAdditional, frame->additional(),
+                            frame->additional_length()))
+        return 0;
+    }
 
-  if (WriteID(writer, kMkvBlock))  // 1-byte ID size
-    return 0;
+    if (frame->discard_padding() != 0) {
+      if (WriteID(writer, kMkvDiscardPadding))
+        return 0;
 
-  if (WriteUInt(writer, block_payload_size))
-    return 0;
+      const uint64 size = GetIntSize(frame->discard_padding());
+      if (WriteUInt(writer, size))
+        return false;
 
-  // Byte 1 of 4
+      if (SerializeInt(writer, frame->discard_padding(),
+                       static_cast<int32>(size))) {
+        return false;
+      }
+    }
 
-  if (WriteUInt(writer, track_number))
-    return 0;
+    if (duration > 0 &&
+        !WriteEbmlElement(writer, kMkvBlockDuration, duration)) {
+      return false;
+    }
+  } else {
+    if (WriteID(writer, kMkvSimpleBlock))
+      return 0;
 
-  // Bytes 2 & 3 of 4
+    const int32 size = static_cast<int32>(frame->length()) + 4;
+    if (WriteUInt(writer, size))
+      return 0;
 
-  if (SerializeInt(writer, timecode, 2))
-    return 0;
+    if (WriteUInt(writer, static_cast<uint64>(frame->track_number())))
+      return 0;
 
-  // Byte 4 of 4
+    if (SerializeInt(writer, timestamp, 2))
+      return 0;
 
-  const uint64 flags = 0;
+    uint64 flags = 0;
+    if (frame->is_key())
+      flags |= 0x80;
 
-  if (SerializeInt(writer, flags, 1))
-    return 0;
+    if (SerializeInt(writer, flags, 1))
+      return 0;
 
-  // Now write the actual frame (of metadata)
+    if (writer->Write(frame->frame(), static_cast<uint32>(frame->length())))
+      return 0;
 
-  if (writer->Write(data, static_cast<uint32>(length)))
-    return 0;
+    total_element_size = GetUIntSize(kMkvSimpleBlock) + GetCodedUIntSize(size) +
+                         4 + frame->length();
+  }
 
-  // Write Duration element
-
-  if (WriteID(writer, kMkvBlockDuration))  // 1-byte ID size
-    return 0;
-
-  if (WriteUInt(writer, duration_payload_size))
-    return 0;
-
-  if (SerializeInt(writer, duration, duration_payload_size))
-    return 0;
-
-  // Note that we don't write a reference time as part of the block
-  // group; no reference time(s) indicates that this block is a
-  // keyframe.  (Unlike the case for a SimpleBlock element, the header
-  // bits of the Block sub-element of a BlockGroup element do not
-  // indicate keyframe status.  The keyframe status is inferred from
-  // the absence of reference time sub-elements.)
-
-  return blockg_elem_size;
-}
-
-// Writes a WebM BlockGroup with BlockAdditional data. The structure is as
-// follows:
-// Indentation shows sub-levels
-// BlockGroup
-//  Block
-//    Data
-//  BlockAdditions
-//    BlockMore
-//      BlockAddID
-//        1 (Denotes Alpha)
-//      BlockAdditional
-//        Data
-uint64 WriteBlockWithAdditional(IMkvWriter* writer, const uint8* data,
-                                uint64 length, const uint8* additional,
-                                uint64 additional_length, uint64 add_id,
-                                uint64 track_number, int64 timecode,
-                                uint64 is_key) {
-  if (!data || !additional || length < 1 || additional_length < 1)
-    return 0;
-
-  const uint64 block_payload_size = 4 + length;
-  const uint64 block_elem_size =
-      EbmlMasterElementSize(kMkvBlock, block_payload_size) + block_payload_size;
-  const uint64 block_additional_elem_size =
-      EbmlElementSize(kMkvBlockAdditional, additional, additional_length);
-  const uint64 block_addid_elem_size = EbmlElementSize(kMkvBlockAddID, add_id);
-
-  const uint64 block_more_payload_size =
-      block_addid_elem_size + block_additional_elem_size;
-  const uint64 block_more_elem_size =
-      EbmlMasterElementSize(kMkvBlockMore, block_more_payload_size) +
-      block_more_payload_size;
-  const uint64 block_additions_payload_size = block_more_elem_size;
-  const uint64 block_additions_elem_size =
-      EbmlMasterElementSize(kMkvBlockAdditions, block_additions_payload_size) +
-      block_additions_payload_size;
-  const uint64 block_group_payload_size =
-      block_elem_size + block_additions_elem_size;
-  const uint64 block_group_elem_size =
-      EbmlMasterElementSize(kMkvBlockGroup, block_group_payload_size) +
-      block_group_payload_size;
-
-  if (!WriteEbmlMasterElement(writer, kMkvBlockGroup, block_group_payload_size))
-    return 0;
-
-  if (!WriteEbmlMasterElement(writer, kMkvBlock, block_payload_size))
-    return 0;
-
-  if (WriteUInt(writer, track_number))
-    return 0;
-
-  if (SerializeInt(writer, timecode, 2))
-    return 0;
-
-  uint64 flags = 0;
-  if (is_key)
-    flags |= 0x80;
-  if (SerializeInt(writer, flags, 1))
-    return 0;
-
-  if (writer->Write(data, static_cast<uint32>(length)))
-    return 0;
-
-  if (!WriteEbmlMasterElement(writer, kMkvBlockAdditions,
-                              block_additions_payload_size))
-    return 0;
-
-  if (!WriteEbmlMasterElement(writer, kMkvBlockMore, block_more_payload_size))
-    return 0;
-
-  if (!WriteEbmlElement(writer, kMkvBlockAddID, add_id))
-    return 0;
-
-  if (!WriteEbmlElement(writer, kMkvBlockAdditional, additional,
-                        additional_length))
-    return 0;
-
-  return block_group_elem_size;
-}
-
-// Writes a WebM BlockGroup with DiscardPadding. The structure is as follows:
-// Indentation shows sub-levels
-// BlockGroup
-//  Block
-//    Data
-//  DiscardPadding
-uint64 WriteBlockWithDiscardPadding(IMkvWriter* writer, const uint8* data,
-                                    uint64 length, int64 discard_padding,
-                                    uint64 track_number, int64 timecode,
-                                    uint64 is_key) {
-  if (!data || length < 1)
-    return 0;
-
-  const uint64 block_payload_size = 4 + length;
-  const uint64 block_elem_size =
-      EbmlMasterElementSize(kMkvBlock, block_payload_size) + block_payload_size;
-  const uint64 discard_padding_elem_size =
-      EbmlElementSize(kMkvDiscardPadding, discard_padding);
-  const uint64 block_group_payload_size =
-      block_elem_size + discard_padding_elem_size;
-  const uint64 block_group_elem_size =
-      EbmlMasterElementSize(kMkvBlockGroup, block_group_payload_size) +
-      block_group_payload_size;
-
-  if (!WriteEbmlMasterElement(writer, kMkvBlockGroup, block_group_payload_size))
-    return 0;
-
-  if (!WriteEbmlMasterElement(writer, kMkvBlock, block_payload_size))
-    return 0;
-
-  if (WriteUInt(writer, track_number))
-    return 0;
-
-  if (SerializeInt(writer, timecode, 2))
-    return 0;
-
-  uint64 flags = 0;
-  if (is_key)
-    flags |= 0x80;
-  if (SerializeInt(writer, flags, 1))
-    return 0;
-
-  if (writer->Write(data, static_cast<uint32>(length)))
-    return 0;
-
-  if (WriteID(writer, kMkvDiscardPadding))
-    return 0;
-
-  const uint64 size = GetIntSize(discard_padding);
-  if (WriteUInt(writer, size))
-    return false;
-
-  if (SerializeInt(writer, discard_padding, static_cast<int32>(size)))
-    return false;
-
-  return block_group_elem_size;
+  return total_element_size;
 }
 
 uint64 WriteVoidElement(IMkvWriter* writer, uint64 size) {

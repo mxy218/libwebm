@@ -1516,6 +1516,250 @@ uint64 Chapters::WriteEdition(IMkvWriter* writer) const {
 
 ///////////////////////////////////////////////////////////////
 //
+// Tag Class
+bool Tag::add_simple_tag(const char* tagName, const char* tagString){
+  if (!ExpandSimpleTagsArray())
+    return false;
+
+  SimpleTag& st = simple_tags_[simple_tags_count_++];
+  st.Init();
+
+  if (!st.set_tag_name(tagName))
+    return false;
+
+  if (!st.set_tag_string(tagString))
+    return false;
+
+  return true;
+}
+
+Tag::Tag() {
+  // This ctor only constructs the object.  Proper initialization is
+  // done in Init() (called in Tags::AddTag()).  The only
+  // reason we bother implementing this ctor is because we had to
+  // declare it as private (along with the dtor), in order to prevent
+  // clients from creating Tag instances (a privelege we grant
+  // only to the Tags class).  Doing no initialization here also
+  // means that creating arrays of tag objects is more efficient,
+  // because we only initialize each new tag object as it becomes
+  // active on the array.
+}
+
+Tag::~Tag() {}
+
+void Tag::Init() {
+  simple_tags_ = NULL;
+  simple_tags_size_ = 0;
+  simple_tags_count_ = 0;
+}
+
+void Tag::ShallowCopy(Tag* dst) const {
+  dst->simple_tags_ = simple_tags_;
+  dst->simple_tags_size_ = simple_tags_size_;
+  dst->simple_tags_count_ = simple_tags_count_;
+}
+
+void Tag::Clear() {
+  while (simple_tags_count_ > 0) {
+    SimpleTag& st = simple_tags_[--simple_tags_count_];
+    st.Clear();
+  }
+
+  delete[] simple_tags_;
+  simple_tags_ = NULL;
+
+  simple_tags_size_ = 0;
+}
+
+bool Tag::ExpandSimpleTagsArray() {
+  if (simple_tags_size_ > simple_tags_count_)
+    return true;  // nothing to do yet
+
+  const int size = (simple_tags_size_ == 0) ? 1 : 2 * simple_tags_size_;
+
+  SimpleTag* const simple_tags = new (std::nothrow) SimpleTag[size];  // NOLINT
+  if (simple_tags == NULL)
+    return false;
+
+  for (int idx = 0; idx < simple_tags_count_; ++idx) {
+    simple_tags[idx] = simple_tags_[idx];  // shallow copy
+  }
+
+  delete[] simple_tags_;
+
+  simple_tags_ = simple_tags;
+  simple_tags_size_ = size;
+
+  return true;
+}
+
+uint64 Tag::Write(IMkvWriter* writer) const {
+  uint64 payload_size = 0;
+
+  for (int idx = 0; idx < simple_tags_count_; ++idx) {
+    const SimpleTag& st = simple_tags_[idx];
+    payload_size += st.Write(NULL);
+  }
+
+  const uint64 tag_size =
+          EbmlMasterElementSize(kMkvTag, payload_size) + payload_size;
+
+  if (writer == NULL)
+    return tag_size;
+
+  const int64 start = writer->Position();
+
+  if (!WriteEbmlMasterElement(writer, kMkvTag, payload_size))
+    return 0;
+
+  for (int idx = 0; idx < simple_tags_count_; ++idx) {
+    const SimpleTag& st = simple_tags_[idx];
+
+    if (!st.Write(writer))
+      return 0;
+  }
+
+  const int64 stop = writer->Position();
+
+  if (stop >= start && uint64(stop - start) != tag_size)
+    return 0;
+
+  return tag_size;
+}
+
+void Tag::SimpleTag::Init() {
+  tag_name_ = NULL;
+  tag_string_ = NULL;
+}
+
+void Tag::SimpleTag::Clear() {
+  StrCpy(NULL, &tag_name_);
+  StrCpy(NULL, &tag_string_);
+}
+
+bool Tag::SimpleTag::set_tag_name(const char* tag_name) {
+  return StrCpy(tag_name, &tag_name_);
+}
+
+bool Tag::SimpleTag::set_tag_string(const char* tag_string) {
+  return StrCpy(tag_string, &tag_string_);
+}
+
+uint64 Tag::SimpleTag::Write(IMkvWriter* writer) const {
+  uint64 payload_size = EbmlElementSize(kMkvTagName, tag_name_);
+
+  payload_size += EbmlElementSize(kMkvTagString, tag_string_);
+
+  const uint64 simple_tag_size =  EbmlMasterElementSize(kMkvSimpleTag, payload_size) + payload_size;
+
+  if (writer == NULL)
+    return simple_tag_size;
+
+  const int64 start = writer->Position();
+
+  if (!WriteEbmlMasterElement(writer, kMkvSimpleTag, payload_size))
+    return 0;
+
+  if (!WriteEbmlElement(writer, kMkvTagName, tag_name_))
+    return 0;
+
+  if (!WriteEbmlElement(writer, kMkvTagString, tag_string_))
+    return 0;
+
+  const int64 stop = writer->Position();
+
+  if (stop >= start && uint64(stop - start) != simple_tag_size)
+    return 0;
+
+  return simple_tag_size;
+}
+   
+///////////////////////////////////////////////////////////////
+//
+// Tags Class
+
+Tags::Tags() : tags_size_(0), tags_count_(0), tags_(NULL) {}
+
+Tags::~Tags() {
+  while (tags_count_ > 0) {
+    Tag& tag = tags_[--tags_count_];
+    tag.Clear();
+  }
+
+  delete[] tags_;
+  tags_ = NULL;
+}
+
+int Tags::Count() const { return tags_count_; }
+
+Tag* Tags::AddTag() {
+  if (!ExpandTagsArray())
+    return NULL;
+
+  Tag& tag = tags_[tags_count_++];
+  tag.Init();
+
+  return &tag;
+}
+
+bool Tags::Write(IMkvWriter* writer) const {
+  if (writer == NULL)
+    return false;
+
+  uint64 payload_size = 0;
+
+  for (int idx = 0; idx < tags_count_; ++idx) {
+    const Tag& tag = tags_[idx];
+    payload_size += tag.Write(NULL);
+  }
+
+  if (!WriteEbmlMasterElement(writer, kMkvTags, payload_size))
+    return false;
+
+  const int64 start = writer->Position();
+
+  for (int idx = 0; idx < tags_count_; ++idx) {
+    const Tag& tag = tags_[idx];
+
+    const uint64 tag_size = tag.Write(writer);
+    if (tag_size == 0)  // error
+      return 0;
+  }
+
+  const int64 stop = writer->Position();
+
+  if (stop >= start && uint64(stop - start) != payload_size)
+    return false;
+
+  return true;
+}
+
+bool Tags::ExpandTagsArray() {
+  if (tags_size_ > tags_count_)
+    return true;  // nothing to do yet
+
+  const int size = (tags_size_ == 0) ? 1 : 2 * tags_size_;
+
+  Tag* const tags = new (std::nothrow) Tag[size];  // NOLINT
+  if (tags == NULL)
+    return false;
+
+  for (int idx = 0; idx < tags_count_; ++idx) {
+    const Tag& src = tags_[idx];
+    Tag* const dst = tags + idx;
+    src.ShallowCopy(dst);
+  }
+
+  delete[] tags_;
+
+  tags_ = tags;
+  tags_size_ = size;
+
+  return true;
+}
+ 
+///////////////////////////////////////////////////////////////
+//
 // Cluster class
 
 Cluster::Cluster(uint64 timecode, int64 cues_pos, uint64 timecode_scale)
@@ -2274,6 +2518,8 @@ Track* Segment::AddTrack(int32 number) {
 
 Chapter* Segment::AddChapter() { return chapters_.AddChapter(&seed_); }
 
+Tag* Segment::AddTag() { return tags_.AddTag(); }
+
 uint64 Segment::AddVideoTrack(int32 width, int32 height, int32 number) {
   VideoTrack* const track = new (std::nothrow) VideoTrack(&seed_);  // NOLINT
   if (!track)
@@ -2611,6 +2857,13 @@ bool Segment::WriteSegmentHeader() {
     if (!seek_head_.AddSeekEntry(kMkvChapters, MaxOffset()))
       return false;
     if (!chapters_.Write(writer_header_))
+      return false;
+  }
+
+  if (tags_.Count() > 0) {
+    if (!seek_head_.AddSeekEntry(kMkvTags, MaxOffset()))
+      return false;
+    if (!tags_.Write(writer_header_))
       return false;
   }
 

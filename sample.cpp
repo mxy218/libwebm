@@ -32,6 +32,8 @@ static const wchar_t* utf8towcs(const char* str) {
     return NULL;
 
   wchar_t* const val = new wchar_t[size + 1];
+  if (val == NULL)
+    return NULL;
 
   mbstowcs(val, str, size);
   val[size] = L'\0';

@@ -296,8 +296,11 @@ long mkvparser::ParseElementHeader(IMkvReader* pReader, long long& pos,
 
   id = ReadUInt(pReader, pos, len);
 
-  if (id < 0)
+  if (id < 0 || len < 1 || len > 4) {
+    // An ID must be at least 1 byte long, and cannot exceed 4.
+    // See EBMLMaxIDLength: http://www.matroska.org/technical/specs/index.html
     return E_FILE_FORMAT_INVALID;
+  }
 
   pos += len;  // consume id
 
@@ -306,14 +309,18 @@ long mkvparser::ParseElementHeader(IMkvReader* pReader, long long& pos,
 
   size = ReadUInt(pReader, pos, len);
 
-  if (size < 0)
+  if (size < 0 || len < 0 || len > 8) {
+    // Disallow negative payload size.
+    // Disallow negative length integer.
+    // Disallow integer larger than 64 bits (libwebm cannot handle them).
     return E_FILE_FORMAT_INVALID;
+  }
 
   pos += len;  // consume length of size
 
   // pos now designates payload
 
-  if ((stop >= 0) && ((pos + size) > stop))
+  if ((pos + size) < 0 || ((stop >= 0) && ((pos + size) > stop)))
     return E_FILE_FORMAT_INVALID;
 
   return 0;  // success

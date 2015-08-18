@@ -791,8 +791,10 @@ long long Segment::ParseHeaders() {
     if (result < 0)  // error
       return result;
 
-    if (result > 0)  // underflow (weird)
+    if (result > 0) {
+      // MkvReader doesn't have enough data to satisfy this read attempt.
       return (pos + 1);
+    }
 
     if ((segment_stop >= 0) && ((pos + len) > segment_stop))
       return E_FILE_FORMAT_INVALID;
@@ -820,8 +822,10 @@ long long Segment::ParseHeaders() {
     if (result < 0)  // error
       return result;
 
-    if (result > 0)  // underflow (weird)
+    if (result > 0) {
+      // MkvReader doesn't have enough data to satisfy this read attempt.
       return (pos + 1);
+    }
 
     if ((segment_stop >= 0) && ((pos + len) > segment_stop))
       return E_FILE_FORMAT_INVALID;
@@ -831,12 +835,18 @@ long long Segment::ParseHeaders() {
 
     const long long size = ReadUInt(m_pReader, pos, len);
 
-    if (size < 0)  // error
+    if (size < 0 || len < 1 || len > 8) {
+      // TODO(tomfinegan): ReadUInt should return an error when len is < 1 or
+      // len > 8 is true instead of checking this _everywhere_.
       return size;
+    }
 
     pos += len;  // consume length of size of element
 
     const long long element_size = size + pos - element_start;
+
+    if (element_size < 0)
+      return E_FILE_FORMAT_INVALID;
 
     // Pos now points to start of payload
 
@@ -844,6 +854,9 @@ long long Segment::ParseHeaders() {
       return E_FILE_FORMAT_INVALID;
 
     // We read EBML elements either in total or nothing at all.
+
+    if (available > 0 && (available - pos) < size)
+      return E_FILE_FORMAT_INVALID;
 
     if ((pos + size) > available)
       return pos + size;

@@ -791,8 +791,10 @@ long long Segment::ParseHeaders() {
     if (result < 0)  // error
       return result;
 
-    if (result > 0)  // underflow (weird)
+    if (result > 0) {
+      // MkvReader doesn't have enough data to satisfy this read attempt.
       return (pos + 1);
+    }
 
     if ((segment_stop >= 0) && ((pos + len) > segment_stop))
       return E_FILE_FORMAT_INVALID;
@@ -803,8 +805,13 @@ long long Segment::ParseHeaders() {
     const long long idpos = pos;
     const long long id = ReadUInt(m_pReader, idpos, len);
 
-    if (id < 0)  // error
+    if (id < 0 || len < 1 || len > 4) {
+      // TODO(tomfinegan): A helper that is intended for reading IDs would be
+      // handy; even better if its aware of the max ID size from the EBML
+      // header. It could easily enforce the rules here, instead of duping this
+      // check everytime an ID is read.
       return id;
+    }
 
     if (id == 0x0F43B675)  // Cluster ID
       break;
@@ -820,8 +827,10 @@ long long Segment::ParseHeaders() {
     if (result < 0)  // error
       return result;
 
-    if (result > 0)  // underflow (weird)
+    if (result > 0) {
+      // MkvReader doesn't have enough data to satisfy this read attempt.
       return (pos + 1);
+    }
 
     if ((segment_stop >= 0) && ((pos + len) > segment_stop))
       return E_FILE_FORMAT_INVALID;
@@ -831,12 +840,18 @@ long long Segment::ParseHeaders() {
 
     const long long size = ReadUInt(m_pReader, pos, len);
 
-    if (size < 0)  // error
+    if (size < 0 || len < 1 || len > 8) {
+      // TODO(tomfinegan): ReadUInt should return an error when len is < 1 or
+      // len > 8 is true instead of checking this _everywhere_.
       return size;
+    }
 
     pos += len;  // consume length of size of element
 
     const long long element_size = size + pos - element_start;
+
+    if (element_size < 0)
+      return E_FILE_FORMAT_INVALID;
 
     // Pos now points to start of payload
 

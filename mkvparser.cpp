@@ -17,6 +17,11 @@
 #pragma warning(disable : 4996)
 #endif
 
+namespace {
+// 2^56 - 2
+const long long kMaxEbmlSigned64Bit = 0x100000000000002;
+}
+
 mkvparser::IMkvReader::~IMkvReader() {}
 
 void mkvparser::GetVersion(int& major, int& minor, int& build, int& revision) {
@@ -246,6 +251,11 @@ long mkvparser::UnserializeInt(IMkvReader* pReader, long long pos,
 
     if (status < 0)
       return status;
+
+    const unsigned long long rollover_check =
+        static_cast<unsigned long long>(result) * 256;
+    if (rollover_check > kMaxEbmlSigned64Bit)
+      return E_FILE_FORMAT_INVALID;
 
     result <<= 8;
     result |= b;

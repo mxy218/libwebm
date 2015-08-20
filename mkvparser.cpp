@@ -247,6 +247,11 @@ long mkvparser::UnserializeInt(IMkvReader* pReader, long long pos,
     if (status < 0)
       return status;
 
+    const unsigned long long rollover_check =
+        static_cast<unsigned long long>(result) * 256;
+    if (rollover_check > LONG_LONG_MAX)
+      return E_FILE_FORMAT_INVALID;
+
     result <<= 8;
     result |= b;
 

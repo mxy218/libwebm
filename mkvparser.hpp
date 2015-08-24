@@ -27,6 +27,8 @@ class IMkvReader {
   virtual ~IMkvReader();
 };
 
+template<typename Type> Type* SafeArrayAlloc(size_t num_bytes);
+
 long long GetUIntLength(IMkvReader*, long long, long&);
 long long ReadUInt(IMkvReader*, long long, long&);
 long long UnserializeUInt(IMkvReader*, long long pos, long long size);

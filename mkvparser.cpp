@@ -19,6 +19,20 @@
 
 mkvparser::IMkvReader::~IMkvReader() {}
 
+template<typename Type> Type* mkvparser::SafeArrayAlloc(size_t num_bytes) {
+#if defined _MSC_VER
+#if !defined INT32_MAX
+#define INT32_MAX (1 << 31)
+#endif
+#endif
+  const size_t kMaxAllocSize = INT32_MAX;
+  if (num_bytes == 0)
+    return NULL;
+  if (num_bytes > kMaxAllocSize)
+    return NULL;
+  return new (std::nothrow) Type[num_bytes];
+}
+
 void mkvparser::GetVersion(int& major, int& minor, int& build, int& revision) {
   major = 1;
   minor = 0;
@@ -252,7 +266,7 @@ long mkvparser::UnserializeString(IMkvReader* pReader, long long pos,
   // +1 for '\0' terminator
   const long required_size = static_cast<long>(size) + 1;
 
-  str = new (std::nothrow) char[required_size];
+  str = SafeArrayAlloc<char>(required_size);
   if (str == NULL)
     return E_FILE_FORMAT_INVALID;
 

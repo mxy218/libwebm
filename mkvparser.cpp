@@ -7,6 +7,9 @@
 // be found in the AUTHORS file in the root of the source tree.
 
 #include "mkvparser.hpp"
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
+#include <stdint.h>
+#endif
 #include <cassert>
 #include <cstring>
 #include <new>

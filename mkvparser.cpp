@@ -93,15 +93,34 @@ long long ReadUInt(IMkvReader* pReader, long long pos, long& len) {
 }
 
 long long ReadID(IMkvReader* pReader, long long pos, long& len) {
-  const long long id = ReadUInt(pReader, pos, len);
-  if (id <= 0 || len < 1 || len > 4) {
-    // An ID must at least 1 byte long, cannot exceed 4, and its value must be
-    // greater than 0.
-    // See known EBML values and EBMLMaxIDLength:
-    // http://www.matroska.org/technical/specs/index.html
+  if (pReader == NULL || pos < 0)
     return E_FILE_FORMAT_INVALID;
-  }
-  return id;
+
+  // Read the first byte. The length in bytes of the ID is determined by
+  // finding the first set bit in the first byte of the ID.
+  unsigned char length_byte = 0;
+  int read_status = pReader->Read(pos, 1, &length_byte);
+
+  if (read_status < 0)  // WEIRD!? BROKEN!? AH!
+    return E_FILE_FORMAT_INVALID;
+  else if (read_status > 0)  // No data to read.
+    return E_BUFFER_NOT_FULL;
+  
+  int id_length = 0;
+  const int kMaxIdLengthInBytes = 4;
+  const int kCheckByte = 0x80;
+  
+  if (length_byte == 0)  // ID length > 8 bytes; invalid file.
+    return E_FILE_FORMAT_INVALID;
+  
+  
+  
+  if (id_length == 0)  // WEIRD
+    return E_FILE_FORMAT_INVALID;
+  
+  
+  long long ebml_id = 0;
+  return ebml_id;
 }
 
 long long GetUIntLength(IMkvReader* pReader, long long pos, long& len) {

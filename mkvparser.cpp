@@ -8,6 +8,11 @@
 
 #include "mkvparser.hpp"
 
+#if defined(_MSC_VER) && _MSC_VER < 1800
+#include <float.h>  // _isnan() / _finite()
+#define MSC_COMPAT
+#endif
+
 #include <cassert>
 #include <climits>
 #include <cmath>
@@ -22,6 +27,22 @@
 #endif
 
 namespace mkvparser {
+
+bool isnan(double val) {
+#ifdef MSC_COMPAT
+  return _isnan(val);
+#else
+  return std::isnan(val);
+#endif
+}
+
+bool isinf(double val) {
+#ifdef MSC_COMPAT
+  return !_finite(val);
+#else
+  return std::isinf(val);
+#endif
+}
 
 IMkvReader::~IMkvReader() {}
 
@@ -267,7 +288,7 @@ long UnserializeFloat(IMkvReader* pReader, long long pos, long long size_,
     result = d;
   }
 
-  if (std::isinf(result) || std::isnan(result))
+  if (mkvparser::isinf(result) || mkvparser::isnan(result))
     return E_FILE_FORMAT_INVALID;
 
   return 0;

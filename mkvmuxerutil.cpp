@@ -37,6 +37,7 @@ const int kDateElementSize = 8;
 
 uint64 WriteBlock(IMkvWriter* writer, const Frame* const frame, int64 timecode,
                   uint64 timecode_scale) {
+  printf("FWriting block @ time_ns %lld\n", frame->timestamp());
   uint64 block_additional_elem_size = 0;
   uint64 block_addid_elem_size = 0;
   uint64 block_more_payload_size = 0;
@@ -76,7 +77,7 @@ uint64 WriteBlock(IMkvWriter* writer, const Frame* const frame, int64 timecode,
 
   const uint64 duration = frame->duration() / timecode_scale;
   uint64 block_duration_elem_size = 0;
-  if (duration > 0)
+  if (frame->duration_set())
     block_duration_elem_size = EbmlElementSize(kMkvBlockDuration, duration);
 
   const uint64 block_payload_size = 4 + frame->length();
@@ -137,7 +138,8 @@ uint64 WriteBlock(IMkvWriter* writer, const Frame* const frame, int64 timecode,
     return false;
   }
 
-  if (duration > 0 && !WriteEbmlElement(writer, kMkvBlockDuration, duration)) {
+  if (frame->duration_set() &&
+      !WriteEbmlElement(writer, kMkvBlockDuration, duration)) {
     return false;
   }
   return EbmlMasterElementSize(kMkvBlockGroup, block_group_payload_size) +
@@ -146,6 +148,7 @@ uint64 WriteBlock(IMkvWriter* writer, const Frame* const frame, int64 timecode,
 
 uint64 WriteSimpleBlock(IMkvWriter* writer, const Frame* const frame,
                         int64 timecode) {
+  printf("FWriting SIMPLEblock @ time_ns %lld\n", frame->timestamp());
   if (WriteID(writer, kMkvSimpleBlock))
     return 0;
 

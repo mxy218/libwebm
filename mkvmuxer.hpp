@@ -11,6 +11,9 @@
 
 #include "mkvmuxertypes.hpp"
 
+#include <list>
+#include <map>
+
 // For a description of the WebM elements see
 // http://www.webmproject.org/code/specs/container/.
 
@@ -96,8 +99,13 @@ class Frame {
   uint64 add_id() const { return add_id_; }
   const uint8* additional() const { return additional_; }
   uint64 additional_length() const { return additional_length_; }
-  void set_duration(uint64 duration) { duration_ = duration; }
+  bool cue_point_holdback() { return cue_point_holdback_; }
+  void set_cue_point_holdback(bool cue_point_holdback) {
+    cue_point_holdback_ = cue_point_holdback;
+  }
+  void set_duration(uint64 duration);
   uint64 duration() const { return duration_; }
+  bool duration_set() const { return duration_set_; }
   const uint8* frame() const { return frame_; }
   void set_is_key(bool key) { is_key_ = key; }
   bool is_key() const { return is_key_; }
@@ -126,8 +134,18 @@ class Frame {
   // Length of the additional data.
   uint64 additional_length_;
 
+  // Set true when this frame should be given a CuePoint, but was held back
+  // (see |end_clusters_with_duration_|). Since CuePoints reference written
+  // Blocks, the CuePoint must also be held back until the frame is written.
+  bool cue_point_holdback_;
+
   // Duration of the frame in nanoseconds.
   uint64 duration_;
+
+  // Flag indicating that |duration_| has been set. Setting a value for duration
+  // will cause a BlockDuration to be written alongside a Block for this frame
+  // when added to a Cluster (CanBeSimpleBlock will return false).
+  bool duration_set_;
 
   // Pointer to the data. Owned by this class.
   uint8* frame_;
@@ -850,10 +868,9 @@ class Tags {
 //  |Init| must be called before any other method in this class.
 class Cluster {
  public:
-  // |timecode| is the absolute timecode of the cluster. |cues_pos| is the
-  // position for the cluster within the segment that should be written in
-  // the cues element. |timecode_scale| is the timecode scale of the segment.
-  Cluster(uint64 timecode, int64 cues_pos, uint64 timecode_scale);
+  // |timecode| is the absolute timecode of the cluster. |timecode_scale| is the
+  // timecode scale of the segment.
+  Cluster(uint64 timecode, uint64 timecode_scale);
   ~Cluster();
 
   bool Init(IMkvWriter* ptr_writer);
@@ -942,8 +959,8 @@ class Cluster {
 
   int64 size_position() const { return size_position_; }
   int32 blocks_added() const { return blocks_added_; }
+  bool finalized() const { return finalized_; }
   uint64 payload_size() const { return payload_size_; }
-  int64 position_for_cues() const { return position_for_cues_; }
   uint64 timecode() const { return timecode_; }
   uint64 timecode_scale() const { return timecode_scale_; }
 
@@ -974,9 +991,6 @@ class Cluster {
 
   // The size of the cluster elements in bytes.
   uint64 payload_size_;
-
-  // The file position used for cue points.
-  const int64 position_for_cues_;
 
   // The file position of the cluster's size element.
   int64 size_position_;
@@ -1106,6 +1120,12 @@ class Segment {
   enum CuesPosition {
     kAfterClusters = 0x0,  // Position Cues after Clusters - Default
     kBeforeClusters = 0x1  // Position Cues before Clusters
+  };
+
+  // Control behavior of |FlushHoldBackFrames|.
+  enum HoldbackFlushConfig {
+    kFlushReadyFrames,  // Allow FlushHoldBackFrames to choose what to flush.
+    kForceAllFrames,    // Flush all frames (EOF case).
   };
 
   const static uint32 kDefaultDocTypeVersion = 2;
@@ -1275,6 +1295,10 @@ class Segment {
 
   bool chunking() const { return chunking_; }
   uint64 cues_track() const { return cues_track_; }
+  void set_end_clusters_with_duration(bool end_clusters_with_duration) {
+    end_clusters_with_duration_ = end_clusters_with_duration;
+  }
+  bool end_clusters_with_duration() { return end_clusters_with_duration_; }
   void set_max_cluster_duration(uint64 max_cluster_duration) {
     max_cluster_duration_ = max_cluster_duration;
   }
@@ -1290,10 +1314,37 @@ class Segment {
   const SegmentInfo* segment_info() const { return &segment_info_; }
 
  private:
+  // Add |frame| to the correct cluster. The correct cluster will be the first
+  // cluster with a timecode <=  that of |frame|. The correct cluster should
+  // exist prior to calling. This method is the critical point for the hold-back
+  // mechanism that facilitates ending clusters with block durations when
+  // desired. See |end_clusters_with_duration_|.
+  bool AddFrameToCluster(const Frame* frame);
+
   // Checks if header information has been output and initialized. If not it
-  // will output the Segment element and initialize the SeekHead elment and
+  // will output the Segment element and initialize the SeekHead element and
   // Cues elements.
   bool CheckHeaderInfo();
+
+  // Return the position in |cluster_list_| for the cluster that is to contain
+  // |frame| according to the frame's timestamp. Return -1 if no cluster works.
+  int32 FindClusterForFrame(const Frame* frame) const;
+
+  int32 FindClusterForTimestamp(const uint64 timestamp) const;
+
+  // Flush the frames in holdback_frames_ to the appropriate cluster. Along the
+  // way, identify end-of-cluster frames (across all tracks) and write those
+  // frames with BlockDuration. Finalize clusters that have all frames written.
+  // Set |force_last_frames| to true at the end of the file to force the
+  // flushing of the final holdback frames.
+  // INVARIANTS:
+  // - Frames are added in monotonically increasing order via AddFrameToCluster
+  // - Clusters for all holdback frames are already allocated in cluster_list_
+  bool FlushHoldbackFrames(HoldbackFlushConfig flush_config);
+
+  // Helper to |FlushHoldbackFrames| to finalize a cluster when all frames are
+  // written for all tracks.
+  bool FinalizeClusterIfDone(int32 cluster_pos);
 
   // Sets |doc_type_version_| based on the current element requirements.
   void UpdateDocTypeVersion();
@@ -1333,6 +1384,8 @@ class Segment {
   //  1 = create a new cluster, and write frame to that new cluster
   //  2 = create a new cluster, and re-run test
   int TestFrame(uint64 track_num, uint64 timestamp_ns, bool key) const;
+
+  void UpdateLastFrameState(const Frame* const frame);
 
   // Create a new cluster, using the earlier of the first enqueued
   // frame, or the indicated time. Returns true on success.
@@ -1411,6 +1464,19 @@ class Segment {
   // Track number that is associated with the cues element for this segment.
   uint64 cues_track_;
 
+  // Helper to finalize clusters when |end_clusters_with_duration_| is set true.
+  // Map of track numbers to positions in |cluster_list_|. A cluster is "done"
+  // for a given track whenever all frames destined for that cluster have been
+  // added.
+  std::map<uint64, int32> done_clusters_;
+
+  // Flag indicating that last block in output clusters should end in a
+  // BlockGroup containing a BlockDuration. This allows consumers of chunked
+  // WebM to accurately determine chunk duration without consuming/rendering all
+  // input in the chunk or looking ahead to read the start time of the next
+  // chunk.
+  bool end_clusters_with_duration_;
+
   // Tells the muxer to force a new cluster on the next Block.
   bool force_new_cluster_;
 
@@ -1431,6 +1497,16 @@ class Segment {
 
   // Flag telling if the segment's header has been written.
   bool header_written_;
+
+  // Map of track numbers to "holdback frames". When end_clusters_with_duration_
+  // is true, frames are written in a one-frame delay. The final frames will be
+  // written as BlockGroups with BlockDurations immediately before the Cluster
+  // is finalized. See |AddFrameToCluster|.
+  std::map<uint64, std::list<Frame*> > holdback_frames_;
+
+  // Stores the byte offset within the Segment for a given cluster. The offset
+  // can only be computed after the previous Cluster is finalized.
+  std::map<uint32, uint64> cluster_offsets_;
 
   // Duration of the last block in nanoseconds.
   uint64 last_block_duration_;

@@ -46,6 +46,7 @@ void Usage() {
   printf("  -output_cues <int>          >0 outputs cues element\n");
   printf("  -cues_on_video_track <int>  >0 outputs cues on video track\n");
   printf("  -cues_on_audio_track <int>  >0 outputs cues on audio track\n");
+  printf("  -end_clusters_with_dur      >0 clusters end w/ BlockDuration\n");
   printf("  -max_cluster_duration <double> in seconds\n");
   printf("  -max_cluster_size <int>     in bytes\n");
   printf("  -switch_tracks <int>        >0 switches tracks in output\n");
@@ -155,6 +156,7 @@ int main(int argc, char* argv[]) {
   bool cues_before_clusters = false;
   bool cues_on_video_track = true;
   bool cues_on_audio_track = false;
+  bool end_clusters_with_dur = false;
   uint64 max_cluster_duration = 0;
   uint64 max_cluster_size = 0;
   bool switch_tracks = false;
@@ -201,6 +203,9 @@ int main(int argc, char* argv[]) {
       cues_on_audio_track = strtol(argv[++i], &end, 10) == 0 ? false : true;
       if (cues_on_audio_track)
         cues_on_video_track = false;
+    } else if (!strcmp("-end_clusters_with_dur", argv[i]) && i < argc_check) {
+      printf("yes!\n");
+      end_clusters_with_dur = strtol(argv[++i], &end, 10) == 0 ? false : true;
     } else if (!strcmp("-max_cluster_duration", argv[i]) && i < argc_check) {
       const double seconds = strtod(argv[++i], &end);
       max_cluster_duration = static_cast<uint64>(seconds * 1000000000.0);
@@ -300,6 +305,7 @@ int main(int argc, char* argv[]) {
   if (chunking)
     muxer_segment.SetChunking(true, chunk_name);
 
+  muxer_segment.set_end_clusters_with_dur(end_clusters_with_dur);
   if (max_cluster_duration > 0)
     muxer_segment.set_max_cluster_duration(max_cluster_duration);
   if (max_cluster_size > 0)

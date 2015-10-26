@@ -8,12 +8,14 @@
 
 #include "mkvmuxer.hpp"
 
+#include <algorithm>
 #include <climits>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
 #include <new>
+#include <queue>
 
 #include "mkvmuxerutil.hpp"
 #include "mkvparser.hpp"
@@ -126,6 +128,7 @@ Frame::Frame()
       additional_(NULL),
       additional_length_(0),
       duration_(0),
+      duration_set_(false),
       frame_(NULL),
       is_key_(false),
       length_(0),
@@ -206,14 +209,22 @@ bool Frame::IsValid() const {
   if (track_number_ == 0 || track_number_ > kMaxTrackNumber) {
     return false;
   }
-  if (!CanBeSimpleBlock() && !is_key_ && !reference_block_timestamp_set_) {
-    return false;
-  }
+  // Commenting this because reference blocks still need wiring for BlockGroups
+  // at end of cluster.
+  //if (!CanBeSimpleBlock() && !is_key_ && !reference_block_timestamp_set_) {
+  //  return false;
+  //}
   return true;
 }
 
 bool Frame::CanBeSimpleBlock() const {
-  return additional_ == NULL && discard_padding_ == 0 && duration_ == 0;
+  return additional_ == NULL && discard_padding_ == 0 && !duration_set_;
+}
+
+void Frame::set_duration(uint64 duration) {
+  printf("Setting frame duration %llu\n", duration);
+  duration_ = duration;
+  duration_set_ = true;
 }
 
 void Frame::set_reference_block_timestamp(int64 reference_block_timestamp) {
@@ -1115,6 +1126,10 @@ bool Tracks::AddTrack(Track* track, int32 number) {
   track_entries_ = track_entries;
   track_entries_[track_entries_size_] = track;
   track_entries_size_ = count;
+
+  printf("Added %s track %u\n",
+         (TrackIsAudio(track_num) ? "audio" : "video"),
+         track_num);
   return true;
 }
 
@@ -1775,6 +1790,7 @@ bool Cluster::AddFrame(const Frame* const frame) { return DoWriteFrame(frame); }
 
 bool Cluster::AddFrame(const uint8* data, uint64 length, uint64 track_number,
                        uint64 abs_timecode, bool is_key) {
+  printf("Cluster::AddFrame tr:%llu abstime:%llu \n", track_number, abs_timecode);
   Frame frame;
   if (!frame.Init(data, length))
     return false;
@@ -1835,6 +1851,8 @@ bool Cluster::Finalize() {
   if (!writer_ || finalized_ || size_position_ == -1)
     return false;
 
+  printf("Cluster::Finalize.\n");
+
   if (writer_->Seekable()) {
     const int64 pos = writer_->Position();
 
@@ -1888,6 +1906,7 @@ int64 Cluster::GetRelativeTimecode(int64 abs_timecode) const {
 }
 
 bool Cluster::DoWriteFrame(const Frame* const frame) {
+  printf("DoWriteFrame [%llu:%llu] in cluster tc %llu\n", frame->track_number(), frame->timestamp(), timecode());
   if (!frame || !frame->IsValid())
     return false;
 
@@ -2239,6 +2258,7 @@ Segment::Segment()
       header_written_(false),
       last_block_duration_(0),
       last_timestamp_(0),
+      end_clusters_with_dur_(false),
       max_cluster_duration_(kDefaultMaxClusterDuration),
       max_cluster_size_(0),
       mode_(kFile),
@@ -2395,15 +2415,21 @@ bool Segment::Finalize() {
   if (WriteFramesAll() < 0)
     return false;
 
+  printf("Segment::Finalize\n");
+  if (end_clusters_with_dur_ &&
+      !FlushHoldbackFrames(/*force_last_frames*/ true))
+    return false;
+
+  if (cluster_list_size_ > 0) {
+    // Update last cluster's size
+    Cluster* const old_cluster = cluster_list_[cluster_list_size_ - 1];
+
+    if (!old_cluster ||
+        (!old_cluster->is_finalized() && !old_cluster->Finalize()))
+      return false;
+  }
+
   if (mode_ == kFile) {
-    if (cluster_list_size_ > 0) {
-      // Update last cluster's size
-      Cluster* const old_cluster = cluster_list_[cluster_list_size_ - 1];
-
-      if (!old_cluster || !old_cluster->Finalize())
-        return false;
-    }
-
     if (chunking_ && chunk_writer_cluster_) {
       chunk_writer_cluster_->Close();
       chunk_count_++;
@@ -2650,12 +2676,12 @@ bool Segment::AddGenericFrame(const Frame* frame) {
   // muxed into the same cluster.
   if (has_video_ && tracks_.TrackIsAudio(frame->track_number()) &&
       !force_new_cluster_) {
+    printf("Queuing audio frame track:%llu, time_ns:%llu\n", frame->track_number(), frame->timestamp());
     Frame* const new_frame = new (std::nothrow) Frame();
     if (!new_frame || !new_frame->CopyFrom(*frame))
       return false;
     return QueueFrame(new_frame);
   }
-
   if (!DoNewClusterProcessing(frame->track_number(), frame->timestamp(),
                               frame->is_key())) {
     return false;
@@ -2664,12 +2690,9 @@ bool Segment::AddGenericFrame(const Frame* frame) {
   if (cluster_list_size_ < 1)
     return false;
 
-  Cluster* const cluster = cluster_list_[cluster_list_size_ - 1];
-  if (!cluster)
-    return false;
-
   // If the Frame is not a SimpleBlock, then set the reference_block_timestamp
   // if it is not set already.
+  // TODO: MAYBE EXTRACT THIS...if frame->NeedsRefTime MakeFrameWithReferenceTime...
   bool frame_created = false;
   if (!frame->CanBeSimpleBlock() && !frame->is_key() &&
       !frame->reference_block_timestamp_set()) {
@@ -2682,7 +2705,8 @@ bool Segment::AddGenericFrame(const Frame* frame) {
     frame_created = true;
   }
 
-  if (!cluster->AddFrame(frame))
+  printf("(AGF) Writing frame [%llu|%llu]\n", frame->track_number(),frame->timestamp());
+  if (!AddFrameToCluster(frame))
     return false;
 
   if (new_cuepoint_ && cues_track_ == frame->track_number()) {
@@ -2692,10 +2716,207 @@ bool Segment::AddGenericFrame(const Frame* frame) {
 
   last_timestamp_ = frame->timestamp();
   last_track_timestamp_[frame->track_number() - 1] = frame->timestamp();
+  // TODO IS THIS BUSTED? Seems unlikely that this is typically set.
+  // Meaning that segment info duration is probably off by one frame?
   last_block_duration_ = frame->duration();
 
   if (frame_created)
     delete frame;
+
+  return true;
+}
+
+int32 Segment::FindClusterForFrame(const Frame* frame) const {
+  if (!frame || cluster_list_size_ <= 0)
+    return -1;
+
+  const uint64 timecode_scale = segment_info_.timecode_scale();
+  const uint64 frame_timecode = frame->timestamp() / timecode_scale;
+
+  // Clusters ordered by timecode. Walk backward to find the first with
+  // timecode < frame timecode.
+  for (int32 i = cluster_list_size_-1; i >= 0; i--) {
+    if (cluster_list_[i]->timecode() <= frame_timecode) {
+      return i;
+    }
+  }
+
+  return -1;
+}
+
+bool Segment::AddFrameToCluster(const Frame* frame) {
+  printf("AFTC head %llu|%llu\n", frame->track_number(), frame->timestamp());
+
+  // If Clusters aren't required to end in BlockDuration, add this frame to the
+  // last Cluster and move on.
+  if (!end_clusters_with_dur_) {
+    printf("AFTC: taking normal route for frame @ %llu\n", frame->timestamp());
+    int32 pos = FindClusterForFrame(frame);
+    if (pos < 0)
+      return false;
+    return cluster_list_[pos]->AddFrame(frame);
+  }
+
+  // Clusters are required to end in BlockDuration. Holdback this frame to
+  // compute its duration when the next frame is appended. Copy the frame to own
+  // lifetime during holdback period.
+  Frame* const frame_copy = new (std::nothrow) Frame();
+  if (!frame_copy || !frame_copy->CopyFrom(*frame))
+    return false;
+  uint64 new_frame_track = frame_copy->track_number();
+  holdback_frames_[new_frame_track].push_back(frame_copy);
+
+  // Adding this holdback frame may enable existing holdbacks to be flushed to
+  // to clusters.
+  return FlushHoldbackFrames(/*force_last_frames*/ false);
+}
+
+// Helper types to make priority queue of Frames in ascending timestamp order.
+struct OrderFramesTimeAsc {
+  bool operator()(Frame* lhs, Frame* rhs) {
+    return lhs->timestamp() > rhs->timestamp();
+  }
+};
+typedef std::priority_queue<Frame*, std::vector<Frame*>, OrderFramesTimeAsc>
+    HoldbackPriorityQueue;
+typedef std::map<uint64, std::list<Frame*> > HoldbackMap;
+
+HoldbackPriorityQueue MakeHoldbackQueue(const HoldbackMap& holdback_frames) {
+  HoldbackPriorityQueue pq;
+  for (HoldbackMap::const_iterator it = holdback_frames.begin();
+       it != holdback_frames.end(); it++) {
+    for (std::list<Frame*>::const_iterator it2 = it->second.begin();
+         it2 != it->second.end(); it2++) {
+      pq.push(*it2);
+    }
+  }
+  return pq;
+}
+
+bool Segment::FlushHoldbackFrames(bool force_last_frames) {
+  // All active holdback frames in ascending order by timestamp.
+  HoldbackPriorityQueue holdbacks_pq = MakeHoldbackQueue(holdback_frames_);
+  printf("FHF: pq has %zu holdbacks\n", holdbacks_pq.size());
+
+  // Held back frames must be written in monotonically increasing order
+  // regardless of which track they belong to. Walk the queue until we find
+  // a frame we can't flush yet.
+  while (!holdbacks_pq.empty()) {
+    std::list<Frame*>& track_holdbacks =
+        holdback_frames_[holdbacks_pq.top()->track_number()];
+
+    // Stop if the next frame's track doesn't have at least two frames
+    // unless we're forcing the final frames out of the queue (end of file).
+    // At least two frames are needed because:
+    // 1) We identify end-of-cluster frames by observing that the *next* frame's
+    //    timestamp would put it in a later cluster.
+    // 2) We computing the duration of earlier frame using the timestamp
+    //    difference from the later frame.
+    // When |forcing_last_frames| is true, the final holdback frames are assumed
+    // to be the last in the cluster.
+    if (track_holdbacks.size() < 2 && !force_last_frames) {
+      printf("FHF: Not enough holdbacks to flush track %llu, pq has %zu items\n",
+        holdbacks_pq.top()->track_number(),
+        holdbacks_pq.size());
+      break;
+    }
+
+    // Sanity check that top of merged queue matches top of track queue.
+    if (track_holdbacks.front() != holdbacks_pq.top())
+      return false;
+
+    // Everything looks to for writing this frame. Pop frame from merged queue
+    // and track queue.
+    Frame* write_frame = holdbacks_pq.top();
+    holdbacks_pq.pop();
+    track_holdbacks.pop_front();
+    Frame* later_frame =
+        track_holdbacks.empty() ? NULL : track_holdbacks.front();
+    printf("FHF: Processing write_frame %llu|%llu\n",
+           write_frame->track_number(), write_frame->timestamp());
+
+    // Cluster should always exist.
+    int32 write_frame_cluster = FindClusterForFrame(write_frame);
+    if (write_frame_cluster < 0) {
+      printf("FHF: Failed to find WRITE cluster\n");
+      return false;
+    }
+
+    // Compare |write_frame| and |later_frame| to determine cluster & duration.
+    if (later_frame) {
+      int32 later_frame_cluster = FindClusterForFrame(later_frame);
+      if (later_frame_cluster < 0) {
+        printf("FHF: Failed to find LATER cluster\n");
+        return false;
+      }
+      if (later_frame->timestamp() < write_frame->timestamp() ||
+          later_frame_cluster < write_frame_cluster) {
+        printf("FHF: Time/cluster moved backward %llu -> %llu\n",
+               write_frame->timestamp(), later_frame->timestamp());
+        return false;
+      }
+
+      // |next_frame| going to a later cluster => |write_frame| is the last
+      // in this cluster for its track.
+      if (write_frame_cluster != later_frame_cluster) {
+        write_frame->set_duration(later_frame->timestamp() -
+                                  write_frame->timestamp());
+        done_clusters_[write_frame->track_number()] = write_frame_cluster;
+      }
+    } else {
+      // If we don't have two or more frames, we must be forcing out the final
+      // frames, or else we should have already bailed from the loop.
+      if (!force_last_frames)
+        return false;
+
+      if (!write_frame->duration_set()) {
+        // TODO: GET DURATION FROM INPUT FILE OR DO SOMETHIHNG LIKE USE AVG DURATION
+        printf("FHF: Forcing duration for frame %llu|%llu\n",
+               write_frame->track_number(), write_frame->timestamp());
+        write_frame->set_duration(0);
+      }
+
+      // We're forcing the last frames to flush (EOF), so safely assume this is
+      // the last frame  for this track in this cluster.
+      done_clusters_[write_frame->track_number()] = write_frame_cluster;
+    }
+
+    // Add frame to cluster and delete it. This memory was allocated in
+    // AddFrameToCluster.
+    if (!cluster_list_[write_frame_cluster]->AddFrame(write_frame))
+      return false;
+    delete write_frame;
+  }
+
+  // Finalize all clusters that have final holdbacks already added for all
+  // tracks.
+  return FinalizeDoneClusters();
+}
+
+bool Segment::FinalizeDoneClusters() {
+  // Only do this if the size of |done_clusters_| indicates we're considering
+  // all tracks. Size will grow when other tracks finish adding to the
+  // first cluster.
+  if (done_clusters_.size() == tracks_.track_entries_size()) {
+    // Determine lowest common done cluster among all tracks.
+    int32 common_done_cluster = cluster_list_size_;
+    for (std::map<uint64, int32>::iterator it = done_clusters_.begin();
+         it != done_clusters_.end(); it++) {
+      if (it->second < common_done_cluster)
+        common_done_cluster = it->second;
+    }
+
+    printf("FDC: Common done cluster %d\n", common_done_cluster);
+    if (common_done_cluster < cluster_list_size_) {
+      for (int32 i = common_done_cluster;
+           i >= 0 && !cluster_list_[i]->is_finalized(); i--) {
+        if (!cluster_list_[i]->Finalize())
+          return false;
+        printf("FDC: Finalizing cluster %d w/ tc:%llu\n", i,
+               cluster_list_[i]->timecode());
+      }
+    }
+  }
 
   return true;
 }
@@ -2967,14 +3188,18 @@ bool Segment::MakeNewCluster(uint64 frame_timestamp_ns) {
   if (!WriteFramesLessThan(frame_timestamp_ns))
     return false;
 
-  if (mode_ == kFile) {
-    if (cluster_list_size_ > 0) {
-      // Update old cluster's size
-      Cluster* const old_cluster = cluster_list_[cluster_list_size_ - 1];
+  if (cluster_list_size_ > 0) {
+    // Update old cluster's size
+    Cluster* const old_cluster = cluster_list_[cluster_list_size_ - 1];
 
-      if (!old_cluster || !old_cluster->Finalize())
-        return false;
-    }
+    if (!old_cluster)
+      return false;
+
+    // Only finalize old cluster if we're not potentially holding back later
+    // frames for this cluster. When ending clusters with duration, we finalize
+    // the cluster in |AddFrameToCluster|.
+    if (!end_clusters_with_dur_ && !old_cluster->Finalize())
+      return false;
 
     if (output_cues_)
       new_cuepoint_ = true;
@@ -3004,10 +3229,13 @@ bool Segment::MakeNewCluster(uint64 frame_timestamp_ns) {
       cluster_timecode = tc;
   }
 
+  printf("Making new cluster for timestamp_ns:%llu\n", frame_timestamp_ns);
+
   Cluster*& cluster = cluster_list_[cluster_list_size_];
   const int64 offset = MaxOffset();
   cluster = new (std::nothrow) Cluster(cluster_timecode,  // NOLINT
                                        offset, segment_info_.timecode_scale());
+
   if (!cluster)
     return false;
 
@@ -3020,6 +3248,7 @@ bool Segment::MakeNewCluster(uint64 frame_timestamp_ns) {
 
 bool Segment::DoNewClusterProcessing(uint64 track_number,
                                      uint64 frame_timestamp_ns, bool is_key) {
+  printf("DoNewClusterProcessing tn:%llu   frame_ts_ns:%llu\n", track_number, frame_timestamp_ns);
   for (;;) {
     // Based on the characteristics of the current frame and current
     // cluster, decide whether to create a new cluster.
@@ -3149,6 +3378,8 @@ int64 Segment::MaxOffset() {
 bool Segment::QueueFrame(Frame* frame) {
   const int32 new_size = frames_size_ + 1;
 
+  printf("Queueing frame [%llu|%llu]\n", frame->track_number(),frame->timestamp());
+
   if (new_size > frames_capacity_) {
     // Add more frames.
     const int32 new_capacity = (!frames_capacity_) ? 2 : frames_capacity_ * 2;
@@ -3192,8 +3423,9 @@ int Segment::WriteFramesAll() {
     // places where |doc_type_version_| needs to be updated.
     if (frame->discard_padding() != 0)
       doc_type_version_ = 4;
-    if (!cluster->AddFrame(frame))
+    if (!AddFrameToCluster(frame))
       return -1;
+    printf("(WFA) Writing queued frame [%llu|%llu]\n", frame->track_number(),frame->timestamp());
 
     if (new_cuepoint_ && cues_track_ == frame->track_number()) {
       if (!AddCuePoint(frame->timestamp(), cues_track_))
@@ -3216,15 +3448,12 @@ int Segment::WriteFramesAll() {
 }
 
 bool Segment::WriteFramesLessThan(uint64 timestamp) {
+  printf("Writing FRAMESLESSTHAN %llu\n", timestamp);
   // Check |cluster_list_size_| to see if this is the first cluster. If it is
   // the first cluster the audio frames that are less than the first video
   // timesatmp will be written in a later step.
   if (frames_size_ > 0 && cluster_list_size_ > 0) {
     if (!frames_)
-      return false;
-
-    Cluster* const cluster = cluster_list_[cluster_list_size_ - 1];
-    if (!cluster)
       return false;
 
     int32 shift_left = 0;
@@ -3240,7 +3469,7 @@ bool Segment::WriteFramesLessThan(uint64 timestamp) {
       const Frame* const frame_prev = frames_[i - 1];
       if (frame_prev->discard_padding() != 0)
         doc_type_version_ = 4;
-      if (!cluster->AddFrame(frame_prev))
+      if (!AddFrameToCluster(frame_prev))
         return false;
 
       if (new_cuepoint_ && cues_track_ == frame_prev->track_number()) {

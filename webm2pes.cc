@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "mkvparser.hpp"
 #include "mkvreader.hpp"
@@ -23,6 +24,51 @@ bool WriteUint8(std::uint8_t val, std::FILE* fileptr) {
   if (fileptr == nullptr)
     return false;
   return (std::fputc(val, fileptr) == val);
+}
+
+bool VP9FrameHasSuperFrameIndex(const std::uint8_t* frame, std::size_t length) {
+  const std::uint8_t marker = frame[length - 1];
+  if ((marker & 0xe0) == 0xc0) {
+    const int frames = (marker & 0x7) + 1;
+    const int mag = ((marker >> 3) & 0x3) + 1;
+    const size_t index_length = 2 + mag * frames;
+
+    if (length >= index_length && frame[length - index_length] == marker) {
+      // Found a valid superframe index.
+      return true;
+    }
+  }
+  return false;
+}
+
+// Checks |data| for super frame index
+void ParseSuperframeIndex(const std::uint8_t* data,
+                          std::size_t data_sz,
+                          std::uint32_t sizes[8],
+                          std::size_t* count) {
+  const std::uint8_t marker = data[data_sz - 1];
+  *count = 0;
+
+  if ((marker & 0xe0) == 0xc0) {
+    const int frames = (marker & 0x7) + 1;
+    const int mag = ((marker >> 3) & 0x3) + 1;
+    const size_t index_sz = 2 + mag * frames;
+
+    if (data_sz >= index_sz && data[data_sz - index_sz] == marker) {
+      // found a valid superframe index
+      const std::uint8_t* x = data + data_sz - index_sz + 1;
+
+      for (int i = 0; i < frames; ++i) {
+        std::uint32_t this_sz = 0;
+
+        for (int j = 0; j < mag; ++j) {
+          this_sz |= (*x++) << (j * 8);
+        }
+        sizes[i] = this_sz;
+      }
+      *count = frames;
+    }
+  }
 }
 }  // namespace
 
@@ -434,6 +480,16 @@ bool Webm2Pes::WritePesOptionalHeader(const PesHeader& pes_header,
   return true;
 }
 
+struct FrameSubRange {
+  FrameSubRange(size_t position, size_t length) : pos(position), len(length) {}
+  FrameSubRange() = delete;
+  FrameSubRange(const FrameSubRange&) = default;
+  FrameSubRange(FrameSubRange&&) = default;
+  ~FrameSubRange() = default;
+  const size_t pos;
+  const size_t len;
+};
+
 bool Webm2Pes::WritePesPacket(const mkvparser::Block::Frame& vpx_frame,
                               double timecode_1000nanosecond_ticks) {
   bool packetize = false;
@@ -444,9 +500,29 @@ bool Webm2Pes::WritePesPacket(const mkvparser::Block::Frame& vpx_frame,
   // the header (4 byte start code + 2 bytes for the length). We can fit in 6
   // more bytes if we really want to, and avoid packetization when size is very
   // close to UINT16_MAX.
+  std::vector<FrameSubRange> packet_ranges;
+  int num_packets = 1;
   if (header.size() + vpx_frame.len > UINT16_MAX) {
     packetize = true;
+    const int max_packet_size = UINT16_MAX;
+    const size_t packet_payload_size = UINT16_MAX - header.size();
+    num_packets = vpx_frame.len +
+                  (max_packet_size - 1) / (max_packet_size - header.size());
+    for (int i = 0; i < num_packets; ++i) {
+      packet_ranges.push_back(
+          FrameSubRange((i + 1) * packet_payload_size, packet_payload_size));
+    }
+
+    size_t remaining_frame_payload = vpx_frame.len % packet_payload_size;
+    if (remaining_frame_payload > 0) {
+      packet_ranges.push_back(FrameSubRange(num_packets * packet_payload_size,
+                                            remaining_frame_payload));
+    }
   }
+
+  // TODO(tomfinegan): Need to inspect frame, check for super frame, split it
+  // up when one is found w/multiple frames. Need BCMV/PTS for complete and
+  // first of a packetized sequence of frames.
 
   const double kNanosecondsPerSecond = 1000000000.0;
   const double kMillisecondsPerSecond = 1000.0;

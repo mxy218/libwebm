@@ -20,8 +20,20 @@ void Usage(const char* argv[]) {
 }
 
 bool WriteUint8(std::uint8_t val, std::FILE* fileptr) {
-  if (fileptr == nullptr) return false;
+  if (fileptr == nullptr)
+    return false;
   return (std::fputc(val, fileptr) == val);
+}
+
+std::int64_t TimecodeTicksTo90KhzTicks(
+    std::int64_t timecode_1000nanosecond_ticks) {
+  const double kNanosecondsPerSecond = 1000000000.0;
+  const double kMillisecondsPerSecond = 1000.0;
+  const double k1000NanosecondTicksPerSecond =
+      kNanosecondsPerSecond * kMillisecondsPerSecond;
+  const double pts_seconds =
+      timecode_1000nanosecond_ticks / k1000NanosecondTicksPerSecond;
+  return pts_seconds * 90000;
 }
 }  // namespace
 
@@ -31,8 +43,10 @@ namespace libwebm {
 // Maximum size is 64 bits. Users may call the Check() method to perform minimal
 // validation (size > 0 and <= 64).
 struct PesHeaderField {
-  PesHeaderField(std::uint64_t value, std::uint32_t size_in_bits,
-                 std::uint8_t byte_index, std::uint8_t bits_to_shift)
+  PesHeaderField(std::uint64_t value,
+                 std::uint32_t size_in_bits,
+                 std::uint8_t byte_index,
+                 std::uint8_t bits_to_shift)
       : bits(value),
         num_bits(size_in_bits),
         index(byte_index),
@@ -114,6 +128,117 @@ struct PesOptionalHeader {
   bool fragment = false;
 
   static std::size_t size_in_bytes() { return 9; }
+
+  void SetPtsBits(std::int64_t pts_90khz) {
+    std::uint64_t* pts_bits = &pts.bits;
+    *pts_bits = 0;
+
+    // PTS is broken up:
+    // bits 32-30
+    // marker
+    // bits 29-15
+    // marker
+    // bits 14-0
+    // marker
+    const std::uint32_t pts1 = (pts_90khz >> 30) & 0x7;
+    const std::uint32_t pts2 = (pts_90khz >> 15) & 0x7FFF;
+    const std::uint32_t pts3 = pts_90khz & 0x7FFF;
+
+    std::uint8_t buffer[5] = {0};
+    // PTS only flag.
+    buffer[0] |= 1 << 5;
+    // Top 3 bits of PTS and 1 bit marker.
+    buffer[0] |= pts1 << 1;
+    // Marker.
+    buffer[0] |= 1;
+
+    // Next 15 bits of pts and 1 bit marker.
+    // Top 8 bits of second PTS chunk.
+    buffer[1] |= (pts2 >> 8) & 0xff;
+    // bottom 7 bits of second PTS chunk.
+    buffer[2] |= (pts2 << 1);
+    // Marker.
+    buffer[2] |= 1;
+
+    // Last 15 bits of pts and 1 bit marker.
+    // Top 8 bits of second PTS chunk.
+    buffer[3] |= (pts3 >> 8) & 0xff;
+    // bottom 7 bits of second PTS chunk.
+    buffer[4] |= (pts3 << 1);
+    // Marker.
+    buffer[4] |= 1;
+
+    // Write bits into PesHeaderField.
+    std::memcpy(reinterpret_cast<std::uint8_t*>(pts_bits), buffer, 5);
+  }
+
+  // Writes fields to |file| and returns true. Returns false when write or
+  // field value validation fails.
+  bool Write(std::FILE* file, bool write_pts) const {
+    if (file == nullptr) {
+      std::fprintf(stderr, "Webm2Pes: nullptr in opt header writer.\n");
+      return false;
+    }
+
+    std::uint8_t header[9] = {0};
+    std::uint8_t* byte = header;
+
+    if (marker.Check() != true || scrambling.Check() != true ||
+        priority.Check() != true || data_alignment.Check() != true ||
+        copyright.Check() != true || original.Check() != true ||
+        has_pts.Check() != true || has_dts.Check() != true ||
+        pts.Check() != true || stuffing_byte.Check() != true) {
+      std::fprintf(stderr, "Webm2Pes: Invalid PES Optional Header field.\n");
+      return false;
+    }
+
+    // TODO(tomfinegan): As noted in above, the PesHeaderFields should be an
+    // array (or some data structure) that can be iterated over.
+
+    // First byte of header, fields: marker, scrambling, priority, alignment,
+    // copyright, original.
+    *byte = 0;
+    *byte |= marker.bits << marker.shift;
+    *byte |= scrambling.bits << scrambling.shift;
+    *byte |= priority.bits << priority.shift;
+    *byte |= data_alignment.bits << data_alignment.shift;
+    *byte |= copyright.bits << copyright.shift;
+    *byte |= original.bits << original.shift;
+
+    // Second byte of header, fields: has_pts, has_dts, unused fields.
+    *++byte = 0;
+    if (write_pts == true) {
+      *byte |= has_pts.bits << has_pts.shift;
+      *byte |= has_dts.bits << has_dts.shift;
+    }
+
+    // Third byte of header, fields: remaining size of header.
+    *++byte = remaining_size.bits;  // Field is 8 bits wide.
+
+    int num_stuffing_bytes = 1;
+    if (write_pts == true) {
+      // Set the PTS value.
+      *++byte = (pts.bits >> 32) & 0xff;
+      *++byte = (pts.bits >> 24) & 0xff;
+      *++byte = (pts.bits >> 16) & 0xff;
+      *++byte = (pts.bits >> 8) & 0xff;
+      *++byte = pts.bits & 0xff;
+      num_stuffing_bytes += pts.num_bits / 8;
+    }
+
+    // Add the stuffing byte(s).
+    for (int i = 0; i < num_stuffing_bytes; ++i)
+      *++byte = stuffing_byte.bits;
+
+    if (std::fwrite(reinterpret_cast<void*>(header), 1, size_in_bytes(),
+                    file) != size_in_bytes()) {
+      std::fprintf(stderr,
+                   "Webm2Pes: unable to write PES opt header to file.\n");
+      return false;
+    }
+
+    return true;
+  }
 };
 
 struct BCMVHeader {
@@ -155,7 +280,8 @@ struct BCMVHeader {
 
 struct PesHeader {
   const std::uint8_t start_code[4] = {
-      0x00, 0x00,
+      0x00,
+      0x00,
       0x01,   // 0x000001 is the PES packet start code prefix.
       0xE0};  // 0xE0 is the minimum video stream ID.
   std::uint16_t packet_length = 0;  // Number of bytes _after_ this field.
@@ -163,6 +289,41 @@ struct PesHeader {
   std::size_t size() const {
     return optional_header.size_in_bytes() + BCMVHeader::size() +
            6 /* start_code + packet_length */ + packet_length;
+  }
+
+  // Writes out the header to |file|. Calls PesOptionalHeader::Write() to write
+  // |optional_header| contents. Returns true when successful, false otherwise.
+  bool Write(std::FILE* file, bool write_pts) {
+    if (file == nullptr) {
+      std::fprintf(stderr, "Webm2Pes: nullptr in header writer.\n");
+      return false;
+    }
+
+    // Write |start_code|.
+    if (std::fwrite(reinterpret_cast<const void*>(start_code), 1, 4, file) !=
+        4) {
+      std::fprintf(stderr, "Webm2Pes: cannot write packet start code.\n");
+      return false;
+    }
+
+    // Write |packet_length| as big endian.
+    std::uint8_t byte = (packet_length >> 8) & 0xff;
+    if (WriteUint8(byte, file) != true) {
+      std::fprintf(stderr, "Webm2Pes: cannot write packet length (byte 0).\n");
+      return false;
+    }
+    byte = packet_length & 0xff;
+    if (WriteUint8(byte, file) != true) {
+      std::fprintf(stderr, "Webm2Pes: cannot write packet length (byte 1).\n");
+      return false;
+    }
+
+    // Write the (not really) optional header.
+    if (optional_header.Write(file, write_pts) != true) {
+      std::fprintf(stderr, "Webm2Pes: PES optional header write failed.");
+      return false;
+    }
+    return true;
   }
 };
 
@@ -186,7 +347,8 @@ class Webm2Pes {
   // fclose functor for wrapping FILE in std::unique_ptr.
   struct FILEDeleter {
     int operator()(FILE* f) {
-      if (f != nullptr) return fclose(f);
+      if (f != nullptr)
+        return fclose(f);
       return 0;
     }
   };
@@ -194,7 +356,8 @@ class Webm2Pes {
 
   bool Write90KHzPtsBitsToPesHeader(std::int64_t pts_90khz,
                                     PesHeader* header) const;
-  bool WritePesOptionalHeader(const PesHeader& pes_header, std::size_t length,
+  bool WritePesOptionalHeader(const PesHeader& pes_header,
+                              std::size_t length,
                               std::uint8_t* header) const;
   bool WritePesPacket(const mkvparser::Block::Frame& vpx_frame,
                       double timecode_1000nanosecond_ticks);
@@ -214,7 +377,8 @@ class Webm2Pes {
 
 Webm2Pes::Webm2Pes(const std::string& input_file_name,
                    const std::string& output_file_name)
-    : input_file_name_(input_file_name), output_file_name_(output_file_name) {}
+    : input_file_name_(input_file_name), output_file_name_(output_file_name) {
+}
 
 bool Webm2Pes::Convert() {
   if (input_file_name_.empty() || output_file_name_.empty()) {
@@ -442,44 +606,15 @@ bool Webm2Pes::WritePesPacket(const mkvparser::Block::Frame& vpx_frame,
     packetize = true;
   }
 
-  const double kNanosecondsPerSecond = 1000000000.0;
-  const double kMillisecondsPerSecond = 1000.0;
-  const double k1000NanosecondTicksPerSecond =
-      kNanosecondsPerSecond * kMillisecondsPerSecond;
-  const double pts_seconds =
-      timecode_1000nanosecond_ticks / k1000NanosecondTicksPerSecond;
-  const std::int64_t khz90_pts = pts_seconds * 90000;
+  const std::int64_t khz90_pts =
+      TimecodeTicksTo90KhzTicks(timecode_1000nanosecond_ticks);
+  header.optional_header.SetPtsBits(khz90_pts);
 
-  if (Write90KHzPtsBitsToPesHeader(khz90_pts, &header) != true) {
-    std::fprintf(stderr, "Webm2Pes: 90khz pts write failed.");
-    return false;
-  }
-
-  std::uint8_t write_buffer[9] = {0};
   if (packetize == false) {
     header.packet_length =
         header.optional_header.size_in_bytes() + vpx_frame.len;
-    if (std::fwrite(reinterpret_cast<const void*>(header.start_code), 1, 4,
-                    output_file_.get()) != 4) {
-      std::fprintf(stderr, "Webm2Pes: cannot write packet start code.\n");
-      return false;
-    }
-
-    // Big endian length.
-    std::uint8_t byte = (header.packet_length >> 8) & 0xff;
-    if (WriteUint8(byte, output_file_.get()) != true) {
-      std::fprintf(stderr, "Webm2Pes: cannot write packet length (1).\n");
-      return false;
-    }
-    byte = header.packet_length & 0xff;
-    if (WriteUint8(byte, output_file_.get()) != true) {
-      std::fprintf(stderr, "Webm2Pes: cannot write packet length (2).\n");
-      return false;
-    }
-
-    if (WritePesOptionalHeader(header, header.packet_length,
-                               &write_buffer[0]) != true) {
-      std::fprintf(stderr, "Webm2Pes: PES optional header write failed.");
+    if (header.Write(output_file_.get(), true) != true) {
+      std::fprintf(stderr, "Webm2Pes: cannot write PES packet header.\n");
       return false;
     }
 

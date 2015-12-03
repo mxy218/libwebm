@@ -10,11 +10,23 @@
 #include <cstdlib>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "mkvparser.hpp"
 #include "mkvreader.hpp"
 
 namespace {
+struct Range {
+  Range(size_t off, size_t len) : offset(off), length(len) {}
+  Range() = delete;
+  Range(const Range&) = default;
+  Range(Range&&) = default;
+  ~Range() = default;
+  const size_t offset;
+  const size_t length;
+};
+typedef std::vector<Range> FrameRanges;
+
 void Usage(const char* argv[]) {
   printf("Usage: %s <WebM file> <output file>", argv[0]);
 }
@@ -23,6 +35,56 @@ bool WriteUint8(std::uint8_t val, std::FILE* fileptr) {
   if (fileptr == nullptr)
     return false;
   return (std::fputc(val, fileptr) == val);
+}
+
+// Returns true and stores frame offsets and lengths in |frame_ranges| when
+// |frame| has a valid VP9 super frame index.
+bool ParseVP9SuperFrameIndex(const std::uint8_t* frame,
+                             std::size_t length,
+                             FrameRanges* frame_ranges) {
+  if (frame == nullptr || length == 0 || frame_ranges == nullptr)
+    return false;
+
+  bool parse_ok = false;
+  const std::uint8_t marker = frame[length - 1];
+  const std::uint32_t kHasSuperFrameIndexMask = 0xe0;
+  const std::uint32_t kSuperFrameMarker = 0xc0;
+
+  if ((marker & kHasSuperFrameIndexMask) == kSuperFrameMarker) {
+    const std::uint32_t kFrameCountMask = 0x7;
+    const std::uint32_t kFrameLengthFieldSizeMask = 0x18;
+
+    const int num_frames = (marker & kFrameCountMask) + 1;
+    const int length_field_size = (marker & kFrameLengthFieldSizeMask) + 1;
+    const std::size_t index_length = 2 + length_field_size * num_frames;
+    std::size_t frame_offset = 0;
+
+    if (length >= index_length && frame[length - index_length] == marker) {
+      // Found a valid superframe index.
+      const std::uint8_t* byte = frame + length - index_length + 1;
+
+      for (int i = 0; i < num_frames; ++i) {
+        std::uint32_t child_frame_length = 0;
+
+        for (int j = 0; j < length_field_size; ++j) {
+          child_frame_length |= (*byte++) << (j * 8);
+        }
+
+        frame_ranges->push_back(Range(frame_offset, child_frame_length));
+        frame_offset += child_frame_length;
+      }
+
+      if (frame_ranges->size() != num_frames) {
+        std::fprintf(stderr, "Webm2Pes: superframe index parse failed.\n");
+        return false;
+      }
+
+      parse_ok = true;
+    } else {
+      std::fprintf(stderr, "Webm2Pes: Invalid superframe index.\n");
+    }
+  }
+  return parse_ok;
 }
 
 std::int64_t TimecodeTicksTo90KhzTicks(
@@ -256,7 +318,7 @@ struct BCMVHeader {
   static std::size_t size() { return 10; }
 
   // Write the BCMV Header into the FILE stream.
-  bool Write(std::FILE* fileptr) {
+  bool Write(std::FILE* fileptr) const {
     if (fileptr == nullptr) {
       std::fprintf(stderr, "Webm2Pes: nullptr for file in BCMV Write.\n");
       return false;
@@ -265,9 +327,12 @@ struct BCMVHeader {
       std::fprintf(stderr, "Webm2Pes: BCMV write failed.\n");
     }
     const std::size_t kRemainingBytes = 6;
-    const uint8_t buffer[kRemainingBytes] = {
-        (length >> 24) & 0xff, (length >> 16) & 0xff, (length >> 8) & 0xff,
-        length & 0xff, 0, 0 /* 2 bytes 0 padding */};
+    const uint8_t buffer[kRemainingBytes] = {(length >> 24) & 0xff,
+                                             (length >> 16) & 0xff,
+                                             (length >> 8) & 0xff,
+                                             length & 0xff,
+                                             0,
+                                             0 /* 2 bytes 0 padding */};
     for (std::size_t i = 0; i < kRemainingBytes; ++i) {
       if (WriteUint8(buffer[i], fileptr) != true) {
         std::fprintf(stderr, "Webm2Pes: BCMV remainder write failed.\n");
@@ -333,6 +398,10 @@ struct PesHeader {
 // https://en.wikipedia.org/wiki/MPEG_transport_stream
 class Webm2Pes {
  public:
+  enum VideoCodec {
+    VP8,
+    VP9,
+  };
   Webm2Pes(const std::string& input_file, const std::string& output_file);
   Webm2Pes() = delete;
   Webm2Pes(const Webm2Pes&) = delete;
@@ -361,7 +430,9 @@ class Webm2Pes {
                               std::uint8_t* header) const;
   bool WritePesPacket(const mkvparser::Block::Frame& vpx_frame,
                       double timecode_1000nanosecond_ticks);
-
+  bool GetPacketRanges(const PesHeader& header,
+                       const FrameRanges& frame_ranges,
+                       FrameRanges* packet_ranges);
   const std::string input_file_name_;
   const std::string output_file_name_;
   std::unique_ptr<mkvparser::Segment> webm_parser_;
@@ -370,6 +441,9 @@ class Webm2Pes {
 
   // Video track num in the WebM file.
   int video_track_num_ = 0;
+
+  // Video codec.
+  VideoCodec codec_;
 
   // Input timecode scale.
   std::int64_t timecode_scale_ = 1000000;
@@ -428,6 +502,14 @@ bool Webm2Pes::Convert() {
        ++track_index) {
     const mkvparser::Track* track = tracks->GetTrackByIndex(track_index);
     if (track && track->GetType() == mkvparser::Track::kVideo) {
+      if (std::string(track->GetCodecNameAsUTF8()) == std::string("V_VP8"))
+        codec_ = VP8;
+      else if (std::string(track->GetCodecNameAsUTF8()) == std::string("V_VP9"))
+        codec_ = VP9;
+      else {
+        fprintf(stderr, "Webm2Pes: Codec must be VP8 or VP9.\n");
+        return false;
+      }
       video_track_num_ = track_index + 1;
       break;
     }
@@ -539,71 +621,66 @@ bool Webm2Pes::WritePesOptionalHeader(const PesHeader& pes_header,
     std::fprintf(stderr, "Webm2Pes: nullptr in opt header writer.\n");
     return false;
   }
-
-  std::uint8_t* byte = header;
-  const PesOptionalHeader& poh = pes_header.optional_header;
-
-  if (poh.marker.Check() != true || poh.scrambling.Check() != true ||
-      poh.priority.Check() != true || poh.data_alignment.Check() != true ||
-      poh.copyright.Check() != true || poh.original.Check() != true ||
-      poh.has_pts.Check() != true || poh.has_dts.Check() != true ||
-      poh.pts.Check() != true || poh.stuffing_byte.Check() != true) {
-    std::fprintf(stderr, "Webm2Pes: Invalid PES Optional Header field.\n");
-    return false;
-  }
-
-  // TODO(tomfinegan): As noted in PesOptionalHeader, the PesHeaderFields
-  // should be an array that can be iterated over.
-
-  // First byte of header, fields: marker, scrambling, priority, alignment,
-  // copyright, original.
-  *byte = 0;
-  *byte |= poh.marker.bits << poh.marker.shift;
-  *byte |= poh.scrambling.bits << poh.scrambling.shift;
-  *byte |= poh.priority.bits << poh.priority.shift;
-  *byte |= poh.data_alignment.bits << poh.data_alignment.shift;
-  *byte |= poh.copyright.bits << poh.copyright.shift;
-  *byte |= poh.original.bits << poh.original.shift;
-
-  // Second byte of header, fields: has_pts, has_dts, unused fields.
-  *++byte = 0;
-  *byte |= poh.has_pts.bits << poh.has_pts.shift;
-  *byte |= poh.has_dts.bits << poh.has_dts.shift;
-
-  // Third byte of header, fields: remaining size of header.
-  *++byte = poh.remaining_size.bits;  // Field is 8 bits wide.
-
-  // Set the PTS value.
-  *++byte = (poh.pts.bits >> 32) & 0xff;
-  *++byte = (poh.pts.bits >> 24) & 0xff;
-  *++byte = (poh.pts.bits >> 16) & 0xff;
-  *++byte = (poh.pts.bits >> 8) & 0xff;
-  *++byte = poh.pts.bits & 0xff;
-
-  // Add the stuffing byte;
-  *++byte = poh.stuffing_byte.bits;
-
-  if (std::fwrite(reinterpret_cast<void*>(header), 1, poh.size_in_bytes(),
-                  output_file_.get()) != poh.size_in_bytes()) {
-    std::fprintf(stderr, "Webm2Pes: unable to write PES opt header to file.\n");
-    return false;
-  }
-
-  return true;
+  return pes_header.optional_header.Write(output_file_.get(), true);
 }
 
 bool Webm2Pes::WritePesPacket(const mkvparser::Block::Frame& vpx_frame,
                               double timecode_1000nanosecond_ticks) {
   bool packetize = false;
   PesHeader header;
+  FrameRanges frame_ranges;
+  frame_ranges.push_back(Range(0, vpx_frame.len));
+
+  // Read the input frame.
+  std::unique_ptr<uint8_t[]> frame_data(new (std::nothrow)
+                                            uint8_t[vpx_frame.len]);
+  if (frame_data.get() == nullptr) {
+    std::fprintf(stderr, "Webm2Pes: Out of memory.\n");
+    return false;
+  }
+  if (vpx_frame.Read(&webm_reader_, frame_data.get()) != 0) {
+    std::fprintf(stderr, "Webm2Pes: Error reading VPx frame!\n");
+    return false;
+  }
+
+  if (codec_ == VP9) {
+    frame_ranges.clear();
+    bool has_superframe_index =
+        ParseVP9SuperFrameIndex(frame_data.get(), vpx_frame.len, &frame_ranges);
+    if (has_superframe_index == false) {
+      frame_ranges.push_back(Range(0, vpx_frame.len));
+    }
+  }
 
   // TODO(tomfinegan): The length field in PES is actually number of bytes that
   // follow the length field, and does not include the 6 byte fixed portion of
   // the header (4 byte start code + 2 bytes for the length). We can fit in 6
   // more bytes if we really want to, and avoid packetization when size is very
   // close to UINT16_MAX.
+  FrameRanges packet_ranges;
+  int num_packets = 1;
+
+  for (const Range& range : frame_ranges) {
+    if (range.length + header.size() > UINT16_MAX) {
+    }
+  }
+
   if (header.size() + vpx_frame.len > UINT16_MAX) {
     packetize = true;
+    const int max_packet_size = UINT16_MAX;
+    const size_t packet_payload_size = UINT16_MAX - header.size();
+    num_packets = vpx_frame.len +
+                  (max_packet_size - 1) / (max_packet_size - header.size());
+    for (int i = 0; i < num_packets; ++i) {
+      packet_ranges.push_back(
+          Range((i + 1) * packet_payload_size, packet_payload_size));
+    }
+
+    size_t remaining_frame_payload = vpx_frame.len % packet_payload_size;
+    if (remaining_frame_payload > 0) {
+      packet_ranges.push_back(
+          Range(num_packets * packet_payload_size, remaining_frame_payload));
+    }
   }
 
   const std::int64_t khz90_pts =
@@ -626,16 +703,7 @@ bool Webm2Pes::WritePesPacket(const mkvparser::Block::Frame& vpx_frame,
     }
 
     // Write frame.
-    std::unique_ptr<uint8_t[]> frame_data(new (std::nothrow)
-                                              uint8_t[vpx_frame.len]);
-    if (frame_data.get() == nullptr) {
-      std::fprintf(stderr, "Webm2Pes: Out of memory.\n");
-      return false;
-    }
-    if (vpx_frame.Read(&webm_reader_, frame_data.get()) != 0) {
-      std::fprintf(stderr, "Webm2Pes: Error reading VPx frame!\n");
-      return false;
-    }
+
     if (std::fwrite(frame_data.get(), 1, vpx_frame.len, output_file_.get()) !=
         vpx_frame.len) {
       std::fprintf(stderr, "Webm2Pes: VPx frame write failed.\n");
@@ -651,6 +719,32 @@ bool Webm2Pes::WritePesPacket(const mkvparser::Block::Frame& vpx_frame,
 
   return true;
 }
+
+/*
+bool Webm2Pes::GetPacketRanges(const PesHeader& header,
+                               const FrameRanges& frame_ranges,
+                               FrameRanges* packet_ranges) {
+  if (header.size() + vpx_frame.len > UINT16_MAX) {
+    packetize = true;
+    const int max_packet_size = UINT16_MAX;
+    const size_t packet_payload_size = UINT16_MAX - header.size();
+    num_packets = vpx_frame.len +
+                  (max_packet_size - 1) / (max_packet_size - header.size());
+    for (int i = 0; i < num_packets; ++i) {
+      packet_ranges.push_back(
+          Range((i + 1) * packet_payload_size, packet_payload_size));
+    }
+
+    size_t remaining_frame_payload = vpx_frame.len % packet_payload_size;
+    if (remaining_frame_payload > 0) {
+      packet_ranges.push_back(
+          Range(num_packets * packet_payload_size, remaining_frame_payload));
+    }
+  }
+  for (const Range& frame_range : frame_ranges) {
+  }
+}
+*/
 
 }  // namespace libwebm
 

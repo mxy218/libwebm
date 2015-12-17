@@ -311,6 +311,10 @@ bool Webm2Pes::ConvertToFile() {
   return true;
 }
 
+bool Webm2Pes::ConvertToTypedPacketStream() {
+  return false;
+}
+
 bool Webm2Pes::InitWebmParser() {
   using mkvparser::Segment;
   Segment* webm_parser = nullptr;

@@ -11,6 +11,11 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/build/msvc_runtime.cmake")
 
 set(LIBWEBM_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
+# Test configuration flags. Defined here for visibility.
+option(ENABLE_TESTS "Enables tests." OFF)
+set(GTEST_SRC_DIR "${LIBWEBM_SRC_DIR}/../googletest")
+set(GTEST_BUILD_DIR "${CMAKE_BINARY_DIR}/googletest_build")
+
 # Libwebm section.
 add_library(webm STATIC
             "${LIBWEBM_SRC_DIR}/mkvmuxer.cpp"
@@ -62,3 +67,19 @@ add_executable(webm2pes
                "${LIBWEBM_SRC_DIR}/webm2pes.cc"
                "${LIBWEBM_SRC_DIR}/webm2pes.h")
 target_link_libraries(webm2pes LINK_PUBLIC webm)
+
+# tests section.
+if (ENABLE_TESTS)
+  add_subdirectory("${GTEST_SRC_DIR}" "${GTEST_BUILD_DIR}")
+  include_directories("${GTEST_SRC_DIR}/googletest/include")
+  # TODO(tomfinegan): Duping the source lists sucks, fix.
+  add_executable(webm2pes_tests
+                 "${LIBWEBM_SRC_DIR}/common/libwebm_utils.cc"
+                 "${LIBWEBM_SRC_DIR}/common/libwebm_utils.h"
+                 "${LIBWEBM_SRC_DIR}/webm2pes.cc"
+                 "${LIBWEBM_SRC_DIR}/webm2pes.h"
+                 "${LIBWEBM_SRC_DIR}/testing/webm2pes_tests.cc")
+  target_link_libraries(webm2pes_tests LINK_PUBLIC webm gtest)
+
+endif (ENABLE_TESTS)
+

@@ -65,3 +65,14 @@ add_executable(webm2pes
                "${LIBWEBM_SRC_DIR}/webm2pes.h"
                "${LIBWEBM_SRC_DIR}/webm2pes_main.cc")
 target_link_libraries(webm2pes LINK_PUBLIC webm)
+
+# webm2ts section.
+add_executable(webm2ts
+               "${LIBWEBM_SRC_DIR}/common/libwebm_utils.cc"
+               "${LIBWEBM_SRC_DIR}/common/libwebm_utils.h"
+               "${LIBWEBM_SRC_DIR}/vpxpes2ts.cc"
+               "${LIBWEBM_SRC_DIR}/vpxpes2ts.h"
+               "${LIBWEBM_SRC_DIR}/webm2pes.cc"
+               "${LIBWEBM_SRC_DIR}/webm2pes.h"
+               "${LIBWEBM_SRC_DIR}/vpxpes2ts_main.cc")
+target_link_libraries(webm2ts LINK_PUBLIC webm)

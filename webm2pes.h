@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "mkvparser.hpp"
 #include "mkvreader.hpp"
@@ -155,6 +156,20 @@ struct PesHeader {
   bool Write(std::FILE* file, bool write_pts) const;
 };
 
+enum PacketType {
+  KEYFRAME_START,
+  FRAME_START,
+  CONTINUATION,
+};
+
+typedef std::vector<std::uint8_t> PacketDataBuffer;
+class PacketReceiverInterface {
+ public:
+  virtual ~PacketReceiverInterface() {}
+  virtual bool ReceivePacket(PacketType packet_type,
+                             const PacketDataBuffer& packet) = 0;
+};
+
 // Converts the VP9 track of a WebM file to a Packetized Elementary Stream
 // suitable for use in a MPEG2TS.
 // https://en.wikipedia.org/wiki/Packetized_elementary_stream
@@ -165,6 +180,8 @@ class Webm2Pes {
 
   Webm2Pes(const std::string& input_file, const std::string& output_file)
       : input_file_name_(input_file), output_file_name_(output_file) {}
+  Webm2Pes(const std::string& input_file, PacketReceiverInterface* packet_sink)
+      : input_file_name_(input_file), packet_sink_(packet_sink) {}
 
   Webm2Pes() = delete;
   Webm2Pes(const Webm2Pes&) = delete;
@@ -174,6 +191,9 @@ class Webm2Pes {
   // Converts the VPx video stream to a PES file and returns true. Returns false
   // to report failure.
   bool ConvertToFile();
+
+  // Converts the VPx video stream to a
+  bool ConvertToTypedPacketStream();
 
  private:
   bool InitWebmParser();
@@ -194,6 +214,10 @@ class Webm2Pes {
 
   // Input timecode scale.
   std::int64_t timecode_scale_ = 1000000;
+
+  // Packet sink; when constructed with a PacketReceiverInterface*, packet and
+  // type of packet are sent to packet_sink_ instead of written to an output file.
+  const PacketReceiverInterface* packet_sink_;
 };
 }  // namespace libwebm
 

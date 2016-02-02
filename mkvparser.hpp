@@ -10,8 +10,11 @@
 #define MKVPARSER_HPP
 
 #include <cstddef>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+
+#include "mkvmuxertypes.hpp"
 
 namespace mkvparser {
 
@@ -28,8 +31,9 @@ class IMkvReader {
   virtual ~IMkvReader();
 };
 
-template<typename Type> Type* SafeArrayAlloc(unsigned long long num_elements,
-                                             unsigned long long element_size);
+template <typename Type>
+Type* SafeArrayAlloc(unsigned long long num_elements,
+                     unsigned long long element_size);
 long long GetUIntLength(IMkvReader*, long long, long&);
 long long ReadUInt(IMkvReader*, long long, long&);
 long long ReadID(IMkvReader* pReader, long long pos, long& len);
@@ -391,6 +395,50 @@ class Track {
   ContentEncoding** content_encoding_entries_end_;
 };
 
+struct Chromaticity {
+  Chromaticity() : x(0), y(0) {}
+  ~Chromaticity() {}
+  float x;
+  float y;
+};
+
+struct MasteringMetadata {
+  MasteringMetadata() : luminance_max(0), luminance_min(0) {}
+  ~MasteringMetadata() {}
+  Chromaticity r;
+  Chromaticity g;
+  Chromaticity b;
+  Chromaticity white_point;
+  float luminance_max;
+  float luminance_min;
+};
+
+struct Colour {
+  // Unless otherwise noted all values assigned upon construction are the
+  // equivalent of unspecified/default.
+  Colour()
+      : matrix(2),
+        bits_per_channel(0),
+        chroma_subsampling(0),
+        chroma_sitting_horz(0),
+        chroma_sitting_vert(0),
+        range(0),
+        transfer_function(2),
+        primaries(2) {}
+  ~Colour() {}
+
+  mkvmuxer::uint32 matrix;
+  mkvmuxer::uint32 bits_per_channel;
+  mkvmuxer::uint32 chroma_subsampling;
+  mkvmuxer::uint32 chroma_sitting_horz;
+  mkvmuxer::uint32 chroma_sitting_vert;
+  mkvmuxer::uint32 range;
+  mkvmuxer::uint32 transfer_function;
+  mkvmuxer::uint32 primaries;
+
+  MasteringMetadata mastering_metadata;
+};
+
 class VideoTrack : public Track {
   VideoTrack(const VideoTrack&);
   VideoTrack& operator=(const VideoTrack&);
@@ -412,6 +460,8 @@ class VideoTrack : public Track {
   bool VetEntry(const BlockEntry*) const;
   long Seek(long long time_ns, const BlockEntry*&) const;
 
+  bool GetColour(Colour* colour) const;
+
  private:
   long long m_width;
   long long m_height;
@@ -421,6 +471,8 @@ class VideoTrack : public Track {
   long long m_stereo_mode;
 
   double m_rate;
+
+  Colour m_colour;
 };
 
 class AudioTrack : public Track {

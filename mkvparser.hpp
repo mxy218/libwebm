@@ -10,8 +10,11 @@
 #define MKVPARSER_HPP
 
 #include <cstddef>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+
+#include "mkvmuxertypes.hpp"
 
 namespace mkvparser {
 
@@ -28,8 +31,9 @@ class IMkvReader {
   virtual ~IMkvReader();
 };
 
-template<typename Type> Type* SafeArrayAlloc(unsigned long long num_elements,
-                                             unsigned long long element_size);
+template <typename Type>
+Type* SafeArrayAlloc(unsigned long long num_elements,
+                     unsigned long long element_size);
 long long GetUIntLength(IMkvReader*, long long, long&);
 long long ReadUInt(IMkvReader*, long long, long&);
 long long ReadID(IMkvReader* pReader, long long pos, long& len);
@@ -391,6 +395,82 @@ class Track {
   ContentEncoding** content_encoding_entries_end_;
 };
 
+struct PrimaryChromaticity {
+  PrimaryChromaticity() : x(0), y(0) {}
+  ~PrimaryChromaticity() {}
+  static bool Parse(IMkvReader* reader, long long read_pos,
+                    long long value_size, bool is_x,
+                    PrimaryChromaticity** chromaticity);
+  double x;
+  double y;
+};
+
+struct MasteringMetadata {
+  MasteringMetadata()
+      : r(NULL),
+        g(NULL),
+        b(NULL),
+        white_point(NULL),
+        luminance_max(0),
+        luminance_min(0) {}
+  ~MasteringMetadata() {
+    delete r;
+    r = NULL;
+    delete g;
+    g = NULL;
+    delete b;
+    b = NULL;
+    delete white_point;
+    white_point = NULL;
+  }
+
+  static bool Parse(IMkvReader* reader, long long element_start,
+                    long long element_size,
+                    MasteringMetadata** mastering_metadata);
+
+  PrimaryChromaticity* r;
+  PrimaryChromaticity* g;
+  PrimaryChromaticity* b;
+  PrimaryChromaticity* white_point;
+  double luminance_max;
+  double luminance_min;
+};
+
+struct Colour {
+  // Unless otherwise noted all values assigned upon construction are the
+  // equivalent of unspecified/default.
+  Colour()
+      : matrix(2),
+        bits_per_channel(0),
+        chroma_subsampling(0),
+        chroma_siting_horz(0),
+        chroma_siting_vert(0),
+        range(0),
+        transfer_function(2),
+        primaries(2),
+        mastering_metadata(NULL) {}
+  ~Colour() {
+    delete mastering_metadata;
+    mastering_metadata = NULL;
+  }
+
+  static bool Parse(IMkvReader* reader, long long element_start,
+                    long long element_size, Colour** colour);
+
+  long long matrix;
+  long long bits_per_channel;
+  long long chroma_subsampling;
+  long long chroma_siting_horz;
+  long long chroma_siting_vert;
+  long long range;
+  long long transfer_function;
+  long long primaries;
+  long long max_cll;
+  long long max_fall;
+
+  MasteringMetadata* mastering_metadata;
+};
+
 class VideoTrack : public Track {
   VideoTrack(const VideoTrack&);
   VideoTrack& operator=(const VideoTrack&);
@@ -412,6 +492,8 @@ class VideoTrack : public Track {
   bool VetEntry(const BlockEntry*) const;
   long Seek(long long time_ns, const BlockEntry*&) const;
 
+  bool GetColour(Colour* colour) const;
+
  private:
   long long m_width;
   long long m_height;
@@ -421,6 +503,8 @@ class VideoTrack : public Track {
   long long m_stereo_mode;
 
   double m_rate;
+
+  Colour* m_colour;
 };
 
 class AudioTrack : public Track {

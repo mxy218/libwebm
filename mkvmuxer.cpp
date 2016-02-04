@@ -844,6 +844,19 @@ void Track::set_name(const char* name) {
 
 ///////////////////////////////////////////////////////////////
 //
+// Colour Class and its child elements
+uint64 PrimaryChromaticity::PrimaryChromaticityPayloadSize(MkvId x_id,
+                                                           MkvId y_id) const {
+  return EbmlElementSize(x_id, x) + EbmlElementSize(y_id, y);
+}
+
+uint64 MasteringMetadata::MasteringMetadataPayloadSize() const {
+//  uint64 size = EbmlElementSize(kMkvL, <#int64 value#>)
+  return 0;
+}
+
+///////////////////////////////////////////////////////////////
+//
 // VideoTrack Class
 
 VideoTrack::VideoTrack(unsigned int* seed)
@@ -858,9 +871,10 @@ VideoTrack::VideoTrack(unsigned int* seed)
       height_(0),
       stereo_mode_(0),
       alpha_mode_(0),
-      width_(0) {}
+      width_(0),
+      colour_(NULL) {}
 
-VideoTrack::~VideoTrack() {}
+VideoTrack::~VideoTrack() { delete colour_; }
 
 bool VideoTrack::SetStereoMode(uint64 stereo_mode) {
   if (stereo_mode != kMono && stereo_mode != kSideBySideLeftIsFirst &&
@@ -1048,9 +1062,7 @@ const char Tracks::kVp9CodecId[] = "V_VP9";
 const char Tracks::kVp10CodecId[] = "V_VP10";
 
 Tracks::Tracks()
-    : track_entries_(NULL),
-      track_entries_size_(0),
-      wrote_tracks_(false) {}
+    : track_entries_(NULL), track_entries_size_(0), wrote_tracks_(false) {}
 
 Tracks::~Tracks() {
   if (track_entries_) {

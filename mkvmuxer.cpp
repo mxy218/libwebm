@@ -858,9 +858,10 @@ VideoTrack::VideoTrack(unsigned int* seed)
       height_(0),
       stereo_mode_(0),
       alpha_mode_(0),
-      width_(0) {}
+      width_(0),
+      colour_(NULL) {}
 
-VideoTrack::~VideoTrack() {}
+VideoTrack::~VideoTrack() { delete colour_; }
 
 bool VideoTrack::SetStereoMode(uint64 stereo_mode) {
   if (stereo_mode != kMono && stereo_mode != kSideBySideLeftIsFirst &&

@@ -11,6 +11,8 @@
 
 #include "mkvmuxertypes.hpp"
 
+#include <cstddef>
+
 // For a description of the WebM elements see
 // http://www.webmproject.org/code/specs/container/.
 
@@ -330,6 +332,65 @@ class ContentEncoding {
 };
 
 ///////////////////////////////////////////////////////////////
+// Colour element.
+struct PrimaryChromaticity {
+  PrimaryChromaticity() : x(0), y(0) {}
+  ~PrimaryChromaticity() {}
+  float x;
+  float y;
+};
+
+struct MasteringMetadata {
+  MasteringMetadata()
+      : r(NULL),
+        g(NULL),
+        b(NULL),
+        white_point(NULL),
+        luminance_max(0),
+        luminance_min(0) {}
+  ~MasteringMetadata() {
+    delete r;
+    delete g;
+    delete b;
+    delete white_point;
+  }
+
+  PrimaryChromaticity* r;
+  PrimaryChromaticity* g;
+  PrimaryChromaticity* b;
+  PrimaryChromaticity* white_point;
+  float luminance_max;
+  float luminance_min;
+};
+
+struct Colour {
+  Colour()
+      : matrix(2),
+        bits_per_channel(0),
+        chroma_subsampling(0),
+        chroma_siting_horz(0),
+        chroma_siting_vert(0),
+        range(0),
+        transfer_function(2),
+        primaries(0),
+        max_cll(0),
+        max_fall(0),
+        mastering_metadata(NULL) {}
+  ~Colour() { delete mastering_metadata; }
+  uint32 matrix;
+  uint32 bits_per_channel;
+  uint32 chroma_subsampling;
+  uint32 chroma_siting_horz;
+  uint32 chroma_siting_vert;
+  uint32 range;
+  uint32 transfer_function;
+  uint32 primaries;
+  uint32 max_cll;
+  uint32 max_fall;
+  MasteringMetadata* mastering_metadata;
+};
+
+///////////////////////////////////////////////////////////////
 // Track element.
 class Track {
  public:
@@ -471,6 +532,9 @@ class VideoTrack : public Track {
   void set_width(uint64 width) { width_ = width; }
   uint64 width() const { return width_; }
 
+  Colour* colour();
+  void set_colour(Colour* colour);
+
  private:
   // Returns the size in bytes of the Video element.
   uint64 VideoPayloadSize() const;
@@ -487,6 +551,8 @@ class VideoTrack : public Track {
   uint64 stereo_mode_;
   uint64 alpha_mode_;
   uint64 width_;
+
+  Colour* colour_;
 
   LIBWEBM_DISALLOW_COPY_AND_ASSIGN(VideoTrack);
 };

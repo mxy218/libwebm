@@ -9,7 +9,10 @@
 #ifndef MKVMUXER_HPP
 #define MKVMUXER_HPP
 
+#include <cstddef>
+
 #include "mkvmuxertypes.hpp"
+#include "webmids.hpp"
 
 // For a description of the WebM elements see
 // http://www.webmproject.org/code/specs/container/.
@@ -330,6 +333,97 @@ class ContentEncoding {
 };
 
 ///////////////////////////////////////////////////////////////
+// Colour element.
+struct PrimaryChromaticity {
+  PrimaryChromaticity(float x_val, float y_val) : x(x_val), y(y_val) {}
+  PrimaryChromaticity() : x(0), y(0) {}
+  ~PrimaryChromaticity() {}
+  uint64 PrimaryChromaticityPayloadSize(MkvId x_id, MkvId y_id) const;
+  bool Write(IMkvWriter* writer, MkvId x_id, MkvId y_id) const;
+
+  float x;
+  float y;
+};
+
+class MasteringMetadata {
+ public:
+  MasteringMetadata()
+      : luminance_max(0),
+        luminance_min(0),
+        r_(NULL),
+        g_(NULL),
+        b_(NULL),
+        white_point_(NULL) {}
+  ~MasteringMetadata() {
+    delete r_;
+    delete g_;
+    delete b_;
+    delete white_point_;
+  }
+  uint64 MasteringMetadataPayloadSize() const;
+  bool Write(IMkvWriter* writer) const;
+
+  // Copies non-null chromaticity.
+  bool SetChromaticity(const PrimaryChromaticity* r,
+                       const PrimaryChromaticity* g,
+                       const PrimaryChromaticity* b,
+                       const PrimaryChromaticity* white_point);
+  const PrimaryChromaticity* r() const { return r_; }
+  const PrimaryChromaticity* g() const { return g_; }
+  const PrimaryChromaticity* b() const { return b_; }
+  const PrimaryChromaticity* white_point() const { return white_point_; }
+
+  float luminance_max;
+  float luminance_min;
+
+ private:
+  PrimaryChromaticity* r_;
+  PrimaryChromaticity* g_;
+  PrimaryChromaticity* b_;
+  PrimaryChromaticity* white_point_;
+};
+
+class Colour {
+ public:
+  Colour()
+      : matrix(2),
+        bits_per_channel(0),
+        chroma_subsampling(0),
+        chroma_siting_horz(0),
+        chroma_siting_vert(0),
+        range(0),
+        transfer_function(2),
+        primaries(0),
+        max_cll(0),
+        max_fall(0),
+        mastering_metadata_(NULL) {}
+  ~Colour() { delete mastering_metadata_; }
+  uint64 ColourPayloadSize() const;
+  bool Write(IMkvWriter* writer) const;
+
+  // Deep copies |mastering_metadata|.
+  bool SetMasteringMetadata(const MasteringMetadata* mastering_metadata);
+
+  const MasteringMetadata* mastering_metadata() const {
+    return mastering_metadata_;
+  }
+
+  uint64 matrix;
+  uint64 bits_per_channel;
+  uint64 chroma_subsampling;
+  uint64 chroma_siting_horz;
+  uint64 chroma_siting_vert;
+  uint64 range;
+  uint64 transfer_function;
+  uint64 primaries;
+  uint64 max_cll;
+  uint64 max_fall;
+
+ private:
+  MasteringMetadata* mastering_metadata_;
+};
+
+///////////////////////////////////////////////////////////////
 // Track element.
 class Track {
  public:
@@ -471,6 +565,11 @@ class VideoTrack : public Track {
   void set_width(uint64 width) { width_ = width; }
   uint64 width() const { return width_; }
 
+  Colour* colour() { return colour_; }
+
+  // Deep copies |colour|.
+  bool SetColour(const Colour& colour);
+
  private:
   // Returns the size in bytes of the Video element.
   uint64 VideoPayloadSize() const;
@@ -487,6 +586,8 @@ class VideoTrack : public Track {
   uint64 stereo_mode_;
   uint64 alpha_mode_;
   uint64 width_;
+
+  Colour* colour_;
 
   LIBWEBM_DISALLOW_COPY_AND_ASSIGN(VideoTrack);
 };

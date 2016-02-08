@@ -6,21 +6,22 @@
 // in the file PATENTS.  All contributing project authors may
 // be found in the AUTHORS file in the root of the source tree.
 
+#include <cassert>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <memory>
 #include <list>
+#include <memory>
 #include <string>
 
 // libwebm parser includes
-#include "mkvreader.hpp"
 #include "mkvparser.hpp"
+#include "mkvreader.hpp"
 
 // libwebm muxer includes
 #include "mkvmuxer.hpp"
-#include "mkvwriter.hpp"
 #include "mkvmuxerutil.hpp"
+#include "mkvwriter.hpp"
 
 #include "sample_muxer_metadata.h"
 

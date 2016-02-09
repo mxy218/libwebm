@@ -403,13 +403,15 @@ struct PrimaryChromaticity {
 };
 
 struct MasteringMetadata {
+  static const double kUnspecifiedMmValue;
+
   MasteringMetadata()
       : r(NULL),
         g(NULL),
         b(NULL),
         white_point(NULL),
-        luminance_max(0),
-        luminance_min(0) {}
+        luminance_max(kUnspecifiedMmValue),
+        luminance_min(kUnspecifiedMmValue) {}
   ~MasteringMetadata() {
     delete r;
     delete g;
@@ -430,17 +432,21 @@ struct MasteringMetadata {
 };
 
 struct Colour {
+  static const long long kUnspecifiedColourValue;
+
   // Unless otherwise noted all values assigned upon construction are the
   // equivalent of unspecified/default.
   Colour()
-      : matrix(2),
-        bits_per_channel(0),
-        chroma_subsampling(0),
-        chroma_siting_horz(0),
-        chroma_siting_vert(0),
-        range(0),
-        transfer_function(2),
-        primaries(2),
+      : matrix(kUnspecifiedColourValue),
+        bits_per_channel(kUnspecifiedColourValue),
+        chroma_subsampling(kUnspecifiedColourValue),
+        chroma_siting_horz(kUnspecifiedColourValue),
+        chroma_siting_vert(kUnspecifiedColourValue),
+        range(kUnspecifiedColourValue),
+        transfer_function(kUnspecifiedColourValue),
+        primaries(kUnspecifiedColourValue),
+        max_cll(kUnspecifiedColourValue),
+        max_fall(kUnspecifiedColourValue),
         mastering_metadata(NULL) {}
   ~Colour() {
     delete mastering_metadata;

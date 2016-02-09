@@ -14,6 +14,7 @@
 #endif
 
 #include <cassert>
+#include <cfloat>
 #include <climits>
 #include <cmath>
 #include <cstring>
@@ -28,6 +29,8 @@
 #endif
 
 namespace mkvparser {
+const double MasteringMetadata::kUnspecifiedMmValue = DBL_MAX;
+const long long Colour::kUnspecifiedColourValue = LLONG_MAX;
 
 #ifdef MSC_COMPAT
 inline bool isnan(double val) { return !!_isnan(val); }

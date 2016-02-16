@@ -5,7 +5,7 @@
 ##  tree. An additional intellectual property rights grant can be found
 ##  in the file PATENTS.  All contributing project authors may
 ##  be found in the AUTHORS file in the root of the source tree.
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.2)
 project(LIBWEBM)
 include("${CMAKE_CURRENT_SOURCE_DIR}/build/msvc_runtime.cmake")
 
@@ -43,6 +43,11 @@ add_library(webm STATIC
             "${LIBWEBM_SRC_DIR}/mkvwriter.cpp"
             "${LIBWEBM_SRC_DIR}/mkvwriter.hpp"
             "${LIBWEBM_SRC_DIR}/webmids.hpp")
+target_compile_features(webm PRIVATE
+                        cxx_defaulted_functions
+                        cxx_deleted_functions
+                        cxx_override
+                        cxx_nullptr)
 if(WIN32)
   # Use libwebm and libwebm.lib for project and library name on Windows (instead
   # webm and webm.lib).

@@ -5,14 +5,11 @@
 ##  tree. An additional intellectual property rights grant can be found
 ##  in the file PATENTS.  All contributing project authors may
 ##  be found in the AUTHORS file in the root of the source tree.
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.2)
 project(LIBWEBM)
 include("${CMAKE_CURRENT_SOURCE_DIR}/build/msvc_runtime.cmake")
 
 set(LIBWEBM_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-
-# Enable C++11 support.
-set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}" CACHE STRING "" FORCE)
 
 # Turn up the warning levels.
 if(MSVC)
@@ -83,6 +80,14 @@ add_library(webmts
             "${LIBWEBM_SRC_DIR}/webm2pes.h"
             "${LIBWEBM_SRC_DIR}/vpxpes2ts.cc"
             "${LIBWEBM_SRC_DIR}/vpxpes2ts.h")
+# webmts requires C++11:
+target_compile_features(webmts PUBLIC
+                        cxx_defaulted_functions
+                        cxx_deleted_functions
+                        cxx_override
+                        cxx_nullptr
+                        cxx_range_for)
+
 # webm2pes section.
 add_executable(webm2pes
                "${LIBWEBM_SRC_DIR}/webm2pes_main.cc")

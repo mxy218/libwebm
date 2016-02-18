@@ -9,6 +9,7 @@
 #include "mkvmuxer.hpp"
 
 #include <cfloat>
+#define __STDC_LIMIT_MACROS
 #include <climits>
 #include <cstdio>
 #include <cstdlib>

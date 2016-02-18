@@ -27,6 +27,10 @@
 #pragma warning(disable : 4996)
 #endif
 
+#ifndef UINT64_MAX
+#define UINT64_MAX  0xffffffffffffffff
+#endif
+
 namespace mkvmuxer {
 
 const float MasteringMetadata::kValueNotPresent = FLT_MAX;

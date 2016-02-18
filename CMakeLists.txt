@@ -31,6 +31,8 @@ set(GTEST_BUILD_DIR "${CMAKE_BINARY_DIR}/googletest_build")
 
 # Libwebm section.
 add_library(webm STATIC
+            "${LIBWEBM_SRC_DIR}/common/hdr_util.cc"
+            "${LIBWEBM_SRC_DIR}/common/hdr_util.h"
             "${LIBWEBM_SRC_DIR}/mkvmuxer.cpp"
             "${LIBWEBM_SRC_DIR}/mkvmuxer.hpp"
             "${LIBWEBM_SRC_DIR}/mkvmuxertypes.hpp"

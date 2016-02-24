@@ -12,29 +12,28 @@
 
 namespace libwebm {
 
-std::int64_t NanosecondsTo90KhzTicks(std::int64_t nanoseconds) {
+int64_t NanosecondsTo90KhzTicks(int64_t nanoseconds) {
   const double kNanosecondsPerSecond = 1000000000.0;
   const double pts_seconds = nanoseconds / kNanosecondsPerSecond;
   return pts_seconds * 90000;
 }
 
-bool ParseVP9SuperFrameIndex(const std::uint8_t* frame,
-                             std::size_t frame_length,
+bool ParseVP9SuperFrameIndex(const uint8_t* frame, size_t frame_length,
                              Ranges* frame_ranges) {
   if (frame == nullptr || frame_length == 0 || frame_ranges == nullptr)
     return false;
 
   bool parse_ok = false;
-  const std::uint8_t marker = frame[frame_length - 1];
-  const std::uint32_t kHasSuperFrameIndexMask = 0xe0;
-  const std::uint32_t kSuperFrameMarker = 0xc0;
-  const std::uint32_t kLengthFieldSizeMask = 0x3;
+  const uint8_t marker = frame[frame_length - 1];
+  const uint32_t kHasSuperFrameIndexMask = 0xe0;
+  const uint32_t kSuperFrameMarker = 0xc0;
+  const uint32_t kLengthFieldSizeMask = 0x3;
 
   if ((marker & kHasSuperFrameIndexMask) == kSuperFrameMarker) {
-    const std::uint32_t kFrameCountMask = 0x7;
+    const uint32_t kFrameCountMask = 0x7;
     const int num_frames = (marker & kFrameCountMask) + 1;
     const int length_field_size = ((marker >> 3) & kLengthFieldSizeMask) + 1;
-    const std::size_t index_length = 2 + length_field_size * num_frames;
+    const size_t index_length = 2 + length_field_size * num_frames;
 
     if (frame_length < index_length) {
       std::fprintf(stderr, "Webm2Pes: Invalid superframe index size.\n");
@@ -42,16 +41,16 @@ bool ParseVP9SuperFrameIndex(const std::uint8_t* frame,
     }
 
     // Consume the super frame index. Note: it's at the end of the super frame.
-    const std::size_t length = frame_length - index_length;
+    const size_t length = frame_length - index_length;
 
     if (length >= index_length &&
         frame[frame_length - index_length] == marker) {
       // Found a valid superframe index.
-      const std::uint8_t* byte = frame + length + 1;
+      const uint8_t* byte = frame + length + 1;
 
-      std::size_t frame_offset = 0;
+      size_t frame_offset = 0;
       for (int i = 0; i < num_frames; ++i) {
-        std::uint32_t child_frame_length = 0;
+        uint32_t child_frame_length = 0;
 
         for (int j = 0; j < length_field_size; ++j) {
           child_frame_length |= (*byte++) << (j * 8);
@@ -74,7 +73,7 @@ bool ParseVP9SuperFrameIndex(const std::uint8_t* frame,
   return parse_ok;
 }
 
-bool WriteUint8(std::uint8_t val, std::FILE* fileptr) {
+bool WriteUint8(uint8_t val, std::FILE* fileptr) {
   if (fileptr == nullptr)
     return false;
   return (std::fputc(val, fileptr) == val);

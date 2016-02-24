@@ -25,9 +25,9 @@ const double kDuration = 2.345;
 const int kFrameLength = 10;
 const int kHeight = 180;
 const int kInvalidTrackNumber = 100;
-const std::uint64_t kOpusCodecDelay = 6500000;
-const std::size_t kOpusPrivateDataSizeMinimum = 19;
-const std::uint64_t kOpusSeekPreroll = 80000000;
+const uint64_t kOpusCodecDelay = 6500000;
+const size_t kOpusPrivateDataSizeMinimum = 19;
+const uint64_t kOpusSeekPreroll = 80000000;
 const char kMetadataCodecId[] = "D_WEBVTT/METADATA";
 const int kMetadataTrackNumber = 3;
 const int kMetadataTrackType = 0x21;
@@ -55,7 +55,7 @@ bool CompareFiles(const std::string& file1, const std::string& file2);
 std::string GetTempFileName();
 
 // Returns size of file specified by |file_name|, or 0 upon failure.
-std::uint64_t GetFileSize(const std::string& file_name);
+uint64_t GetFileSize(const std::string& file_name);
 
 // Manages life of temporary file specified at time of construction. Deletes
 // file upon destruction.

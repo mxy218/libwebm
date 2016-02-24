@@ -8,6 +8,7 @@
 #ifndef LIBWEBM_COMMON_LIBWEBM_UTILS_H_
 #define LIBWEBM_COMMON_LIBWEBM_UTILS_H_
 
+#include <cstdint>
 #include <cstdio>
 #include <memory>
 #include <vector>
@@ -16,37 +17,36 @@ namespace libwebm {
 
 // fclose functor for wrapping FILE in std::unique_ptr.
 struct FILEDeleter {
-  int operator()(FILE* f) {
+  int operator()(std::FILE* f) {
     if (f != nullptr)
       return fclose(f);
     return 0;
   }
 };
-typedef std::unique_ptr<FILE, FILEDeleter> FilePtr;
+typedef std::unique_ptr<std::FILE, FILEDeleter> FilePtr;
 
 struct Range {
-  Range(std::size_t off, std::size_t len) : offset(off), length(len) {}
+  Range(size_t off, size_t len) : offset(off), length(len) {}
   Range() = delete;
   Range(const Range&) = default;
   Range(Range&&) = default;
   ~Range() = default;
-  const std::size_t offset;
-  const std::size_t length;
+  const size_t offset;
+  const size_t length;
 };
 
 typedef std::vector<Range> Ranges;
 
 // Converts |nanoseconds| to 90000 Hz clock ticks and returns the value.
-std::int64_t NanosecondsTo90KhzTicks(std::int64_t nanoseconds);
+int64_t NanosecondsTo90KhzTicks(int64_t nanoseconds);
 
 // Returns true and stores frame offsets and lengths in |frame_ranges| when
 // |frame| has a valid VP9 super frame index.
-bool ParseVP9SuperFrameIndex(const std::uint8_t* frame,
-                             std::size_t frame_length,
+bool ParseVP9SuperFrameIndex(const uint8_t* frame, size_t frame_length,
                              Ranges* frame_ranges);
 
 // Writes |val| to |fileptr| and returns true upon success.
-bool WriteUint8(std::uint8_t val, std::FILE* fileptr);
+bool WriteUint8(uint8_t val, std::FILE* fileptr);
 
 }  // namespace libwebm
 

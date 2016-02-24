@@ -33,9 +33,9 @@ std::string GetTestFilePath(const std::string& name) {
 }
 
 bool CompareFiles(const std::string& file1, const std::string& file2) {
-  const std::size_t kBlockSize = 4096;
-  std::uint8_t buf1[kBlockSize] = {0};
-  std::uint8_t buf2[kBlockSize] = {0};
+  const size_t kBlockSize = 4096;
+  uint8_t buf1[kBlockSize] = {0};
+  uint8_t buf2[kBlockSize] = {0};
 
   FilePtr f1 = FilePtr(std::fopen(file1.c_str(), "rb"), FILEDeleter());
   FilePtr f2 = FilePtr(std::fopen(file2.c_str(), "rb"), FILEDeleter());
@@ -46,8 +46,8 @@ bool CompareFiles(const std::string& file1, const std::string& file2) {
   }
 
   do {
-    const std::size_t r1 = std::fread(buf1, 1, kBlockSize, f1.get());
-    const std::size_t r2 = std::fread(buf2, 1, kBlockSize, f2.get());
+    const size_t r1 = std::fread(buf1, 1, kBlockSize, f1.get());
+    const size_t r2 = std::fread(buf2, 1, kBlockSize, f2.get());
 
     if (r1 != r2 || std::memcmp(buf1, buf2, r1)) {
       return 0;  // Files are not equal
@@ -64,7 +64,7 @@ std::string GetTempFileName() {
 }
 
 std::uint64_t GetFileSize(const std::string& file_name) {
-  std::uint64_t file_size = 0;
+  uint64_t file_size = 0;
 #ifndef _MSC_VER
   struct stat st;
   st.st_size = 0;

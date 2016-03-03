@@ -53,7 +53,7 @@ uint64_t GetFileSize(const std::string& file_name) {
 TempFileDeleter::TempFileDeleter() { file_name_ = GetTempFileName(); }
 
 TempFileDeleter::~TempFileDeleter() {
-  std::ifstream file(file_name_);
+  std::ifstream file(file_name_.c_str());
   if (file.good()) {
     file.close();
     std::remove(file_name_.c_str());

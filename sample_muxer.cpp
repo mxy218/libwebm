@@ -14,7 +14,7 @@
 #include <string>
 
 // libwebm common includes.
-#include "hdr_util.hpp"
+#include "common/hdr_utils.h"
 
 // libwebm parser includes
 #include "mkvparser.hpp"

@@ -3,7 +3,7 @@ CXXFLAGS  := -W -Wall -g -MMD -MP
 LIBWEBMA  := libwebm.a
 LIBWEBMSO := libwebm.so
 WEBMOBJS  := mkvparser.o mkvreader.o mkvmuxer.o mkvmuxerutil.o mkvwriter.o
-WEBMOBJS  += hdr_util.o
+WEBMOBJS  += common/hdr_utils.o
 OBJSA     := $(WEBMOBJS:.o=_a.o)
 OBJSSO    := $(WEBMOBJS:.o=_so.o)
 OBJECTS1  := sample.o
@@ -39,11 +39,17 @@ libwebm.so: $(OBJSSO)
 
 %.o: %.cpp
 	$(CXX) -c $(CXXFLAGS) $(INCLUDES) $< -o $@
+common/%.o: common/%.cc
+	$(CXX) -c $(CXXFLAGS) $(INCLUDES) $< -o $@
 
 %_a.o: %.cpp
 	$(CXX) -c $(CXXFLAGS) $(INCLUDES) $< -o $@
+common/%_a.o: common/%.cc
+	$(CXX) -c $(CXXFLAGS) $(INCLUDES) $< -o $@
 
 %_so.o: %.cpp
+	$(CXX) -c $(CXXFLAGS) -fPIC $(INCLUDES) $< -o $@
+common/%_so.o: common/%.cc
 	$(CXX) -c $(CXXFLAGS) -fPIC $(INCLUDES) $< -o $@
 
 clean:

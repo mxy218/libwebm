@@ -162,7 +162,9 @@ if (ENABLE_WEBMTS)
               "${LIBWEBM_SRC_DIR}/webm2pes.cc"
               "${LIBWEBM_SRC_DIR}/webm2pes.h"
               "${LIBWEBM_SRC_DIR}/vpxpes2ts.cc"
-              "${LIBWEBM_SRC_DIR}/vpxpes2ts.h")
+              "${LIBWEBM_SRC_DIR}/vpxpes2ts.h"
+              "${LIBWEBM_SRC_DIR}/vpxpes_parser.cc"
+              "${LIBWEBM_SRC_DIR}/vpxpes_parser.h")
 
   # webm2pes section.
   add_executable(webm2pes

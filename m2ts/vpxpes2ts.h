@@ -15,7 +15,7 @@
 #include <vector>
 
 #include "common/libwebm_util.h"
-#include "webm2pes.h"
+#include "libwebm/m2ts/webm2pes.h"
 
 namespace libwebm {
 

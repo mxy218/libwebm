@@ -5,7 +5,7 @@
 // tree. An additional intellectual property rights grant can be found
 // in the file PATENTS.  All contributing project authors may
 // be found in the AUTHORS file in the root of the source tree.
-#include "testing/test_util.h"
+#include "libwebm/testing/test_util.h"
 
 #include <sys/stat.h>
 #ifndef _MSC_VER
@@ -21,8 +21,8 @@
 #include <memory>
 #include <string>
 
-#include "common/file_utils.h"
-#include "common/libwebm_utils.h"
+#include "libwebm/common/file_utils.h"
+#include "libwebm/common/libwebm_utils.h"
 
 namespace libwebm {
 namespace test {

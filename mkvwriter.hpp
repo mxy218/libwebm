@@ -11,8 +11,8 @@
 
 #include <stdio.h>
 
-#include "mkvmuxer.hpp"
-#include "mkvmuxertypes.hpp"
+#include "libwebm/mkvmuxer.hpp"
+#include "libwebm/mkvmuxertypes.hpp"
 
 namespace mkvmuxer {
 

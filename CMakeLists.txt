@@ -129,7 +129,7 @@ if (WIN32)
   set_target_properties(webm PROPERTIES PREFIX lib)
 endif ()
 
-include_directories("${LIBWEBM_SRC_DIR}" "${LIBWEBM_SRC_DIR}/..")
+include_directories("${LIBWEBM_SRC_DIR}/..")
 
 # Sample (mkvparser) section.
 add_executable(sample

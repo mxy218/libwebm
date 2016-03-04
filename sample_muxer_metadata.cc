@@ -9,9 +9,9 @@
 // This sample application demonstrates how to use the matroska parser
 // library, which allows clients to handle a matroska format file.
 
-#include "sample_muxer_metadata.h"
+#include "libwebm/sample_muxer_metadata.h"
 #include <string>
-#include "vttreader.h"
+#include "libwebm/vttreader.h"
 
 SampleMuxerMetadata::SampleMuxerMetadata() : segment_(NULL) {}
 

@@ -13,13 +13,12 @@
 
 #include "gtest/gtest.h"
 
-#include "mkvmuxer.hpp"
-#include "mkvreader.hpp"
-#include "mkvwriter.hpp"
-
-#include "common/file_utils.h"
-#include "common/libwebm_utils.h"
-#include "testing/test_util.h"
+#include "libwebm/common/file_utils.h"
+#include "libwebm/common/libwebm_utils.h"
+#include "libwebm/mkvmuxer.hpp"
+#include "libwebm/mkvreader.hpp"
+#include "libwebm/mkvwriter.hpp"
+#include "libwebm/testing/test_util.h"
 
 using ::mkvmuxer::AudioTrack;
 using ::mkvmuxer::Chapter;

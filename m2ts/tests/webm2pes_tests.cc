@@ -14,9 +14,9 @@
 
 #include "gtest/gtest.h"
 
-#include "common/file_utils.h"
-#include "common/libwebm_utils.h"
-#include "testing/test_util.h"
+#include "libwebm/common/file_utils.h"
+#include "libwebm/common/libwebm_utils.h"
+#include "libwebm/testing/test_util.h"
 
 namespace {
 
@@ -126,7 +126,8 @@ class Webm2PesTests : public ::testing::Test {
 
   std::uint8_t ReadStreamId() {
     EXPECT_LT(read_pos_ + 3, pes_file_data_.size());
-    return pes_file_data_[read_pos_ + 3]; }
+    return pes_file_data_[read_pos_ + 3];
+  }
 
   std::uint16_t ReadPacketLength() {
     EXPECT_LT(read_pos_ + 5, pes_file_data_.size());

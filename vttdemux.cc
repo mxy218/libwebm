@@ -11,9 +11,9 @@
 #include <map>
 #include <memory>
 #include <string>
-#include "./mkvparser.hpp"
-#include "./mkvreader.hpp"
-#include "./webvttparser.h"
+#include "libwebm/mkvparser.hpp"
+#include "libwebm/mkvreader.hpp"
+#include "libwebm/webvttparser.h"
 
 #ifdef _MSC_VER
 // Disable MSVC warnings that suggest making code non-portable.

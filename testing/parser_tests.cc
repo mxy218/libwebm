@@ -12,10 +12,9 @@
 #include <cstring>
 #include <string>
 
-#include "mkvparser.hpp"
-#include "mkvreader.hpp"
-
-#include "testing/test_util.h"
+#include "libwebm/mkvparser.hpp"
+#include "libwebm/mkvreader.hpp"
+#include "libwebm/testing/test_util.h"
 
 using ::mkvparser::AudioTrack;
 using ::mkvparser::Block;

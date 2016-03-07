@@ -6,7 +6,7 @@
 // in the file PATENTS.  All contributing project authors may
 // be found in the AUTHORS file in the root of the source tree.
 
-#include "mkvmuxer.hpp"
+#include "libwebm/mkvmuxer.hpp"
 
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
@@ -20,10 +20,10 @@
 #include <memory>
 #include <new>
 
-#include "mkvmuxerutil.hpp"
-#include "mkvparser.hpp"
-#include "mkvwriter.hpp"
-#include "webmids.hpp"
+#include "libwebm/mkvmuxerutil.hpp"
+#include "libwebm/mkvparser.hpp"
+#include "libwebm/mkvwriter.hpp"
+#include "libwebm/webmids.hpp"
 
 #ifdef _MSC_VER
 // Disable MSVC warnings that suggest making code non-portable.

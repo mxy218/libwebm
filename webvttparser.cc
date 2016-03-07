@@ -6,7 +6,7 @@
 // in the file PATENTS.  All contributing project authors may
 // be found in the AUTHORS file in the root of the source tree.
 
-#include "./webvttparser.h"  // NOLINT
+#include "libwebm/webvttparser.h"
 #include <climits>
 
 namespace libwebvtt {

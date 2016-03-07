@@ -9,8 +9,8 @@
 #ifndef MKVMUXERUTIL_HPP
 #define MKVMUXERUTIL_HPP
 
-#include "mkvmuxer.hpp"
-#include "mkvmuxertypes.hpp"
+#include "libwebm/mkvmuxer.hpp"
+#include "libwebm/mkvmuxertypes.hpp"
 
 namespace mkvmuxer {
 

@@ -199,3 +199,10 @@ if (ENABLE_TESTS)
   endif ()
 endif ()
 
+if (MSVC)
+  # Libwebm does not install anything; let cmake know this and avoid failures
+  # in MSVC when the "ALL_BUILD" target is used. The default "INSTALL" target
+  # attempts to create directories in parts of the filesystem that are writable
+  # only by administrator.
+  install(TARGETS DESTINATION)
+endif ()

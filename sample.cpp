@@ -44,6 +44,8 @@ const wchar_t* utf8towcs(const char* str) {
   return val;
 }
 
+using namespace libwebm;
+
 bool InputHasCues(const mkvparser::Segment* const segment) {
   const mkvparser::Cues* const cues = segment->GetCues();
   if (cues == NULL)

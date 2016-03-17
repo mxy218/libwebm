@@ -9,7 +9,7 @@ WEBMOBJS  += mkvparser/mkvparser.o mkvparser/mkvreader.o
 WEBMOBJS  += common/file_util.o common/hdr_util.o
 OBJSA     := $(WEBMOBJS:.o=_a.o)
 OBJSSO    := $(WEBMOBJS:.o=_so.o)
-VTTOBJS   := vttreader.o webvttparser.o sample_muxer_metadata.o
+VTTOBJS   := webvtt/vttreader.o webvtt/webvttparser.o sample_muxer_metadata.o
 EXEOBJS   := sample.o sample_muxer.o dumpvtt.o vttdemux.o
 DEPS      := $(WEBMOBJS:.o=.d) $(OBJECTS1:.o=.d) $(OBJECTS2:.o=.d)
 DEPS      += $(OBJECTS3:.o=.d) $(OBJECTS4:.o=.d) $(OBJSA:.o=.d) $(OBJSSO:.o=.d)

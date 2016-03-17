@@ -6617,8 +6617,8 @@ long Cluster::ParseBlockGroup(long long payload_size, long long& pos,
   if (pos != payload_stop)
     return E_FILE_FORMAT_INVALID;
 
-  status = CreateBlock(kMkvBlockGroup, payload_start, payload_size,
-                       discard_padding);
+  status =
+      CreateBlock(kMkvBlockGroup, payload_start, payload_size, discard_padding);
   if (status != 0)
     return status;
 

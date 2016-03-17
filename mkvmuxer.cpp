@@ -20,7 +20,8 @@
 #include <new>
 
 #include "mkvmuxerutil.hpp"
-#include "mkvparser.hpp"
+#include "mkvparser/mkvparser.hpp"
+#include "mkvparser/mkvreader.hpp"
 #include "mkvwriter.hpp"
 #include "webmids.hpp"
 

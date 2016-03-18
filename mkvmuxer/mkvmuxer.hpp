@@ -19,8 +19,8 @@
 
 #include <cstddef>
 
+#include "common/webmids.hpp"
 #include "mkvmuxer/mkvmuxertypes.hpp"
-#include "webmids.hpp"
 
 // For a description of the WebM elements see
 // http://www.webmproject.org/code/specs/container/.

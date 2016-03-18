@@ -19,7 +19,7 @@
 
 #include <cstddef>
 
-#include "mkvmuxertypes.hpp"
+#include "mkvmuxer/mkvmuxertypes.hpp"
 #include "webmids.hpp"
 
 // For a description of the WebM elements see

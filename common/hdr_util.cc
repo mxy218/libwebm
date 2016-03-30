@@ -16,7 +16,9 @@ namespace libwebm {
 bool CopyPrimaryChromaticity(const mkvparser::PrimaryChromaticity& parser_pc,
                              PrimaryChromaticityPtr* muxer_pc) {
   muxer_pc->reset(new (std::nothrow)
-                      mkvmuxer::PrimaryChromaticity(parser_pc.x, parser_pc.y));
+                      mkvmuxer::PrimaryChromaticity(
+                          static_cast<float>(parser_pc.x),
+                          static_cast<float>(parser_pc.y)));
   if (!muxer_pc->get())
     return false;
   return true;
@@ -29,9 +31,9 @@ bool MasteringMetadataValuePresent(double value) {
 bool CopyMasteringMetadata(const mkvparser::MasteringMetadata& parser_mm,
                            mkvmuxer::MasteringMetadata* muxer_mm) {
   if (MasteringMetadataValuePresent(parser_mm.luminance_max))
-    muxer_mm->luminance_max = parser_mm.luminance_max;
+    muxer_mm->luminance_max = static_cast<float>(parser_mm.luminance_max);
   if (MasteringMetadataValuePresent(parser_mm.luminance_min))
-    muxer_mm->luminance_min = parser_mm.luminance_min;
+    muxer_mm->luminance_min = static_cast<float>(parser_mm.luminance_min);
 
   PrimaryChromaticityPtr r_ptr(NULL);
   PrimaryChromaticityPtr g_ptr(NULL);

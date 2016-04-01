@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "common/hdr_util.h"
 #include "common/indent.h"
 #include "common/webm_constants.h"
 #include "common/webm_endian.h"
@@ -367,6 +368,17 @@ bool OutputTracks(const mkvparser::Segment& segment, const Options& options,
     if (private_data)
       fprintf(o, "%sPrivateData(size): %d\n", indent->indent_str().c_str(),
               static_cast<int>(private_size));
+
+    if (private_data && track_type == mkvparser::Track::kVideo) {
+      std::string codec_id = track->GetCodecId();
+      const std::string v_vp9 = "V_VP9";
+      if (codec_id == v_vp9) {
+        int vp9_profile_level =
+            libwebm::ParseVpxCodecPrivate(private_data, private_size);
+        fprintf(o, "%sVP9 profile level: %d\n", indent->indent_str().c_str(),
+                vp9_profile_level);
+      }
+    }
 
     const uint64_t default_duration = track->GetDefaultDuration();
     if (default_duration > 0)

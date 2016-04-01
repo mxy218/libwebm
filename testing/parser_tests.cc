@@ -14,6 +14,7 @@
 #include <iomanip>
 #include <string>
 
+#include "common/hdr_util.h"
 #include "mkvparser/mkvparser.h"
 #include "mkvparser/mkvreader.h"
 #include "testing/test_util.h"
@@ -660,6 +661,19 @@ TEST_F(ParserTest, StereoModeParsedCorrectly) {
   EXPECT_EQ(144, video_track->GetHeight());
   EXPECT_EQ(128, video_track->GetDisplayWidth());
   EXPECT_EQ(144, video_track->GetDisplayHeight());
+}
+
+TEST_F(ParserTest, Vp9CodecProfileTest) {
+  const int kCodecPrivateLength = 3;
+  // Test an invalid codec private; this should return 0.
+  const uint8_t bad_codec_private[kCodecPrivateLength] = {0, 0, 0};
+  EXPECT_EQ(0, libwebm::ParseVpxCodecPrivate(&bad_codec_private[0],
+                                             kCodecPrivateLength));
+  // Test a valid codec private; this should return 11.
+  // ID: 1, Length: 1, Profile: 11
+  const uint8_t good_codec_private[kCodecPrivateLength] = {1, 1, 11};
+  EXPECT_EQ(11, libwebm::ParseVpxCodecPrivate(&good_codec_private[0],
+                                              kCodecPrivateLength));
 }
 
 }  // namespace test

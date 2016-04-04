@@ -135,8 +135,10 @@ struct BCMVHeader {
 
   static std::size_t size() { return 10; }
 
-  // Write the BCMV Header into |buffer|.
+  // Write the BCMV Header into |buffer|. Caller responsible for ensuring
+  // destination buffer is of size >= BCMVHeader::size().
   bool Write(PacketDataBuffer* buffer) const;
+  bool Write(uint8_t* buffer);
 };
 
 struct PesHeader {

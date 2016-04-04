@@ -209,6 +209,17 @@ bool VpxPesParser::ParseBcmvHeader(BcmvHeader* header) {
   return true;
 }
 
+bool VpxPesParser::FindStartCode(const uint8_t* data, uint32_t length,
+                                 uint32_t* offset) {
+  if (!data || length < 3)
+    return false;
+  uint32_t pos = 0;
+
+  for (int i = 0; i < static_cast<int>(length); ++i) {
+
+  }
+}
+
 int VpxPesParser::BytesAvailable() const {
   return static_cast<int>(pes_file_data_.size() - read_pos_);
 }

@@ -14,48 +14,6 @@
 
 #include "common/libwebm_util.h"
 
-namespace {
-
-bool GetPacketPayloadRanges(const libwebm::PesHeader& header,
-                            const libwebm::Ranges& frame_ranges,
-                            libwebm::Ranges* packet_payload_ranges) {
-  // TODO(tomfinegan): The length field in PES is actually number of bytes that
-  // follow the length field, and does not include the 6 byte fixed portion of
-  // the header (4 byte start code + 2 bytes for the length). We can fit in 6
-  // more bytes if we really want to, and avoid packetization when size is very
-  // close to UINT16_MAX.
-  if (packet_payload_ranges == nullptr) {
-    std::fprintf(stderr, "Webm2Pes: nullptr getting payload ranges.\n");
-    return false;
-  }
-
-  const std::size_t kMaxPacketPayloadSize = UINT16_MAX - header.size();
-
-  for (const libwebm::Range& frame_range : frame_ranges) {
-    if (frame_range.length + header.size() > kMaxPacketPayloadSize) {
-      // make packet ranges until range.length is exhausted
-      const std::size_t kBytesToPacketize = frame_range.length;
-      std::size_t packet_payload_length = 0;
-      for (std::size_t pos = 0; pos < kBytesToPacketize;
-           pos += packet_payload_length) {
-        packet_payload_length =
-            (frame_range.length - pos < kMaxPacketPayloadSize) ?
-                frame_range.length - pos :
-                kMaxPacketPayloadSize;
-        packet_payload_ranges->push_back(
-            libwebm::Range(frame_range.offset + pos, packet_payload_length));
-      }
-    } else {
-      // copy range into |packet_ranges|
-      packet_payload_ranges->push_back(
-          libwebm::Range(frame_range.offset, frame_range.length));
-    }
-  }
-  return true;
-}
-
-}  // namespace
-
 namespace libwebm {
 
 //
@@ -197,6 +155,10 @@ bool BCMVHeader::Write(PacketDataBuffer* buffer) const {
     buffer->push_back(bcmv_buffer[i]);
 
   return true;
+}
+
+bool BCMVHeader::Write(uint8_t* buffer) {
+
 }
 
 //
@@ -445,14 +407,6 @@ bool Webm2Pes::WritePesPacket(const mkvparser::Block::Frame& vpx_frame,
     frame_ranges.push_back(Range(0, vpx_frame.len));
   }
 
-  PesHeader header;
-  Ranges packet_payload_ranges;
-  if (GetPacketPayloadRanges(header, frame_ranges, &packet_payload_ranges) !=
-      true) {
-    std::fprintf(stderr, "Webm2Pes: Error preparing packet payload ranges!\n");
-    return false;
-  }
-
   ///
   /// TODO: DEBUG/REMOVE
   ///
@@ -462,23 +416,17 @@ bool Webm2Pes::WritePesPacket(const mkvparser::Block::Frame& vpx_frame,
            static_cast<unsigned int>(frame_range.offset),
            static_cast<unsigned int>(frame_range.length));
   }
-  for (const Range& payload_range : packet_payload_ranges) {
-    printf("---payload range: off:%u len:%u\n",
-           static_cast<unsigned int>(payload_range.offset),
-           static_cast<unsigned int>(payload_range.length));
-  }
 
   const std::int64_t khz90_pts =
       NanosecondsTo90KhzTicks(static_cast<std::int64_t>(nanosecond_pts));
+  PesHeader header;
   header.optional_header.SetPtsBits(khz90_pts);
 
   packet_data_.clear();
 
   bool write_pts = true;
-  for (const Range& packet_payload_range : packet_payload_ranges) {
-    header.packet_length =
-        (header.optional_header.size_in_bytes() + packet_payload_range.length) &
-        0xffff;
+  for (const Range& packet_payload_range : frame_ranges) {
+    header.packet_length = 0;
     if (header.Write(write_pts, &packet_data_) != true) {
       std::fprintf(stderr, "Webm2Pes: packet header write failed.\n");
       return false;
@@ -491,11 +439,43 @@ bool Webm2Pes::WritePesPacket(const mkvparser::Block::Frame& vpx_frame,
       return false;
     }
 
+
     // Insert the payload at the end of |packet_data_|.
     const std::uint8_t* payload_start =
         frame_data.get() + packet_payload_range.offset;
-    packet_data_.insert(packet_data_.end(), payload_start,
-                        payload_start + packet_payload_range.length);
+
+    // Copy payload data from |frame_data| to |packet_data_| while escaping
+    // start codes. A start code is the 3 byte sequence 0x00 0x00 0x01. When
+    // the sequence is encountered, a byte equal to 0x03 is inserted. To avoid
+    // any ambiguity at reassembly time, the same is done for the sequence
+    // 0x00 0x00 0x03. So, the following transformation occurs for when either
+    // of the noted sequences is encountered:
+    //
+    //    0x00 0x00 0x01  =>  0x00 0x00 0x03 0x01
+    //    0x00 0x00 0x03  =>  0x00 0x00 0x03 0x03
+
+    // The final 2 bytes of the BCMV header are 0x00 0x00; the first byte of the
+    // payload might need to be escaped:
+    if (*payload_start == 0x1 || *payload_start == 0x3)
+      packet_data_.push_back(0x3);
+    packet_data_.push_back(*payload_start);
+
+    // Process the remaining data from |frame_data|.
+    int num_zeros = 0;
+    for (int i = 1; i < static_cast<int>(packet_payload_range.length); ++i) {
+      const uint8_t byte = *(payload_start + i);
+
+      if (byte == 0) {
+        ++num_zeros;
+      } else if (num_zeros >= 2 && (byte == 0x1 || byte == 0x3)) {
+        packet_data_.push_back(0x3);
+        num_zeros = 0;
+      } else {
+        num_zeros = 0;
+      }
+
+      packet_data_.push_back(byte);
+    }
   }
 
   return true;

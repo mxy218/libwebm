@@ -20,6 +20,7 @@ namespace libwebm {
 class VpxPesParser {
  public:
   typedef std::vector<std::uint8_t> PesFileData;
+  typedef std::vector<std::uint8_t> PacketData;
 
   enum ParseState {
     kParsePesHeader,
@@ -137,7 +138,14 @@ class VpxPesParser {
   // header.
   bool ParseBcmvHeader(BcmvHeader* header);
 
+  // Returns true when a start code is found and sets |offset| to the position
+  // of the first byte of the start code relative to |data|. Returns false and
+  // does not set |offset| if the end of |data| is reached without finding a
+  // start code. A start code is the byte sequence 0x00 0x00 0x01.
+  bool FindStartCode(const uint8_t* data, uint32_t length, uint32_t* offset);
+
   std::size_t pes_file_size_ = 0;
+  PacketData packet_data_;
   PesFileData pes_file_data_;
   std::size_t read_pos_ = 0;
   ParseState parse_state_ = kParsePesHeader;

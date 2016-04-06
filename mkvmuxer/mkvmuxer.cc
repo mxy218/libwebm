@@ -2112,9 +2112,10 @@ bool Tags::ExpandTagsArray() {
 // Cluster class
 
 Cluster::Cluster(uint64_t timecode, int64_t cues_pos, uint64_t timecode_scale,
-                 bool write_last_frame_with_duration)
+                 bool write_last_frame_with_duration, bool fixed_size_timecode)
     : blocks_added_(0),
       finalized_(false),
+      fixed_size_timecode_(fixed_size_timecode),
       header_written_(false),
       payload_size_(0),
       position_for_cues_(cues_pos),
@@ -2386,9 +2387,12 @@ bool Cluster::WriteClusterHeader() {
   if (SerializeInt(writer_, kEbmlUnknownValue, 8))
     return false;
 
-  if (!WriteEbmlElement(writer_, libwebm::kMkvTimecode, timecode()))
+  if (!WriteEbmlElement(writer_, libwebm::kMkvTimecode, timecode(),
+                        fixed_size_timecode_ ? 8 : 0)) {
     return false;
-  AddPayloadSize(EbmlElementSize(libwebm::kMkvTimecode, timecode()));
+  }
+  AddPayloadSize(EbmlElementSize(libwebm::kMkvTimecode, timecode(),
+                                 fixed_size_timecode_ ? 8 : 0));
   header_written_ = true;
 
   return true;
@@ -3185,6 +3189,10 @@ void Segment::AccurateClusterDuration(bool accurate_cluster_duration) {
   accurate_cluster_duration_ = accurate_cluster_duration;
 }
 
+void Segment::UseFixedSizeClusterTimecode(bool fixed_size_cluster_timecode) {
+  fixed_size_cluster_timecode_ = fixed_size_cluster_timecode;
+}
+
 bool Segment::SetChunking(bool chunking, const char* filename) {
   if (chunk_count_ > 0)
     return false;
@@ -3489,7 +3497,7 @@ bool Segment::MakeNewCluster(uint64_t frame_timestamp_ns) {
   const int64_t offset = MaxOffset();
   cluster = new (std::nothrow)
       Cluster(cluster_timecode, offset, segment_info_.timecode_scale(),
-              accurate_cluster_duration_);
+              accurate_cluster_duration_, fixed_size_cluster_timecode_);
   if (!cluster)
     return false;
 

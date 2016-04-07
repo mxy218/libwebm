@@ -95,7 +95,7 @@ bool VpxPesParser::ParsePesHeader(PesHeader* header) {
   if (!VerifyPacketStartCode())
     return false;
 
-  int pos = read_pos_;
+  std::size_t pos = static_cast<int>(read_pos_);
   for (auto& a : header->start_code) {
     a = pes_file_data_[pos++];
   }
@@ -121,7 +121,7 @@ bool VpxPesParser::ParsePesOptionalHeader(PesOptionalHeader* header) {
   if (!header || parse_state_ != kParsePesOptionalHeader)
     return false;
 
-  int offset = read_pos_;
+  int64_t offset = static_cast<int64_t>(read_pos_);
   if (offset >= pes_file_size_)
     return false;
 
@@ -210,7 +210,7 @@ bool VpxPesParser::ParseBcmvHeader(BcmvHeader* header) {
 }
 
 int VpxPesParser::BytesAvailable() const {
-  return pes_file_data_.size() - read_pos_;
+  return static_cast<int>(pes_file_data_.size() - read_pos_);
 }
 
 bool VpxPesParser::ParseNextPacket(PesHeader* header, VpxFrame* frame) {

@@ -212,9 +212,9 @@ int main(int argc, char* argv[]) {
     } else if (!strcmp("-switch_tracks", argv[i]) && i < argc_check) {
       switch_tracks = strtol(argv[++i], &end, 10) == 0 ? false : true;
     } else if (!strcmp("-audio_track_number", argv[i]) && i < argc_check) {
-      audio_track_number = strtol(argv[++i], &end, 10);
+      audio_track_number = static_cast<int>(strtol(argv[++i], &end, 10));
     } else if (!strcmp("-video_track_number", argv[i]) && i < argc_check) {
-      video_track_number = strtol(argv[++i], &end, 10);
+      video_track_number = static_cast<int>(strtol(argv[++i], &end, 10));
     } else if (!strcmp("-chunking", argv[i]) && i < argc_check) {
       chunking = true;
       chunk_name = argv[++i];
@@ -349,9 +349,9 @@ int main(int argc, char* argv[]) {
   using mkvparser::Track;
 
   while (i != parser_tracks->GetTracksCount()) {
-    int track_num = i++;
+    int track_num = static_cast<int>(i++);
     if (switch_tracks)
-      track_num = i % parser_tracks->GetTracksCount();
+      track_num = static_cast<int>(i % parser_tracks->GetTracksCount());
 
     const Track* const parser_track = parser_tracks->GetTrackByIndex(track_num);
 
@@ -534,7 +534,7 @@ int main(int argc, char* argv[]) {
             data = new unsigned char[frame.len];
             if (!data)
               return EXIT_FAILURE;
-            data_len = frame.len;
+            data_len = static_cast<int>(frame.len);
           }
 
           if (frame.Read(&reader, data))

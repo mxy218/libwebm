@@ -1465,7 +1465,7 @@ long Segment::Load() {
     return E_FILE_FORMAT_INVALID;
 
   for (;;) {
-    const int status = LoadCluster();
+    const int status = static_cast<int>(LoadCluster());
 
     if (status < 0)  // error
       return status;
@@ -7797,7 +7797,7 @@ long Block::Parse(const Cluster* pCluster) {
       if (pos > stop)
         return E_FILE_FORMAT_INVALID;
 
-      const int exp = 7 * len - 1;
+      const int exp = static_cast<int>(7 * len - 1);
       const long long bias = (1LL << exp) - 1LL;
       const long long delta_size = delta_size_ - bias;
 

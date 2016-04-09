@@ -251,7 +251,7 @@ uint64_t EbmlElementSize(uint64_t type, uint64_t value) {
 
 uint64_t EbmlElementSize(uint64_t type, uint64_t value, uint64_t fixed_size) {
   // Size of EBML ID
-  int32_t ebml_size = GetUIntSize(type);
+  uint64_t ebml_size = GetUIntSize(type);
 
   // Datasize
   ebml_size += (fixed_size > 0) ? fixed_size : GetUIntSize(value);

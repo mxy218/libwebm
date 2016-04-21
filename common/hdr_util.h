@@ -28,6 +28,24 @@ namespace libwebm {
 // TODO(tomfinegan): These should be moved to libwebm_utils once c++11 is
 // required by libwebm.
 
+// Features of the VP9 codec that may be set in the CodecPrivate of a VP9 video
+// stream. A value of -1 represents that the value was not set in the
+// CodecPrivate.
+struct Vp9CodecFeatures {
+  Vp9CodecFeatures()
+      : profile(-1), level(-1), bit_depth(-1), chroma_subsampling(-1) {}
+  ~Vp9CodecFeatures() = default;
+  Vp9CodecFeatures(Vp9CodecFeatures&& other) = default;
+  Vp9CodecFeatures(const Vp9CodecFeatures& other) = default;
+  Vp9CodecFeatures& operator=(Vp9CodecFeatures&& other) = default;
+  Vp9CodecFeatures& operator=(const Vp9CodecFeatures& other) = default;
+
+  int profile;
+  int level;
+  int bit_depth;
+  int chroma_subsampling;
+};
+
 typedef std::auto_ptr<mkvmuxer::PrimaryChromaticity> PrimaryChromaticityPtr;
 
 bool CopyPrimaryChromaticity(const mkvparser::PrimaryChromaticity& parser_pc,
@@ -43,12 +61,9 @@ bool ColourValuePresent(long long value);
 bool CopyColour(const mkvparser::Colour& parser_colour,
                 mkvmuxer::Colour* muxer_colour);
 
-// Returns true if |profile| and |level| are set to valid values. Returns VP9
-// profile in |profile| or -1 if there was no profile set in CodecPrivate data.
-// Returns VP9 level in |level| or -1 if there was no level set in CodecPrivate
-// data.
+// Returns true if |features| is set to valid values.
 bool ParseVpxCodecPrivate(const uint8_t* private_data, int32_t length,
-                          int* profile, int* level);
+                          Vp9CodecFeatures* features);
 
 }  // namespace libwebm
 

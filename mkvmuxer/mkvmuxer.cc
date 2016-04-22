@@ -16,6 +16,7 @@
 #include <ctime>
 #include <memory>
 #include <new>
+#include <string>
 #include <vector>
 
 #include "common/webmids.h"
@@ -29,6 +30,10 @@ const float MasteringMetadata::kValueNotPresent = FLT_MAX;
 const uint64_t Colour::kValueNotPresent = UINT64_MAX;
 
 namespace {
+
+const char kDocTypeWebm[] = "webm";
+const char kDocTypeMatroska[] = "matroska";
+
 // Deallocate the string designated by |dst|, and then copy the |src|
 // string to |dst|.  The caller owns both the |src| string and the
 // |dst| copy (hence the caller is responsible for eventually
@@ -80,7 +85,8 @@ IMkvWriter::IMkvWriter() {}
 
 IMkvWriter::~IMkvWriter() {}
 
-bool WriteEbmlHeader(IMkvWriter* writer, uint64_t doc_type_version) {
+bool WriteEbmlHeader(IMkvWriter* writer, uint64_t doc_type_version,
+                     const char* doc_type) {
   // Level 0
   uint64_t size =
       EbmlElementSize(libwebm::kMkvEBMLVersion, static_cast<uint64>(1));
@@ -88,7 +94,7 @@ bool WriteEbmlHeader(IMkvWriter* writer, uint64_t doc_type_version) {
   size += EbmlElementSize(libwebm::kMkvEBMLMaxIDLength, static_cast<uint64>(4));
   size +=
       EbmlElementSize(libwebm::kMkvEBMLMaxSizeLength, static_cast<uint64>(8));
-  size += EbmlElementSize(libwebm::kMkvDocType, "webm");
+  size += EbmlElementSize(libwebm::kMkvDocType, doc_type);
   size += EbmlElementSize(libwebm::kMkvDocTypeVersion,
                           static_cast<uint64>(doc_type_version));
   size +=
@@ -112,7 +118,7 @@ bool WriteEbmlHeader(IMkvWriter* writer, uint64_t doc_type_version) {
                         static_cast<uint64>(8))) {
     return false;
   }
-  if (!WriteEbmlElement(writer, libwebm::kMkvDocType, "webm"))
+  if (!WriteEbmlElement(writer, libwebm::kMkvDocType, doc_type))
     return false;
   if (!WriteEbmlElement(writer, libwebm::kMkvDocTypeVersion,
                         static_cast<uint64>(doc_type_version))) {
@@ -124,6 +130,10 @@ bool WriteEbmlHeader(IMkvWriter* writer, uint64_t doc_type_version) {
   }
 
   return true;
+}
+
+bool WriteEbmlHeader(IMkvWriter* writer, uint64_t doc_type_version) {
+  return WriteEbmlHeader(writer, doc_type_version, kDocTypeWebm);
 }
 
 bool WriteEbmlHeader(IMkvWriter* writer) {
@@ -3038,7 +3048,9 @@ bool Segment::Finalize() {
         if (writer_header_->Position(0))
           return false;
 
-        if (!WriteEbmlHeader(writer_header_, doc_type_version_))
+        const char* doc_type =
+            DocTypeIsWebm() ? kDocTypeWebm : kDocTypeMatroska;
+        if (!WriteEbmlHeader(writer_header_, doc_type_version_, doc_type))
           return false;
         if (writer_header_->Position() != ebml_header_size_)
           return false;
@@ -3390,7 +3402,8 @@ bool Segment::WriteSegmentHeader() {
   UpdateDocTypeVersion();
 
   // TODO(fgalligan): Support more than one segment.
-  if (!WriteEbmlHeader(writer_header_, doc_type_version_))
+  const char* doc_type = DocTypeIsWebm() ? kDocTypeWebm : kDocTypeMatroska;
+  if (!WriteEbmlHeader(writer_header_, doc_type_version_, doc_type))
     return false;
   doc_type_version_written_ = doc_type_version_;
   ebml_header_size_ = static_cast<int32_t>(writer_header_->Position());
@@ -3858,6 +3871,34 @@ bool Segment::WriteFramesLessThan(uint64_t timestamp) {
 
       frames_size_ = new_frames_size;
     }
+  }
+
+  return true;
+}
+
+bool Segment::DocTypeIsWebm() {
+  // Walk Tracks to make sure codec ID is one of the following.
+  const int kNumCodecIds = 6;
+  const char* kWebmCodecIds[kNumCodecIds] = {
+      Tracks::kOpusCodecId, Tracks::kVorbisCodecId, Tracks::kVp8CodecId,
+      Tracks::kVp9CodecId,  Tracks::kVp10CodecId,   "D_WEBVTT/METADATA",
+  };
+
+  const int num_tracks = tracks_.track_entries_size();
+  for (int track_index = 0; track_index < num_tracks; ++track_index) {
+    const Track* const track = tracks_.GetTrackByIndex(track_index);
+    const std::string codec_id = track->codec_id();
+
+    bool id_ok = false;
+    for (int id_index = 0; id_index < kNumCodecIds; ++id_index) {
+      if (codec_id == kWebmCodecIds[id_index]) {
+        id_ok = true;
+        break;
+      }
+    }
+
+    if (!id_ok)
+      return false;
   }
 
   return true;

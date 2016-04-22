@@ -1553,6 +1553,9 @@ class Segment {
   void MoveCuesBeforeClustersHelper(uint64_t diff, int index,
                                     uint64_t* cue_size);
 
+  // Returns true when codec IDs are valid for WebM.
+  bool DocTypeIsWebm();
+
   // Seeds the random number generator used to make UIDs.
   unsigned int seed_;
 

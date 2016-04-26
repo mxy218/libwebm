@@ -107,6 +107,10 @@ target_link_libraries(vttdemux LINK_PUBLIC webm)
 add_executable(webm_info
                "${LIBWEBM_SRC_DIR}/common/indent.cc"
                "${LIBWEBM_SRC_DIR}/common/indent.h"
+               "${LIBWEBM_SRC_DIR}/common/vp9_header_parser.cc"
+               "${LIBWEBM_SRC_DIR}/common/vp9_header_parser.h"
+               "${LIBWEBM_SRC_DIR}/common/vp9_level_stats.cc"
+               "${LIBWEBM_SRC_DIR}/common/vp9_level_stats.h"
                "${LIBWEBM_SRC_DIR}/common/webm_constants.h"
                "${LIBWEBM_SRC_DIR}/common/webm_endian.cc"
                "${LIBWEBM_SRC_DIR}/common/webm_endian.h"

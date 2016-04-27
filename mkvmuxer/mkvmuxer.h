@@ -670,6 +670,10 @@ class Tracks {
   static const char kVp8CodecId[];
   static const char kVp9CodecId[];
   static const char kVp10CodecId[];
+  static const char kWebVttCaptionsId[];
+  static const char kWebVttDescriptionsId[];
+  static const char kWebVttMetadataId[];
+  static const char kWebVttSubtitlesId[];
 
   Tracks();
   ~Tracks();
@@ -1552,6 +1556,9 @@ class Segment {
   // cue_size - sum of size of all the CuePoint elements.
   void MoveCuesBeforeClustersHelper(uint64_t diff, int index,
                                     uint64_t* cue_size);
+
+  // Returns true when codec IDs are valid for WebM.
+  bool DocTypeIsWebm();
 
   // Seeds the random number generator used to make UIDs.
   unsigned int seed_;

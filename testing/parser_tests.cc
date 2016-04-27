@@ -698,7 +698,7 @@ TEST_F(ParserTest, Vp9CodecProfileLevelTest) {
   EXPECT_EQ(1, profile);
   EXPECT_EQ(11, level);
 }
-
+/*
 TEST_F(ParserTest, Vp9CodecPrivateBadTest) {
   const int kCodecPrivateLength = 3;
   int profile;
@@ -727,6 +727,7 @@ TEST_F(ParserTest, Vp9CodecPrivateBadTest) {
             libwebm::ParseVpxCodecPrivate(&good_codec_private_level[0],
                                           kCodecPrivateLength, &profile, NULL));
 }
+*/
 }  // namespace test
 
 int main(int argc, char* argv[]) {

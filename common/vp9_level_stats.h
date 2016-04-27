@@ -153,7 +153,6 @@ class Vp9LevelStats {
   int64_t current_luma_size_;
   int64_t max_luma_size_;
   int64_t max_luma_end_ns_;
-  size_t max_frames_in_one_second_;
 
   bool first_altref;
   int frames_since_last_altref;

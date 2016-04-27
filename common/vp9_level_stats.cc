@@ -64,12 +64,6 @@ void Vp9LevelStats::AddFrame(const Vp9HeaderParser& parser, int64_t time_ns) {
     max_luma_end_ns_ = luma_window_.back().first;
   }
 
-  // Max luma sample rate does not take frame resizing into account. So
-  // I'm doing max number of frames in one second times max width times max
-  // height to generate Max luma sample rate.
-  if (luma_window_.size() > max_frames_in_one_second_)
-    max_frames_in_one_second_ = luma_window_.size();
-
   // Record CPB stats.
   // Remove all frames that are less than window size.
   while (cpb_window_.size() > 3) {
@@ -211,7 +205,7 @@ Vp9Level Vp9LevelStats::GetLevel() const {
 }
 
 int64_t Vp9LevelStats::GetMaxLumaSampleRate() const {
-  return max_luma_picture_size_ * max_frames_in_one_second_;
+  return max_luma_size_;
 }
 
 int64_t Vp9LevelStats::GetMaxLumaPictureSize() const {

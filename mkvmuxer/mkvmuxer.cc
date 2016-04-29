@@ -2230,6 +2230,7 @@ Cluster::Cluster(uint64_t timecode, int64_t cues_pos, uint64_t timecode_scale,
       writer_(NULL) {}
 
 Cluster::~Cluster() {
+  return;
   // Delete any stored frames that are left behind. This will happen if the
   // Cluster was not Finalized for whatever reason.
   while (!stored_frames_.empty()) {

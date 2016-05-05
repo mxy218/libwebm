@@ -77,8 +77,12 @@ int32 MkvWriter::Position(int64 position) {
 #ifdef _MSC_VER
   return _fseeki64(file_, position, SEEK_SET);
 #else
+#ifdef __LP64__
   return fseek(file_, position, SEEK_SET);
-#endif
+#else
+  return fseek(file_, static_cast<int32>(position), SEEK_SET);
+#endif  // __LP64__
+#endif  // _MSC_VER
 }
 
 bool MkvWriter::Seekable() const { return true; }

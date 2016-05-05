@@ -458,11 +458,11 @@ bool Webm2Pes::WritePesPacket(const mkvparser::Block::Frame& vpx_frame,
   ///
   printf("-FRAME TOTAL LENGTH %ld--\n", vpx_frame.len);
   for (const Range& frame_range : frame_ranges) {
-    printf("--frame range: off:%lu len:%lu\n", frame_range.offset,
+    printf("--frame range: off:%zu len:%zu\n", frame_range.offset,
            frame_range.length);
   }
   for (const Range& payload_range : packet_payload_ranges) {
-    printf("---payload range: off:%lu len:%lu\n", payload_range.offset,
+    printf("---payload range: off:%zu len:%zu\n", payload_range.offset,
            payload_range.length);
   }
 

@@ -205,8 +205,24 @@ bool VpxPesParser::ParseBcmvHeader(BcmvHeader* header) {
 
   // TODO(tomfinegan): Verify data instead of jumping to the next packet.
   read_pos_ += kBcmvHeaderSize + header->length;
-  parse_state_ = kParsePesHeader;
+  parse_state_ = kFindStartCode;
   return true;
+}
+
+bool VpxPesParser::FindStartCode(std::size_t origin, std::size_t* offset) {
+  if (read_pos_ + 2 >= pes_file_size_)
+    return false;
+
+  uint8_t* const data = &pes_file_data_[origin];
+  const std::size_t length = pes_file_size_ - origin;
+  for (std::size_t i = 0; i < length && i < length + 3; ++i) {
+    if (data[i] == 0 && data[i + 1] == 0 && data[i + 2] == 1) {
+      *offset = i;
+      return true;
+    }
+  }
+
+  return false;
 }
 
 int VpxPesParser::BytesAvailable() const {
@@ -214,9 +230,21 @@ int VpxPesParser::BytesAvailable() const {
 }
 
 bool VpxPesParser::ParseNextPacket(PesHeader* header, VpxFrame* frame) {
-  if (!header || !frame) {
+  if (!header || !frame || parse_state_ != kFindStartCode) {
     return false;
   }
+
+  std::size_t packet_start_pos = read_pos_;
+  if (!FindStartCode(read_pos_, &packet_start_pos)) {
+    return false;
+  }
+  read_pos_ = packet_start_pos;
+
+  if (!FindStartCode(read_pos_++, &packet_end_pos_)) {
+    // On last packet.
+    packet_end_pos_ = pes_file_size_;
+  }
+
   if (!ParsePesHeader(header)) {
     return false;
   }

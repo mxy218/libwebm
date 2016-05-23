@@ -79,4 +79,23 @@ bool WriteUint8(std::uint8_t val, std::FILE* fileptr) {
   return (std::fputc(val, fileptr) == val);
 }
 
+bool FindPesStartCode(const uint8_t* data, uint32_t length, uint32_t* offset) {
+  if (!data || length < 3 || !offset)
+    return false;
+
+  int num_zeros = 0;
+  bool found = false;
+  for (uint32_t i = 0; i < length && found == false; ++i) {
+    if (data[i] == 0)
+      ++num_zeros;
+    else if (num_zeros >= 2 && data[i] == 1) {
+      *offset = i - 2;
+      found = true;
+    } else
+      num_zeros = 0;
+  }
+
+  return found;
+}
+
 }  // namespace libwebm

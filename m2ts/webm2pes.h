@@ -172,11 +172,18 @@ class PacketReceiverInterface {
 class Webm2Pes {
  public:
   enum VideoCodec { VP8, VP9 };
+  enum PacketizeMode { kBoundless, k16bitMax };
 
-  Webm2Pes(const std::string& input_file, const std::string& output_file)
-      : input_file_name_(input_file), output_file_name_(output_file) {}
-  Webm2Pes(const std::string& input_file, PacketReceiverInterface* packet_sink)
-      : input_file_name_(input_file), packet_sink_(packet_sink) {}
+  Webm2Pes(const std::string& input_file, const std::string& output_file,
+           PacketizeMode mode = kBoundless)
+      : input_file_name_(input_file),
+        output_file_name_(output_file),
+        packetize_mode_(mode) {}
+  Webm2Pes(const std::string& input_file, PacketReceiverInterface* packet_sink,
+           PacketizeMode mode = kBoundless)
+      : input_file_name_(input_file),
+        packet_sink_(packet_sink),
+        packetize_mode_(mode) {}
 
   Webm2Pes() = delete;
   Webm2Pes(const Webm2Pes&) = delete;
@@ -219,6 +226,8 @@ class Webm2Pes {
   PacketReceiverInterface* packet_sink_ = nullptr;
 
   PacketDataBuffer packet_data_;
+
+  PacketizeMode packetize_mode_;
 };
 
 // Copies |raw_input_length| bytes from |raw_input| to |packet_buffer| while

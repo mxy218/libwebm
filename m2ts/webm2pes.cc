@@ -341,9 +341,6 @@ bool Webm2Pes::InitWebmParser() {
     return false;
   }
 
-  // Store timecode scale.
-  timecode_scale_ = webm_parser_->GetInfo()->GetTimeCodeScale();
-
   // Make sure there's a video track.
   const mkvparser::Tracks* tracks = webm_parser_->GetTracks();
   if (tracks == nullptr) {
@@ -351,6 +348,9 @@ bool Webm2Pes::InitWebmParser() {
                  input_file_name_.c_str());
     return false;
   }
+
+  timecode_scale_ = webm_parser_->GetInfo()->GetTimeCodeScale();
+
   for (int track_index = 0;
        track_index < static_cast<int>(tracks->GetTracksCount());
        ++track_index) {

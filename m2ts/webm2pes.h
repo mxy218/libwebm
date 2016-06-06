@@ -18,6 +18,28 @@
 #include "mkvparser/mkvparser.h"
 #include "mkvparser/mkvreader.h"
 
+// Webm2pes
+//
+// Webm2pes consumes a WebM file containing a VP8 or VP9 video stream and
+// outputs a PES stream suitable for inclusion in MPEG2 Transport Stream.
+//
+// In the simplest case the PES stream output by Webm2pes looks like this:
+// | PES Header w/PTS | BCMV Header | Payload (VPx frame) |
+//
+// More typically the output will look like the following due the the PES
+// payload size limitations caused by the format of the PES header.
+// The PES header contains only 2 bytes of storage for expressing payload size.
+// VPx PES streams containing fragmented packets look like this:
+//
+// | PH PTS | BCMV | Payload fragment 1 | PH | Payload fragment 2 | ...
+//
+//   PH = PES Header
+//   PH PTS = PES Header with PTS
+//   BCMV = BCMV Header
+//
+// Note that start codes are properly escaped by Webm2pes, and start code
+// emulation prevention bytes must be stripped from
+
 namespace libwebm {
 
 // Stores a value and its size in bits for writing into a PES Optional Header.
@@ -183,6 +205,10 @@ class Webm2Pes {
   Webm2Pes(Webm2Pes&&) = delete;
   ~Webm2Pes() = default;
 
+  // Frames are split over multiple PES packets when |pes_size_limit_| is true.
+  bool limit_payload_size() const { return limit_payload_size_; }
+  void set_limit_payload_size(bool enable) { limit_payload_size_ = enable; }
+
   // Converts the VPx video stream to a PES file and returns true. Returns false
   // to report failure.
   bool ConvertToFile();
@@ -219,6 +245,8 @@ class Webm2Pes {
   PacketReceiverInterface* packet_sink_ = nullptr;
 
   PacketDataBuffer packet_data_;
+
+  bool limit_payload_size_ = true;
 };
 
 // Copies |raw_input_length| bytes from |raw_input| to |packet_buffer| while

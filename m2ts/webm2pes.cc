@@ -16,6 +16,39 @@
 
 namespace libwebm {
 
+bool GetPacketPayloadRanges(const libwebm::PesHeader& header,
+                            const Ranges& frame_ranges,
+                            Ranges* packet_payload_ranges) {
+  if (packet_payload_ranges == nullptr) {
+    std::fprintf(stderr, "Webm2Pes: nullptr getting payload ranges.\n");
+    return false;
+  }
+
+  const std::size_t kMaxPacketPayloadSize = UINT16_MAX - header.size();
+
+  for (const libwebm::Range& frame_range : frame_ranges) {
+    if (frame_range.length + header.size() > kMaxPacketPayloadSize) {
+      // make packet ranges until range.length is exhausted
+      const std::size_t kBytesToPacketize = frame_range.length;
+      std::size_t packet_payload_length = 0;
+      for (std::size_t pos = 0; pos < kBytesToPacketize;
+           pos += packet_payload_length) {
+        packet_payload_length =
+            (frame_range.length - pos < kMaxPacketPayloadSize) ?
+                frame_range.length - pos :
+                kMaxPacketPayloadSize;
+        packet_payload_ranges->push_back(
+            libwebm::Range(frame_range.offset + pos, packet_payload_length));
+      }
+    } else {
+      // copy range into |packet_ranges|
+      packet_payload_ranges->push_back(
+          libwebm::Range(frame_range.offset, frame_range.length));
+    }
+  }
+  return true;
+}
+
 //
 // PesOptionalHeader methods.
 //
@@ -341,9 +374,6 @@ bool Webm2Pes::InitWebmParser() {
     return false;
   }
 
-  // Store timecode scale.
-  timecode_scale_ = webm_parser_->GetInfo()->GetTimeCodeScale();
-
   // Make sure there's a video track.
   const mkvparser::Tracks* tracks = webm_parser_->GetTracks();
   if (tracks == nullptr) {
@@ -351,6 +381,9 @@ bool Webm2Pes::InitWebmParser() {
                  input_file_name_.c_str());
     return false;
   }
+
+  timecode_scale_ = webm_parser_->GetInfo()->GetTimeCodeScale();
+
   for (int track_index = 0;
        track_index < static_cast<int>(tracks->GetTracksCount());
        ++track_index) {
@@ -401,6 +434,10 @@ bool Webm2Pes::WritePesPacket(const mkvparser::Block::Frame& vpx_frame,
     frame_ranges.push_back(Range(0, vpx_frame.len));
   }
 
+  if (limit_payload_size_) {
+    Ranges packet_ranges;
+  }
+
   ///
   /// TODO: DEBUG/REMOVE
   ///
@@ -420,6 +457,23 @@ bool Webm2Pes::WritePesPacket(const mkvparser::Block::Frame& vpx_frame,
 
   bool write_pts = true;
   for (const Range& packet_payload_range : frame_ranges) {
+    // check limit_payload_size_
+    // when limited:
+    // Make 1 entry Ranges with each packet_payload_range, then:
+    //  new_ranges = GetPacketPayloadRanges(packet_payload_range)
+    //
+    //  for (int i; i < num new ranges; ++i) {
+    //    if (i == 0) {
+    //      write_pts = true
+    //      write_bcmv = true
+    //    }
+    //    header.packet_length = payload_length + header.length
+    //    if (write_bcmv) header.packet_length += BCMVHeader::size()
+    //    header.Write(write_pts)
+    //    if (write_bcmv) write bcmv
+    //    write payload
+    //  }
+    
     header.packet_length = 0;
     if (header.Write(write_pts, &packet_data_) != true) {
       std::fprintf(stderr, "Webm2Pes: packet header write failed.\n");

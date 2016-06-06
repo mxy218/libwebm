@@ -9,12 +9,46 @@
 
 #include <cstdio>
 #include <cstring>
+#include <list>
 #include <new>
 #include <vector>
 
 #include "common/libwebm_util.h"
 
 namespace libwebm {
+
+bool GetPacketPayloadRanges(const libwebm::PesHeader& header,
+                            const Ranges& frame_ranges,
+                            Ranges* packet_payload_ranges) {
+  if (packet_payload_ranges == nullptr) {
+    std::fprintf(stderr, "Webm2Pes: nullptr getting payload ranges.\n");
+    return false;
+  }
+
+  const std::size_t kMaxPacketPayloadSize = UINT16_MAX - header.size();
+
+  for (const libwebm::Range& frame_range : frame_ranges) {
+    if (frame_range.length + header.size() > kMaxPacketPayloadSize) {
+      // make packet ranges until range.length is exhausted
+      const std::size_t kBytesToPacketize = frame_range.length;
+      std::size_t packet_payload_length = 0;
+      for (std::size_t pos = 0; pos < kBytesToPacketize;
+           pos += packet_payload_length) {
+        packet_payload_length =
+            (frame_range.length - pos < kMaxPacketPayloadSize) ?
+                frame_range.length - pos :
+                kMaxPacketPayloadSize;
+        packet_payload_ranges->push_back(
+            libwebm::Range(frame_range.offset + pos, packet_payload_length));
+      }
+    } else {
+      // copy range into |packet_ranges|
+      packet_payload_ranges->push_back(
+          libwebm::Range(frame_range.offset, frame_range.length));
+    }
+  }
+  return true;
+}
 
 //
 // PesOptionalHeader methods.
@@ -172,10 +206,17 @@ bool PesHeader::Write(bool write_pts, PacketDataBuffer* buffer) const {
   for (int i = 0; i < kStartCodeLength; ++i)
     buffer->push_back(start_code[i]);
 
-  // Write |packet_length| as big endian.
-  std::uint8_t byte = (packet_length >> 8) & 0xff;
+  // The length field here reports number of bytes following the field. The
+  // length of the optional header must be added to the payload length set by
+  // the user.
+  const std::size_t header_length = packet_length + optional_header.size_in_bytes();
+  if (header_length > UINT16_MAX)
+    return false;
+
+  // Write |header_length| as big endian.
+  std::uint8_t byte = (header_length >> 8) & 0xff;
   buffer->push_back(byte);
-  byte = packet_length & 0xff;
+  byte = header_length & 0xff;
   buffer->push_back(byte);
 
   // Write the (not really) optional header.
@@ -341,9 +382,6 @@ bool Webm2Pes::InitWebmParser() {
     return false;
   }
 
-  // Store timecode scale.
-  timecode_scale_ = webm_parser_->GetInfo()->GetTimeCodeScale();
-
   // Make sure there's a video track.
   const mkvparser::Tracks* tracks = webm_parser_->GetTracks();
   if (tracks == nullptr) {
@@ -351,6 +389,9 @@ bool Webm2Pes::InitWebmParser() {
                  input_file_name_.c_str());
     return false;
   }
+
+  timecode_scale_ = webm_parser_->GetInfo()->GetTimeCodeScale();
+
   for (int track_index = 0;
        track_index < static_cast<int>(tracks->GetTracksCount());
        ++track_index) {
@@ -401,6 +442,17 @@ bool Webm2Pes::WritePesPacket(const mkvparser::Block::Frame& vpx_frame,
     frame_ranges.push_back(Range(0, vpx_frame.len));
   }
 
+  //  // Move whole frames into list.
+  //  // overkill? probably.
+  //  std::list<std::vector<uint8_t>> frames;
+  //  for (const Range& range : frame_ranges) {
+  //    std::vector<uint8_t> frame_vec;
+  //    frame_vec.insert(frame_vec.begin(),
+  //                     frame_data.get() + range.offset,
+  //                     frame_data.get() + range.length);
+  //    frames.emplace_back(std::move(frame_vec));
+  //  }
+
   ///
   /// TODO: DEBUG/REMOVE
   ///
@@ -418,14 +470,18 @@ bool Webm2Pes::WritePesPacket(const mkvparser::Block::Frame& vpx_frame,
 
   packet_data_.clear();
 
-  bool write_pts = true;
   for (const Range& packet_payload_range : frame_ranges) {
-    header.packet_length = 0;
-    if (header.Write(write_pts, &packet_data_) != true) {
+    std::size_t extra_bytes = 0;
+    if (packet_payload_range.length > kMaxPayloadSize) {
+      extra_bytes = packet_payload_range.length - kMaxPayloadSize;
+    }
+
+    // First packet of new frame. Always include PTS and BCMV header.
+    header.packet_length = packet_payload_range.length + BCMVHeader::size();
+    if (header.Write(true, &packet_data_) != true) {
       std::fprintf(stderr, "Webm2Pes: packet header write failed.\n");
       return false;
     }
-    write_pts = false;
 
     BCMVHeader bcmv_header(static_cast<uint32_t>(packet_payload_range.length));
     if (bcmv_header.Write(&packet_data_) != true) {
@@ -437,11 +493,22 @@ bool Webm2Pes::WritePesPacket(const mkvparser::Block::Frame& vpx_frame,
     const std::uint8_t* payload_start =
         frame_data.get() + packet_payload_range.offset;
 
-    if (CopyAndEscapeStartCodes(payload_start,
-                                static_cast<int>(packet_payload_range.length),
-                                &packet_data_) == false) {
+    const int bytes_to_copy =
+        static_cast<int>(packet_payload_range.length - extra_bytes);
+    if (CopyAndEscapeStartCodes(payload_start, bytes_to_copy, &packet_data_) ==
+        false) {
       fprintf(stderr, "Webm2Pes: Payload write failed.\n");
       return false;
+    }
+
+    while (extra_bytes) {
+      // Write PES packets for the remaining data, but omit the PTS and BCMV
+      // header.
+      const std::size_t extra_bytes_to_copy =
+          std::min(kMaxPayloadSize, extra_bytes);
+      extra_bytes -= extra_bytes_to_copy;
+
+
     }
   }
 

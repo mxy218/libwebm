@@ -899,7 +899,8 @@ bool Track::SetCodecPrivate(const uint8_t* codec_private, uint64_t length) {
 
 void Track::set_codec_id(const char* codec_id) {
   if (codec_id) {
-    delete[] codec_id_;
+    if (codec_id_)
+      delete[] codec_id_;
 
     const size_t length = strlen(codec_id) + 1;
     codec_id_ = new (std::nothrow) char[length];  // NOLINT

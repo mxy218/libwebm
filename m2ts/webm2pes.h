@@ -18,6 +18,28 @@
 #include "mkvparser/mkvparser.h"
 #include "mkvparser/mkvreader.h"
 
+// Webm2pes
+//
+// Webm2pes consumes a WebM file containing a VP8 or VP9 video stream and
+// outputs a PES stream suitable for inclusion in MPEG2 Transport Stream.
+//
+// In the simplest case the PES stream output by Webm2pes looks like this:
+// | PES Header w/PTS | BCMV Header | Payload (VPx frame) |
+//
+// More typically the output will look like the following due the the PES
+// payload size limitations caused by the format of the PES header.
+// The PES header contains only 2 bytes of storage for expressing payload size.
+// VPx PES streams containing fragmented packets look like this:
+//
+// | PH PTS | BCMV | Payload fragment 1 | PH | Payload fragment 2 | ...
+//
+//   PH = PES Header
+//   PH PTS = PES Header with PTS
+//   BCMV = BCMV Header
+//
+// Note that start codes are properly escaped by Webm2pes, and start code
+// emulation prevention bytes must be stripped from
+
 namespace libwebm {
 
 // Stores a value and its size in bits for writing into a PES Optional Header.
@@ -149,7 +171,7 @@ struct PesHeader {
   std::uint16_t packet_length = 0;  // Number of bytes _after_ this field.
   PesOptionalHeader optional_header;
   std::size_t size() const {
-    return optional_header.size_in_bytes() + BCMVHeader::size() +
+    return optional_header.size_in_bytes() +
            6 /* start_code + packet_length */ + packet_length;
   }
 
@@ -171,6 +193,7 @@ class PacketReceiverInterface {
 // https://en.wikipedia.org/wiki/MPEG_transport_stream
 class Webm2Pes {
  public:
+  const std::size_t kMaxPayloadSize = 32768;
   enum VideoCodec { VP8, VP9 };
 
   Webm2Pes(const std::string& input_file, const std::string& output_file)
@@ -188,9 +211,10 @@ class Webm2Pes {
   bool ConvertToFile();
 
   // Converts the VPx video stream to a sequence of PES packets, and calls the
-  // PacketReceiverInterface::ReceivePacket() once for each PES packet. Returns
-  // only after full conversion or error. Returns true for success, and false
-  // when an error occurs.
+  // PacketReceiverInterface::ReceivePacket() once for each VPx frame. The
+  // packet sent to the receiver may contain multiple PES packets. Returns only
+  // after full conversion or error. Returns true for success, and false when
+  // an error occurs.
   bool ConvertToPacketReceiver();
 
  private:
@@ -232,7 +256,7 @@ class Webm2Pes {
 //    0x00 0x00 0x01  =>  0x00 0x00 0x03 0x01
 //    0x00 0x00 0x03  =>  0x00 0x00 0x03 0x03
 bool CopyAndEscapeStartCodes(const std::uint8_t* raw_input,
-                             int raw_input_length,
+                             std::size_t raw_input_length,
                              PacketDataBuffer* packet_buffer);
 }  // namespace libwebm
 

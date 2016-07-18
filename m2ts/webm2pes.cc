@@ -246,7 +246,7 @@ bool Webm2Pes::ConvertToFile() {
           }
 
           // Write frame out as PES packet(s).
-          if (WritePesPacket(vpx_frame) == false) {
+          if (WritePesPacket(vpx_frame, &packet_data_) == false) {
             std::fprintf(stderr, "Webm2Pes: WritePesPacket failed.\n");
             return false;
           }
@@ -314,7 +314,7 @@ bool Webm2Pes::ConvertToPacketReceiver() {
           }
 
           // Write frame out as PES packet(s).
-          if (WritePesPacket(vpx_frame) == false) {
+          if (WritePesPacket(vpx_frame, &packet_data_) == false) {
             std::fprintf(stderr, "Webm2Pes: WritePesPacket failed.\n");
             return false;
           }
@@ -414,7 +414,8 @@ bool Webm2Pes::ReadVpxFrame(const mkvparser::Block::Frame& mkvparser_frame,
   return true;
 }
 
-bool Webm2Pes::WritePesPacket(const VpxFrame& vpx_frame) {
+bool Webm2Pes::WritePesPacket(const VpxFrame& vpx_frame,
+                              PacketDataBuffer* packet_data) {
   if (vpx_frame.data.get() == nullptr || vpx_frame.length < 1)
     return false;
 
@@ -445,7 +446,7 @@ bool Webm2Pes::WritePesPacket(const VpxFrame& vpx_frame) {
   PesHeader header;
   header.optional_header.SetPtsBits(khz90_pts);
 
-  packet_data_.clear();
+  packet_data->clear();
 
   for (const Range& packet_payload_range : frame_ranges) {
     std::size_t extra_bytes = 0;
@@ -455,23 +456,23 @@ bool Webm2Pes::WritePesPacket(const VpxFrame& vpx_frame) {
 
     // First packet of new frame. Always include PTS and BCMV header.
     header.packet_length = packet_payload_range.length + BCMVHeader::size();
-    if (header.Write(true, &packet_data_) != true) {
+    if (header.Write(true, packet_data) != true) {
       std::fprintf(stderr, "Webm2Pes: packet header write failed.\n");
       return false;
     }
 
     BCMVHeader bcmv_header(static_cast<uint32_t>(packet_payload_range.length));
-    if (bcmv_header.Write(&packet_data_) != true) {
+    if (bcmv_header.Write(packet_data) != true) {
       std::fprintf(stderr, "Webm2Pes: BCMV write failed.\n");
       return false;
     }
 
-    // Insert the payload at the end of |packet_data_|.
+    // Insert the payload at the end of |packet_data|.
     const std::uint8_t* payload_start =
         vpx_frame.data.get() + packet_payload_range.offset;
 
     const std::size_t bytes_to_copy = packet_payload_range.length - extra_bytes;
-    if (CopyAndEscapeStartCodes(payload_start, bytes_to_copy, &packet_data_) ==
+    if (CopyAndEscapeStartCodes(payload_start, bytes_to_copy, packet_data) ==
         false) {
       fprintf(stderr, "Webm2Pes: Payload write failed.\n");
       return false;
@@ -488,14 +489,14 @@ bool Webm2Pes::WritePesPacket(const VpxFrame& vpx_frame) {
           std::min(kMaxPayloadSize, extra_bytes);
       extra_bytes -= extra_bytes_to_copy;
       header.packet_length = extra_bytes_to_copy;
-      if (header.Write(false, &packet_data_) != true) {
+      if (header.Write(false, packet_data) != true) {
         fprintf(stderr, "Webm2pes: fragment write failed.\n");
         return false;
       }
 
       payload_start += bytes_copied;
       if (CopyAndEscapeStartCodes(payload_start, extra_bytes_to_copy,
-                                  &packet_data_) == false) {
+                                  packet_data) == false) {
         fprintf(stderr, "Webm2Pes: Payload write failed.\n");
         return false;
       }

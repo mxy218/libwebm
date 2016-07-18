@@ -233,7 +233,7 @@ class Webm2Pes {
   bool InitWebmParser();
   bool ReadVpxFrame(const mkvparser::Block::Frame& mkvparser_frame,
                     VpxFrame* vpx_frame);
-  bool WritePesPacket(const VpxFrame& vpx_frame);
+  bool WritePesPacket(const VpxFrame& vpx_frame, PacketDataBuffer* packet_data);
 
   const std::string input_file_name_;
   const std::string output_file_name_;

@@ -232,7 +232,7 @@ class Webm2Pes {
 
   // Writes |vpx_frame| out as PES packet[s] and stores output in |packet_data|.
   // Returns true for success, and false for failure.
-  bool WritePesPacket(const VpxFrame& vpx_frame, PacketDataBuffer* packet_data);
+  static bool WritePesPacket(const VpxFrame& vpx_frame, PacketDataBuffer* packet_data);
 
  private:
   bool InitWebmParser();

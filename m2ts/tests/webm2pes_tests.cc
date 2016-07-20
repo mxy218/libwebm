@@ -107,6 +107,18 @@ TEST_F(Webm2PesTests, CanParseFirstPacket) {
   EXPECT_TRUE(parser()->ParseNextPacket(&header, &frame));
 }
 
+TEST_F(Webm2PesTests, CanMuxLargeBuffers) {
+  const std::size_t kBufferSize = 100 * 1024;
+  const std::int64_t kFakeTimestamp = 12345;
+  libwebm::VpxFrame fake_frame(kFakeTimestamp, libwebm::VpxFrame::kVP9);
+  fake_frame.data.reset(new uint8_t[kBufferSize]);
+  std::memset(fake_frame.data.get(), 0, kBufferSize);
+  fake_frame.length = kBufferSize;
+  libwebm::PacketDataBuffer pes_packet_buffer;
+  ASSERT_TRUE(
+      libwebm::Webm2Pes::WritePesPacket(fake_frame, &pes_packet_buffer));
+}
+
 }  // namespace
 
 int main(int argc, char* argv[]) {

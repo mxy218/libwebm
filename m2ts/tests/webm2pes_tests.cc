@@ -107,6 +107,33 @@ TEST_F(Webm2PesTests, CanParseFirstPacket) {
   EXPECT_TRUE(parser()->ParseNextPacket(&header, &frame));
 }
 
+TEST_F(Webm2PesTests, CanMuxLargeBuffers) {
+  const std::size_t kBufferSize = 100 * 1024;
+  const std::int64_t kFakeTimestamp = 12345;
+  libwebm::VpxFrame fake_frame(kFakeTimestamp, libwebm::VpxFrame::VP9);
+  fake_frame.data.reset(new uint8_t[kBufferSize]);
+  std::memset(fake_frame.data.get(), 0, kBufferSize);
+  fake_frame.length = kBufferSize;
+  libwebm::PacketDataBuffer pes_packet_buffer;
+  ASSERT_TRUE(
+      libwebm::Webm2Pes::WritePesPacket(fake_frame, &pes_packet_buffer));
+
+  // TODO(tomfinegan): Change VpxPesParser so it can read from a buffer, and get
+  // rid of this extra step.
+  libwebm::FilePtr pes_file(std::fopen(pes_file_name().c_str(), "wb"),
+                            libwebm::FILEDeleter());
+  ASSERT_EQ(pes_packet_buffer.size(),
+            fwrite(&pes_packet_buffer[0], 1, pes_packet_buffer.size(),
+                   pes_file.get()));
+  fclose(pes_file.get());
+  pes_file.release();
+
+  libwebm::VpxPesParser parser;
+  ASSERT_TRUE(parser.Open(pes_file_name()));
+
+  // TODO(tomfinegan): Check timestamp (VpxPesParser does not store it yet).
+}
+
 }  // namespace
 
 int main(int argc, char* argv[]) {

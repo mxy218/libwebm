@@ -73,13 +73,8 @@ bool Ancestory::ById(Id id, Ancestory* ancestory) {
       Id::kSegment, Id::kTracks, Id::kTrackEntry, Id::kAudio,
   };
   static constexpr Id kContentEncAesSettingsAncestory[] = {
-      Id::kSegment,
-      Id::kTracks,
-      Id::kTrackEntry,
-      Id::kContentEncodings,
-      Id::kContentEncoding,
-      Id::kContentEncryption,
-      Id::kContentEncAesSettings,
+      Id::kSegment, Id::kTracks, Id::kTrackEntry, Id::kContentEncodings,
+      Id::kContentEncoding, Id::kContentEncryption, Id::kContentEncAesSettings,
   };
   static constexpr Id kCueTrackPositionsAncestory[] = {
       Id::kSegment, Id::kCues, Id::kCuePoint, Id::kCueTrackPositions,

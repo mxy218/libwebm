@@ -604,9 +604,8 @@ class DemoCallback : public Callback {
     // at a level of 6. Insert enough whitespace so there's room for it.
     std::cout << std::string(21 + 6 * spaces_per_indent -
                                  indent * spaces_per_indent - name.size(),
-                             ' ')
-              << "    header: [" << header_start << ", " << header_end
-              << ")  body: [" << body_start << ", ";
+                             ' ') << "    header: [" << header_start << ", "
+              << header_end << ")  body: [" << body_start << ", ";
     if (metadata.size != kUnknownElementSize) {
       const std::uint64_t body_end = body_start + metadata.size;
       std::cout << body_end;
@@ -956,8 +955,10 @@ class DemoCallback : public Callback {
     PrintValue("timecode", simple_block.timecode);
     PrintValue("lacing", simple_block.lacing);
     std::string flags = (simple_block.is_visible) ? "visible" : "invisible";
-    if (simple_block.is_key_frame) flags += ", key frame";
-    if (simple_block.is_discardable) flags += ", discardable";
+    if (simple_block.is_key_frame)
+      flags += ", key frame";
+    if (simple_block.is_discardable)
+      flags += ", discardable";
     PrintValue("flags", flags);
     *action = Action::kRead;
     return Status(Status::kOkCompleted);
@@ -1096,16 +1097,15 @@ class DemoCallback : public Callback {
 int main(int argc, char* argv[]) {
   if ((argc != 1 && argc != 2) ||
       (argc == 2 && argv[1] == std::string("--help"))) {
-    std::cerr << "Usage:\n"
-              << argv[0] << " [path-to-webm-file]\n\n"
+    std::cerr << "Usage:\n" << argv[0] << " [path-to-webm-file]\n\n"
               << "Prints info for the WebM file specified in the command line. "
                  "If no file is\n"
               << "specified, stdin is used as input.\n";
     return EXIT_FAILURE;
   }
 
-  FILE* file = (argc == 2) ? std::fopen(argv[1], "rb")
-                           : std::freopen(nullptr, "rb", stdin);
+  FILE* file = (argc == 2) ? std::fopen(argv[1], "rb") :
+                             std::freopen(nullptr, "rb", stdin);
   if (!file) {
     std::cerr << "File cannot be opened\n";
     return EXIT_FAILURE;

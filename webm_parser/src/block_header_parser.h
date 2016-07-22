@@ -52,9 +52,9 @@ class BlockHeaderParser : public Parser {
   enum class State {
     // State                 Transitions to state  When
     kReadingTrackNumber,  // kReadingTimecode      track parsed
-    kReadingTimecode,     // kReadingFlags         timecode parsed
-    kReadingFlags,        // kDone                 flags parsed
-    kDone,                // No transitions from here (must call Init)
+    kReadingTimecode,  // kReadingFlags         timecode parsed
+    kReadingFlags,  // kDone                 flags parsed
+    kDone,  // No transitions from here (must call Init)
   } state_ = State::kReadingTrackNumber;
 };
 

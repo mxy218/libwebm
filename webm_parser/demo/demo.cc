@@ -956,8 +956,10 @@ class DemoCallback : public Callback {
     PrintValue("timecode", simple_block.timecode);
     PrintValue("lacing", simple_block.lacing);
     std::string flags = (simple_block.is_visible) ? "visible" : "invisible";
-    if (simple_block.is_key_frame) flags += ", key frame";
-    if (simple_block.is_discardable) flags += ", discardable";
+    if (simple_block.is_key_frame)
+      flags += ", key frame";
+    if (simple_block.is_discardable)
+      flags += ", discardable";
     PrintValue("flags", flags);
     *action = Action::kRead;
     return Status(Status::kOkCompleted);
@@ -1104,8 +1106,8 @@ int main(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
-  FILE* file = (argc == 2) ? std::fopen(argv[1], "rb")
-                           : std::freopen(nullptr, "rb", stdin);
+  FILE* file = (argc == 2) ? std::fopen(argv[1], "rb") :
+                             std::freopen(nullptr, "rb", stdin);
   if (!file) {
     std::cerr << "File cannot be opened\n";
     return EXIT_FAILURE;

@@ -55,7 +55,8 @@ class MasterParser : public ElementParser {
   //
   // Initializer lists don't support move-only types (i.e. std::unique_ptr), so
   // instead a variadic template is used.
-  template <typename... T> explicit MasterParser(T&&... parser_pairs) {
+  template <typename... T>
+  explicit MasterParser(T&&... parser_pairs) {
     // Prefer an odd reserve size. This makes libc++ use a prime number for the
     // bucket count. Otherwise, if it happens to be a power of 2, then libc++
     // will use a power-of-2 bucket count (and since Matroska EBML IDs have low
@@ -128,20 +129,20 @@ class MasterParser : public ElementParser {
   // Parsing states for the finite-state machine.
   enum class State {
     // State                      Transitions to state      When
-    kFirstReadOfChildId,       // kFinishingReadingChildId  size(id)  > 1
-                               // kReadingChildSize         size(id) == 1
-                               // kEndReached               EOF
+    kFirstReadOfChildId,  // kFinishingReadingChildId  size(id)  > 1
+    // kReadingChildSize         size(id) == 1
+    // kEndReached               EOF
     kFinishingReadingChildId,  // kReadingChildSize         done
-    kReadingChildSize,         // kValidatingChildSize      done
-    kValidatingChildSize,      // kGettingAction            done
-                               // kEndReached               unknown id & unsized
-    kGettingAction,            // kInitializingChildParser  done
+    kReadingChildSize,  // kValidatingChildSize      done
+    kValidatingChildSize,  // kGettingAction            done
+    // kEndReached               unknown id & unsized
+    kGettingAction,  // kInitializingChildParser  done
     kInitializingChildParser,  // kReadingChildBody         done
-    kReadingChildBody,         // kChildFullyParsed         child parse done
-    kChildFullyParsed,         // kValidatingChildSize      cached metadata
-                               // kFirstReadOfChildId       read  < my_size_
-                               // kEndReached               read == my_size_
-    kEndReached,               // No transitions from here (must call Init)
+    kReadingChildBody,  // kChildFullyParsed         child parse done
+    kChildFullyParsed,  // kValidatingChildSize      cached metadata
+    // kFirstReadOfChildId       read  < my_size_
+    // kEndReached               read == my_size_
+    kEndReached,  // No transitions from here (must call Init)
   };
 
   using StdHashId = std::hash<std::underlying_type<Id>::type>;
@@ -204,9 +205,10 @@ class MasterParser : public ElementParser {
 
   // Inserts the parser into the parsers_ map and asserts it is the only parser
   // registers to parse the corresponding Id.
-  template <typename T> void InsertParser(T&& parser) {
+  template <typename T>
+  void InsertParser(T&& parser) {
     bool inserted = parsers_.insert(std::forward<T>(parser)).second;
-    (void)inserted;    // Silence unused variable warning.
+    (void)inserted;  // Silence unused variable warning.
     assert(inserted);  // Make sure there aren't duplicates.
   }
 

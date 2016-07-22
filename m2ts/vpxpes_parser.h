@@ -12,6 +12,9 @@
 #include <string>
 #include <vector>
 
+#include "common/libwebm_util.h"
+#include "common/video_frame.h"
+
 namespace libwebm {
 
 // Parser for VPx PES. Requires that the _entire_ PES stream can be stored in
@@ -27,22 +30,6 @@ class VpxPesParser {
     kParsePesHeader,
     kParsePesOptionalHeader,
     kParseBcmvHeader,
-  };
-
-  struct VpxFrame {
-    enum Codec {
-      VP8,
-      VP9,
-    };
-
-    Codec codec = VP9;
-    bool keyframe = false;
-
-    // Frame data.
-    std::vector<std::uint8_t> data;
-
-    // Raw PES PTS.
-    std::int64_t pts = 0;
   };
 
   struct PesOptionalHeader {
@@ -106,8 +93,8 @@ class VpxPesParser {
 
   // Parses the next packet in the PES. PES header information is stored in
   // |header|, and the frame payload is stored in |frame|. Returns true when
-  // packet is parsed successfully.
-  bool ParseNextPacket(PesHeader* header, VpxFrame* frame);
+  // a full frame has been consumed from the PES.
+  bool ParseNextPacket(PesHeader* header, VideoFrame* frame);
 
   // PES Header parsing utility functions.
   // PES Header structure:

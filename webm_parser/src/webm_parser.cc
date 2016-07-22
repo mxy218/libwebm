@@ -185,16 +185,16 @@ class WebmParser::DocumentParser {
   // Parsing states for the finite-state machine.
   enum class State {
     // State                      Transitions to state      When
-    kBegin,                    // kReadingChildId           done
-    kReadingChildId,           // kReadingChildSize         done
-                               // kEndReached               EOF
-    kReadingChildSize,         // kValidatingChildSize      done
-    kValidatingChildSize,      // kGettingAction            done
-    kGettingAction,            // kInitializingChildParser  done
+    kBegin,  // kReadingChildId           done
+    kReadingChildId,  // kReadingChildSize         done
+    // kEndReached               EOF
+    kReadingChildSize,  // kValidatingChildSize      done
+    kValidatingChildSize,  // kGettingAction            done
+    kGettingAction,  // kInitializingChildParser  done
     kInitializingChildParser,  // kReadingChildBody         done
-    kReadingChildBody,         // kValidatingChildSize      cached metadata
-                               // kReadingChildId           otherwise
-    kEndReached,               // No transitions from here
+    kReadingChildBody,  // kValidatingChildSize      cached metadata
+    // kReadingChildId           otherwise
+    kEndReached,  // No transitions from here
   };
 
   // The parser for parsing child element Ids.

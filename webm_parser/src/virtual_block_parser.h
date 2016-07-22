@@ -56,9 +56,9 @@ class VirtualBlockParser : public ElementParser {
 
   enum class State {
     // State             Transitions to state  When
-    kReadingHeader,   // kValidatingSize       header parsed
+    kReadingHeader,  // kValidatingSize       header parsed
     kValidatingSize,  // kDone                 no errors
-    kDone,            // No transitions from here (must call Init)
+    kDone,  // No transitions from here (must call Init)
   } state_ = State::kReadingHeader;
 };
 

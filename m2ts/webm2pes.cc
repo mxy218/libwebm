@@ -102,10 +102,10 @@ bool PesOptionalHeader::Write(bool write_pts, PacketDataBuffer* buffer) const {
 
   // Second byte of header, fields: has_pts, has_dts, unused fields.
   *++byte = 0;
-  if (write_pts == true) {
+  if (write_pts == true)
     *byte |= has_pts.bits << has_pts.shift;
-    *byte |= has_dts.bits << has_dts.shift;
-  }
+
+  *byte |= has_dts.bits << has_dts.shift;
 
   // Third byte of header, fields: remaining size of header.
   *++byte = remaining_size.bits & 0xff;  // Field is 8 bits wide.
@@ -459,7 +459,8 @@ bool Webm2Pes::WritePesPacket(const VideoFrame& frame,
     }
 
     // First packet of new frame. Always include PTS and BCMV header.
-    header.packet_length = packet_payload_range.length + BCMVHeader::size();
+    header.packet_length =
+        packet_payload_range.length - extra_bytes + BCMVHeader::size();
     if (header.Write(true, packet_data) != true) {
       std::fprintf(stderr, "Webm2Pes: packet header write failed.\n");
       return false;

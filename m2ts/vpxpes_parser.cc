@@ -13,7 +13,6 @@
 #include <vector>
 
 #include "common/file_util.h"
-#include "common/libwebm_util.h"
 
 namespace libwebm {
 
@@ -226,10 +225,7 @@ bool VpxPesParser::ParseBcmvHeader(BcmvHeader* header) {
   if (!header->Valid())
     return false;
 
-  // TODO(tomfinegan): Verify data instead of jumping to the next packet.
-  read_pos_ += header->length;
-  parse_state_ = kFindStartCode;
-  return true;
+ return true;
 }
 
 bool VpxPesParser::FindStartCode(std::size_t origin, std::size_t* offset) {
@@ -256,7 +252,7 @@ int VpxPesParser::BytesAvailable() const {
   return static_cast<int>(pes_file_data_.size() - read_pos_);
 }
 
-bool VpxPesParser::ParseNextPacket(PesHeader* header, VpxFrame* frame) {
+bool VpxPesParser::ParseNextPacket(PesHeader* header, VideoFrame* frame) {
   if (!header || !frame || parse_state_ != kFindStartCode) {
     return false;
   }
@@ -276,6 +272,26 @@ bool VpxPesParser::ParseNextPacket(PesHeader* header, VpxFrame* frame) {
   if (!ParseBcmvHeader(&header->bcmv_header)) {
     return false;
   }
+
+  if (header->packet_length != 0 &&
+      header->packet_length != header->bcmv_header.length) {
+    // store available payload and keep parsing ...
+  } else {
+    if (frame->buffer().capacity < header->bcmv_header.length) {
+      if (frame->Init(header->bcmv_header.length) == false) {
+        fprintf(stderr, "VpxPesParser: Out of memory.\n");
+        return false;
+      }
+    }
+  }
+
+  // TODO(tomfinegan): Verify data instead of jumping to the next packet.
+  // This came from ParseBcmvHeader(), but it can't stay there if we're going
+  // to accumulate all bytes for a packet split over multiple frames.
+  read_pos_ += header->bcmv_header.length;
+  parse_state_ = kFindStartCode;
+
+
 
   // TODO(tomfinegan): Process data payload/store in frame. This requires
   // changes to Webm2Pes:

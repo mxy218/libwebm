@@ -13,7 +13,6 @@
 #include <vector>
 
 #include "common/file_util.h"
-#include "common/libwebm_util.h"
 
 namespace libwebm {
 
@@ -30,8 +29,8 @@ bool VpxPesParser::BcmvHeader::operator==(const BcmvHeader& other) const {
 }
 
 bool VpxPesParser::BcmvHeader::Valid() const {
-  return (length > 0 && length <= std::numeric_limits<std::uint16_t>::max() &&
-          id[0] == 'B' && id[1] == 'C' && id[2] == 'M' && id[3] == 'V');
+  return (length > 0 && id[0] == 'B' && id[1] == 'C' && id[2] == 'M' &&
+          id[3] == 'V');
 }
 
 // TODO(tomfinegan): Break Open() into separate functions. One that opens the
@@ -184,9 +183,16 @@ bool VpxPesParser::ParsePesOptionalHeader(PesOptionalHeader* header) {
     // Check the marker bits.
     if ((pes_file_data_[offset] & 1) != 1 ||
         (pes_file_data_[offset + 2] & 1) != 1 ||
-        (pes_file_data_[offset + 2] & 1) != 1) {
+        (pes_file_data_[offset + 4] & 1) != 1) {
       return false;
     }
+    // Extract/store value.
+    std::uint64_t pts = (pes_file_data_[offset] & 0x7) << 4;
+    pts |= (pes_file_data_[offset + 1] & 0xff) << 3;
+    pts |= (pes_file_data_[offset + 2] & 0x7f) << 2;
+    pts |= (pes_file_data_[offset + 3] & 0xff) << 1;
+    pts |= pes_file_data_[offset + 4] & 0x7f;
+
     offset += 5;
     bytes_left -= 5;
   }
@@ -226,13 +232,14 @@ bool VpxPesParser::ParseBcmvHeader(BcmvHeader* header) {
   if (!header->Valid())
     return false;
 
-  // TODO(tomfinegan): Verify data instead of jumping to the next packet.
-  read_pos_ += header->length;
   parse_state_ = kFindStartCode;
+  read_pos_ += header->size();
+
   return true;
 }
 
-bool VpxPesParser::FindStartCode(std::size_t origin, std::size_t* offset) {
+bool VpxPesParser::FindStartCode(std::size_t origin,
+                                 std::size_t* offset) const {
   if (read_pos_ + 2 >= pes_file_size_)
     return false;
 
@@ -244,7 +251,6 @@ bool VpxPesParser::FindStartCode(std::size_t origin, std::size_t* offset) {
   for (std::size_t i = 0; i < length - 3; ++i) {
     if (data[i] == 0 && data[i + 1] == 0 && data[i + 2] == 1) {
       *offset = i;
-      parse_state_ = kParsePesHeader;
       return true;
     }
   }
@@ -252,11 +258,47 @@ bool VpxPesParser::FindStartCode(std::size_t origin, std::size_t* offset) {
   return false;
 }
 
+bool VpxPesParser::AccumulateFragmentedPayload(std::size_t pes_packet_length,
+                                               std::size_t payload_length) {
+  PesHeader fragment_header;
+  const std::size_t first_fragment_length =
+      pes_packet_length - kPesOptionalHeaderSize - kBcmvHeaderSize;
+  for (std::size_t i = 0; i < first_fragment_length; ++i) {
+    payload_.push_back(pes_file_data_[read_pos_ + i]);
+  }
+  read_pos_ += first_fragment_length;
+  parse_state_ = kFindStartCode;
+
+  while (payload_.size() < payload_length) {
+    PesHeader header;
+    std::size_t packet_start_pos = read_pos_;
+    if (!FindStartCode(read_pos_, &packet_start_pos)) {
+      return false;
+    }
+    parse_state_ = kParsePesHeader;
+    read_pos_ = packet_start_pos;
+
+    if (!ParsePesHeader(&header)) {
+      return false;
+    }
+    if (!ParsePesOptionalHeader(&header.opt_header)) {
+      return false;
+    }
+    const std::size_t fragment_length =
+        header.packet_length - kPesOptionalHeaderSize;
+    for (std::size_t i = 0; i < fragment_length; ++i) {
+      payload_.push_back(pes_file_data_[read_pos_ + i]);
+    }
+    read_pos_ += fragment_length;
+  }
+  return true;
+}
+
 int VpxPesParser::BytesAvailable() const {
   return static_cast<int>(pes_file_data_.size() - read_pos_);
 }
 
-bool VpxPesParser::ParseNextPacket(PesHeader* header, VpxFrame* frame) {
+bool VpxPesParser::ParseNextPacket(PesHeader* header, VideoFrame* frame) {
   if (!header || !frame || parse_state_ != kFindStartCode) {
     return false;
   }
@@ -265,6 +307,7 @@ bool VpxPesParser::ParseNextPacket(PesHeader* header, VpxFrame* frame) {
   if (!FindStartCode(read_pos_, &packet_start_pos)) {
     return false;
   }
+  parse_state_ = kParsePesHeader;
   read_pos_ = packet_start_pos;
 
   if (!ParsePesHeader(header)) {
@@ -277,12 +320,46 @@ bool VpxPesParser::ParseNextPacket(PesHeader* header, VpxFrame* frame) {
     return false;
   }
 
-  // TODO(tomfinegan): Process data payload/store in frame. This requires
-  // changes to Webm2Pes:
-  // 1. BCMV header must contain entire frame length, and pes header
-  //    payload size will be what's in the current packet-- parsing code needs
-  //    needs to know how to reassemble frames.
-  // 2. Random access bit must be set in Adaptation Field for key frames.
+  // BCMV header length includes the length of the BCMVHeader itself. Adjust:
+  const std::size_t payload_length =
+      header->bcmv_header.length - BcmvHeader::size();
+
+  // Make sure there's enough input data to read the entire frame.
+  if (read_pos_ + payload_length > pes_file_data_.size()) {
+    // Need more data.
+    printf("VpxPesParser: Not enough data. Required: %u Available: %u\n",
+           static_cast<unsigned int>(payload_length),
+           static_cast<unsigned int>(pes_file_data_.size() - read_pos_));
+    parse_state_ = kFindStartCode;
+    read_pos_ = packet_start_pos;
+    return false;
+  }
+
+  if (header->packet_length != 0 &&
+      header->packet_length != header->bcmv_header.length) {
+    if (!AccumulateFragmentedPayload(header->packet_length, payload_length)) {
+      fprintf(stderr, "VpxPesParser: Failed parsing fragmented payload!\n");
+      return false;
+    }
+  } else {
+    for (std::size_t i = 0; i < payload_length; ++i) {
+      payload_.push_back(pes_file_data_[read_pos_ + i]);
+    }
+    read_pos_ += payload_length;
+  }
+
+  if (frame->buffer().capacity < payload_.size()) {
+    if (frame->Init(payload_.size()) == false) {
+      fprintf(stderr, "VpxPesParser: Out of memory.\n");
+      return false;
+    }
+  }
+  frame->set_nanosecond_pts(Khz90TicksToNanoseconds(header->opt_header.pts));
+  std::memcpy(frame->buffer().data.get(), &payload_[0], payload_.size());
+
+  payload_.clear();
+  parse_state_ = kFindStartCode;
+
   return true;
 }
 

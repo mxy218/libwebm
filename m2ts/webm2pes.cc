@@ -459,6 +459,7 @@ bool Webm2Pes::WritePesPacket(const VideoFrame& frame,
     }
 
     // First packet of new frame. Always include PTS and BCMV header.
+    // TODO: this rolls over with payloads > UINT16_MAX.
     header.packet_length = packet_payload_range.length + BCMVHeader::size();
     if (header.Write(true, packet_data) != true) {
       std::fprintf(stderr, "Webm2Pes: packet header write failed.\n");

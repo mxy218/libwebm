@@ -12,6 +12,9 @@
 #include <string>
 #include <vector>
 
+#include "common/libwebm_util.h"
+#include "common/video_frame.h"
+
 namespace libwebm {
 
 // Parser for VPx PES. Requires that the _entire_ PES stream can be stored in
@@ -27,22 +30,6 @@ class VpxPesParser {
     kParsePesHeader,
     kParsePesOptionalHeader,
     kParseBcmvHeader,
-  };
-
-  struct VpxFrame {
-    enum Codec {
-      VP8,
-      VP9,
-    };
-
-    Codec codec = VP9;
-    bool keyframe = false;
-
-    // Frame data.
-    std::vector<std::uint8_t> data;
-
-    // Raw PES PTS.
-    std::int64_t pts = 0;
   };
 
   struct PesOptionalHeader {
@@ -74,6 +61,7 @@ class VpxPesParser {
     bool operator==(const BcmvHeader& other) const;
 
     bool Valid() const;
+    static std::size_t size() { return 10; }
 
     char id[4] = {0};
     std::uint32_t length = 0;
@@ -106,8 +94,8 @@ class VpxPesParser {
 
   // Parses the next packet in the PES. PES header information is stored in
   // |header|, and the frame payload is stored in |frame|. Returns true when
-  // packet is parsed successfully.
-  bool ParseNextPacket(PesHeader* header, VpxFrame* frame);
+  // a full frame has been consumed from the PES.
+  bool ParseNextPacket(PesHeader* header, VideoFrame* frame);
 
   // PES Header parsing utility functions.
   // PES Header structure:
@@ -144,10 +132,17 @@ class VpxPesParser {
   // Does not set |offset| value if the end of |pes_file_data_| is reached
   // without locating a start code.
   // Note: A start code is the byte sequence 0x00 0x00 0x01.
-  bool FindStartCode(std::size_t origin, std::size_t* offset);
+  bool FindStartCode(std::size_t origin, std::size_t* offset) const;
+
+  // Parses PES and PES Optional header while accumulating payload data in
+  // |payload_|.
+  // Returns true once all payload fragments have been stored in |payload_|.
+  // Returns false if unable to accumulate full payload.
+  bool AccumulateFragmentedPayload(std::size_t pes_packet_length,
+                                   std::size_t payload_length);
 
   std::size_t pes_file_size_ = 0;
-  PacketData packet_data_;
+  PacketData payload_;
   PesFileData pes_file_data_;
   std::size_t read_pos_ = 0;
   ParseState parse_state_ = kFindStartCode;

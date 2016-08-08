@@ -549,8 +549,10 @@ class BasicBlockParserTest : public ElementParserTest<T, id> {
       // maybe one more time if the first call reads zero bytes (if the reader
       // is
       // blocked).
+      const int kThisFrameSize = static_cast<int>(frame_size);
       EXPECT_CALL(callback_, OnFrame(metadata, NotNull(), NotNull()))
-          .Times(incremental ? Between(frame_size, frame_size + 1) : Exactly(1))
+          .Times(incremental ? Between(kThisFrameSize, kThisFrameSize + 1) :
+                               Exactly(1))
           .WillRepeatedly(Invoke(frame_handler));
 
       metadata.position += metadata.size;

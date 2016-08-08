@@ -62,7 +62,7 @@ Status IstreamReader::Read(std::size_t num_to_read, std::uint8_t* buffer,
     return Status(Status::kEndOfFile);
   }
 
-  if (actual == num_to_read) {
+  if (actual == static_cast<std::streamsize>(num_to_read)) {
     return Status(Status::kOkCompleted);
   } else {
     return Status(Status::kOkPartial);

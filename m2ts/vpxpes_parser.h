@@ -146,6 +146,20 @@ class VpxPesParser {
   bool AccumulateFragmentedPayload(std::size_t pes_packet_length,
                                    std::size_t payload_length);
 
+  // PES muxers insert a byte with the value 0x3 when either of the sequences on
+  // the left are encountered, resulting in the sequences shown on the right.
+  //    0x00 0x00 0x03 0x01  =>  0x00 0x00 0x01
+  //    0x00 0x00 0x03 0x03  =>  0x00 0x00 0x03
+  // PES optional header, BCMV header, and payload data must be preprocessed to
+  // avoid potentially invalid data due to the presence of inserted bytes.
+  //
+  // Removes start code emulation prevention bytes while copying data from
+  // |raw_data| to |processed_data|. Returns true when |bytes_required| bytes
+  // have been written to |processed_data|.
+  bool RemoveStartCodeEmulationPreventionBytes(
+      const uint8_t* raw_data, std::size_t bytes_required,
+      PacketData* processed_data, std::size_t* bytes_consumed) const;
+
   std::size_t pes_file_size_ = 0;
   PacketData payload_;
   PesFileData pes_file_data_;

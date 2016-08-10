@@ -140,6 +140,18 @@ TEST_F(Webm2PesTests, CanMuxLargeBuffers) {
                            parsed_frame.buffer().data.get(), kBufferSize));
 }
 
+TEST_F(Webm2PesTests, ParserConsumesAllInput) {
+  CreateAndLoadTestInput();
+  libwebm::VpxPesParser::PesHeader header;
+  libwebm::VideoFrame frame;
+  int i = 0;
+  while (parser()->ParseNextPacket(&header, &frame) == true) {
+    EXPECT_TRUE(VerifyPacketStartCode(header));
+    ++i;
+  }
+  EXPECT_EQ(0, parser()->BytesAvailable());
+}
+
 }  // namespace
 
 int main(int argc, char* argv[]) {

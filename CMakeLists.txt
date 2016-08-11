@@ -149,7 +149,17 @@ add_library(webm_parser STATIC
             "${LIBWEBM_SRC_DIR}/webm_parser/src/virtual_block_parser.h"
             "${LIBWEBM_SRC_DIR}/webm_parser/src/void_parser.cc"
             "${LIBWEBM_SRC_DIR}/webm_parser/src/void_parser.h"
-            "${LIBWEBM_SRC_DIR}/webm_parser/src/webm_parser.cc")
+            "${LIBWEBM_SRC_DIR}/webm_parser/src/webm_parser.cc"
+            "${LIBWEBM_SRC_DIR}/webm_parser/include/webm/buffer_reader.h"
+            "${LIBWEBM_SRC_DIR}/webm_parser/include/webm/callback.h"
+            "${LIBWEBM_SRC_DIR}/webm_parser/include/webm/dom_types.h"
+            "${LIBWEBM_SRC_DIR}/webm_parser/include/webm/element.h"
+            "${LIBWEBM_SRC_DIR}/webm_parser/include/webm/file_reader.h"
+            "${LIBWEBM_SRC_DIR}/webm_parser/include/webm/id.h"
+            "${LIBWEBM_SRC_DIR}/webm_parser/include/webm/istream_reader.h"
+            "${LIBWEBM_SRC_DIR}/webm_parser/include/webm/reader.h"
+            "${LIBWEBM_SRC_DIR}/webm_parser/include/webm/status.h"
+            "${LIBWEBM_SRC_DIR}/webm_parser/include/webm/webm_parser.h")
 endif()
 
 # Libwebm section.

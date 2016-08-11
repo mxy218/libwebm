@@ -597,8 +597,6 @@ class VideoTrack : public Track {
   void set_crop_bottom(uint64_t crop_bottom) { crop_bottom_ = crop_bottom; }
   uint64_t crop_bottom() const { return crop_bottom_; }
 
-  void set_frame_rate(double frame_rate) { frame_rate_ = frame_rate; }
-  double frame_rate() const { return frame_rate_; }
   void set_height(uint64_t height) { height_ = height; }
   uint64_t height() const { return height_; }
   uint64_t stereo_mode() { return stereo_mode_; }
@@ -622,7 +620,6 @@ class VideoTrack : public Track {
   uint64_t crop_right_;
   uint64_t crop_top_;
   uint64_t crop_bottom_;
-  double frame_rate_;
   uint64_t height_;
   uint64_t stereo_mode_;
   uint64_t alpha_mode_;

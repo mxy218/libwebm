@@ -210,7 +210,6 @@ TEST_F(ParserTest, TrackEntries) {
       EXPECT_EQ(kWidth, static_cast<int>(video_track->GetWidth()));
       EXPECT_EQ(kHeight, static_cast<int>(video_track->GetHeight()));
       EXPECT_STREQ(kVP8CodecId, video_track->GetCodecId());
-      EXPECT_DOUBLE_EQ(kVideoFrameRate, video_track->GetFrameRate());
       const unsigned int kTrackUid = 1;
       EXPECT_EQ(kTrackUid, video_track->GetUid());
     } else if (track->GetType() == Track::kAudio) {

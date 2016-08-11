@@ -416,11 +416,6 @@ int main(int argc, char* argv[]) {
       if (stereo_mode > 0)
         video->SetStereoMode(stereo_mode);
 
-      const double rate = pVideoTrack->GetFrameRate();
-      if (rate > 0.0) {
-        video->set_frame_rate(rate);
-      }
-
       if (vp9_profile >= 0 || vp9_level >= 0) {
         const int kMaxVp9PrivateSize = 6;
         unsigned char private_data[kMaxVp9PrivateSize];

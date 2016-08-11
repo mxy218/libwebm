@@ -142,13 +142,11 @@ TEST_F(MuxerTest, AddTracks) {
   video->set_name(kTrackName);
   video->set_display_width(kWidth - 10);
   video->set_display_height(kHeight - 10);
-  video->set_frame_rate(0.5);
   EXPECT_STREQ(kTrackName, video->name());
   const uint64_t kDisplayWidth = kWidth - 10;
   EXPECT_EQ(kDisplayWidth, video->display_width());
   const uint64_t kDisplayHeight = kHeight - 10;
   EXPECT_EQ(kDisplayHeight, video->display_height());
-  EXPECT_DOUBLE_EQ(0.5, video->frame_rate());
   EXPECT_EQ(static_cast<uint64_t>(kVideoTrackNumber), video->uid());
 
   // Add an Audio Track

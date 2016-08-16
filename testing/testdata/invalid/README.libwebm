@@ -1,0 +1,8 @@
+Why the files in this directory are considered invalid.
+
+fixed_lacing_invalid_size.webm - File containing a BlockGroup that reports
+                                 fixed lacing, but reports a total lace size
+                                 that is not evenly divisible by the number
+                                 of laced frames.
+
+

@@ -326,7 +326,7 @@ int main(int argc, char* argv[]) {
   }
 
   const mkvparser::Cluster* pCluster = pSegment->GetFirst();
-
+  int block_num = 0;
   while (pCluster != NULL && !pCluster->EOS()) {
     const long long timeCode = pCluster->GetTimeCode();
     printf("\t\tCluster Time Code\t: %lld\n", timeCode);
@@ -371,6 +371,7 @@ int main(int argc, char* argv[]) {
         }
       }
 
+      ++block_num;
       status = pCluster->GetNext(pBlockEntry, pBlockEntry);
 
       if (status < 0) {

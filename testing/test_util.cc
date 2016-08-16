@@ -15,6 +15,10 @@
 #include <string>
 
 #include "common/libwebm_util.h"
+#include "common/webmids.h"
+
+#include "mkvparser/mkvparser.h"
+#include "mkvparser/mkvreader.h"
 
 namespace test {
 
@@ -53,6 +57,144 @@ bool CompareFiles(const std::string& file1, const std::string& file2) {
   } while (!std::feof(f1.get()) && !std::feof(f2.get()));
 
   return std::feof(f1.get()) && std::feof(f2.get());
+}
+
+bool ParseFile(const std::string webm_file, bool validate_cues) {
+  mkvparser::MkvReader reader;
+  if (reader.Open(webm_file.c_str()) < 0) {
+    return false;
+  }
+
+  std::int64_t pos = 0;
+  mkvparser::EBMLHeader ebml_header;
+  if (ebml_header.Parse(&reader, pos)) {
+    return false;
+  }
+
+  using mkvparser::Segment;
+  Segment* segment_ptr = nullptr;
+  if (Segment::CreateInstance(&reader, pos, segment_ptr)) {
+    return false;
+  }
+
+  const std::unique_ptr<Segment> segment(segment_ptr);
+  if (segment->Load() < 0) {
+    return false;
+  }
+
+  const mkvparser::Cluster* cluster = segment->GetFirst();
+  if (!cluster || cluster->EOS()) {
+    return false;
+  }
+
+  while (cluster && cluster->EOS() == false) {
+    if (cluster->GetTimeCode() < 0) {
+      return false;
+    }
+
+    const mkvparser::BlockEntry* block = nullptr;
+    if (cluster->GetFirst(block) < 0) {
+      return false;
+    }
+
+    while (block != NULL && block->EOS() == false) {
+      if (cluster->GetNext(block, block) < 0) {
+        return false;
+      }
+    }
+
+    cluster = segment->GetNext(cluster);
+  }
+
+  if (validate_cues) {
+    return ValidateCues(segment_ptr, &reader);
+  }
+  return true;
+}
+
+bool HasCuePoints(const mkvparser::Segment* segment, std::int64_t* cues_offset) {
+  if (!segment || !cues_offset) {
+    return false;
+  }
+  using mkvparser::SeekHead;
+  const SeekHead* const seek_head = segment->GetSeekHead();
+  if (!seek_head) {
+    return false;
+  }
+
+  std::int64_t offset = 0;
+  for (int i = 0; i < seek_head->GetCount(); ++i) {
+    const mkvparser::SeekHead::Entry* const entry = seek_head->GetEntry(i);
+    // TODO(tomfinegan): Cues ID is really 0x1C53BB6B, aka kMkvCues, but
+    // mkvparser reads IDs as EBML unsigned ints in some cases, yielding magic
+    // numbers like the following. Investigate fixing this behavior.
+    if (entry->id == 0xC53BB6B) {  // Cues ID as stored in Entry class.
+      offset = entry->pos;
+    }
+  }
+
+  if (offset == -1) {  // No Cues found. So don't fail.
+    return false;
+  }
+  *cues_offset = offset;
+  return true;
+}
+
+bool ValidateCues(mkvparser::Segment* segment, mkvparser::IMkvReader* reader) {
+  if (!segment) {
+    return false;
+  }
+
+  std::int64_t cues_offset = 0;
+  if (!HasCuePoints(segment, &cues_offset)) {
+    // No cues to validate, everything is OK.
+    return true;
+  }
+
+  // Parse Cues.
+  std::int64_t cues_pos;
+  long cues_len;  // NOLINT
+  if (segment->ParseCues(cues_offset, cues_pos, cues_len)) {
+    return false;
+  }
+
+  // Get a pointer to the video track if it exists. Otherwise, we assume
+  // that Cues are based on the first track (which is true for all our test
+  // files).
+  const mkvparser::Tracks* const tracks = segment->GetTracks();
+  const mkvparser::Track* cues_track = tracks->GetTrackByIndex(0);
+  for (int i = 1; i < static_cast<int>(tracks->GetTracksCount()); ++i) {
+    const mkvparser::Track* const track = tracks->GetTrackByIndex(i);
+    if (track->GetType() == mkvparser::Track::kVideo) {
+      cues_track = track;
+      break;
+    }
+  }
+
+  // Iterate through Cues and verify if they are pointing to the correct
+  // Cluster position.
+  const mkvparser::Cues* const cues = segment->GetCues();
+  const mkvparser::CuePoint* cue_point = NULL;
+  while (cues->LoadCuePoint()) {
+    if (!cue_point) {
+      cue_point = cues->GetFirst();
+    } else {
+      cue_point = cues->GetNext(cue_point);
+    }
+    const mkvparser::CuePoint::TrackPosition* const track_position =
+        cue_point->Find(cues_track);
+    const long long cluster_pos = track_position->m_pos +  // NOLINT
+                                  segment->m_start;
+
+    // If a cluster does not begin at |cluster_pos|, then the file is
+    // incorrect.
+    long length;  // NOLINT
+    const std::int64_t id = mkvparser::ReadID(reader, cluster_pos, length);
+    if (id != libwebm::kMkvCluster) {
+      return false;
+    }
+  }
+  return true;
 }
 
 }  // namespace test

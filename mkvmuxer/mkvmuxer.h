@@ -465,6 +465,44 @@ class Colour {
 };
 
 ///////////////////////////////////////////////////////////////
+// Projection element.
+struct Projection {
+  enum ProjectionType {
+    kTypeNotPresent = -1,
+    kRectangular = 0,
+    kEquirectangular = 1,
+    kCubeMap = 2,
+    kMesh = 3,
+  };
+  static const uint64_t kValueNotPresent;
+  Projection()
+      : type(kRectangular),
+        private_data(NULL),
+        private_data_length(0),
+        pose_yaw(0.0),
+        pose_pitch(0.0),
+        pose_roll(0.0) {}
+  ~Projection() { delete[] private_data; }
+
+  uint64_t ProjectionSize() const;
+  bool Write(IMkvWriter* writer) const;
+
+  bool SetProjectionPrivate(const uint8_t* private_data,
+                            uint64_t private_data_length);
+
+  ProjectionType type;
+  uint8_t* private_data;
+  uint64_t private_data_length;
+  float pose_yaw;
+  float pose_pitch;
+  float pose_roll;
+
+ private:
+  // Returns size of VideoProjection child elements.
+  uint64_t PayloadSize() const;
+};
+
+///////////////////////////////////////////////////////////////
 // Track element.
 class Track {
  public:
@@ -611,6 +649,11 @@ class VideoTrack : public Track {
   // Deep copies |colour|.
   bool SetColour(const Colour& colour);
 
+  Projection* projection() { return projection_; };
+
+  // Deep copies |projection|.
+  bool SetProjection(const Projection& projection);
+
  private:
   // Returns the size in bytes of the Video element.
   uint64_t VideoPayloadSize() const;
@@ -629,6 +672,7 @@ class VideoTrack : public Track {
   uint64_t width_;
 
   Colour* colour_;
+  Projection* projection_;
 
   LIBWEBM_DISALLOW_COPY_AND_ASSIGN(VideoTrack);
 };

@@ -57,6 +57,10 @@ std::string GetTestFilePath(const std::string& name);
 // files match exactly, false otherwise.
 bool CompareFiles(const std::string& file1, const std::string& file2);
 
+// Returns true and sets |cues_offset| to the cues location within the MKV file
+// parsed by |segment| when the MKV file has cue points.
+bool HasCuePoints(const mkvparser::Segment* segment, std::int64_t* cues_offset);
+
 // Validates cue points. Assumes caller has already called Load() on |segment|.
 // Returns true when:
 //  All cue points point at clusters, OR

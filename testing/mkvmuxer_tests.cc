@@ -476,8 +476,15 @@ TEST_F(MuxerTest, CuesBeforeClusters) {
   reader.Close();
   cues_writer.Close();
 
+  mkvparser::Segment* segment = nullptr;
   EXPECT_TRUE(CompareFiles(GetTestFilePath("cues_before_clusters.webm"),
                            cues_filename));
+  ASSERT_TRUE(test::ParseMkvFileReleaseSegment(cues_filename, &segment));
+  std::unique_ptr<mkvparser::Segment> segment_ptr(segment);
+  int64_t cues_offset = 0;
+  ASSERT_TRUE(test::HasCuePoints(segment, &cues_offset));
+  ASSERT_NE(0, cues_offset);
+  ASSERT_TRUE(test::ValidateCues(segment, segment->m_pReader));
 }
 
 TEST_F(MuxerTest, MaxClusterSize) {

@@ -851,6 +851,9 @@ TEST_F(MuxerTest, Colour) {
   EXPECT_TRUE(CompareFiles(GetTestFilePath("colour.webm"), filename_));
 }
 
+TEST_F(MuxerTest, Projection) {}
+//  fprintf(stderr,"colour file=%s\n", filename_.c_str());
+//  fprintf(stderr,"colour file=%s\n", filename_.c_str());
 }  // namespace test
 
 int main(int argc, char* argv[]) {

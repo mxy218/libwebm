@@ -844,6 +844,49 @@ TEST_F(MuxerTest, Colour) {
   EXPECT_TRUE(CompareFiles(GetTestFilePath("colour.webm"), filename_));
 }
 
+TEST_F(MuxerTest, Projection) {
+  EXPECT_TRUE(SegmentInit(false, false, false));
+  AddVideoTrack();
+
+  mkvmuxer::Projection muxer_proj;
+  muxer_proj.type = mkvmuxer::Projection::kRectangular;
+  muxer_proj.pose_yaw = 1;
+  muxer_proj.pose_pitch = 2;
+  muxer_proj.pose_roll = 3;
+  const uint8_t muxer_proj_private[1] = {4};
+  const uint64_t muxer_proj_private_length = 1;
+  ASSERT_TRUE(muxer_proj.SetProjectionPrivate(&muxer_proj_private[0],
+                                              muxer_proj_private_length));
+
+  VideoTrack* const video_track =
+      dynamic_cast<VideoTrack*>(segment_.GetTrackByNumber(kVideoTrackNumber));
+  ASSERT_TRUE(video_track != nullptr);
+  ASSERT_TRUE(video_track->SetProjection(muxer_proj));
+  ASSERT_NO_FATAL_FAILURE(AddDummyFrameAndFinalize(kVideoTrackNumber));
+
+  mkvparser::Segment* segment = nullptr;
+  ASSERT_TRUE(ParseMkvFileReleaseSegment(filename_, &segment));
+  std::unique_ptr<mkvparser::Segment> segment_ptr(segment);
+
+  const mkvparser::VideoTrack* const parser_track =
+      static_cast<const mkvparser::VideoTrack*>(
+          segment->GetTracks()->GetTrackByIndex(0));
+
+  const mkvparser::Projection* const parser_proj =
+      parser_track->GetProjection();
+  ASSERT_TRUE(parser_proj != nullptr);
+  EXPECT_FLOAT_EQ(parser_proj->pose_yaw, muxer_proj.pose_yaw);
+  EXPECT_FLOAT_EQ(parser_proj->pose_pitch, muxer_proj.pose_pitch);
+  EXPECT_FLOAT_EQ(parser_proj->pose_roll, muxer_proj.pose_roll);
+  ASSERT_TRUE(parser_proj->private_data != nullptr);
+  EXPECT_EQ(parser_proj->private_data_length,
+            static_cast<size_t>(muxer_proj.private_data_length()));
+  EXPECT_EQ(parser_proj->private_data[0], muxer_proj.private_data()[0]);
+  typedef mkvparser::Projection::ProjectionType ParserProjType;
+  EXPECT_EQ(parser_proj->type, static_cast<ParserProjType>(muxer_proj.type));
+  EXPECT_TRUE(CompareFiles(GetTestFilePath("projection.webm"), filename_));
+}
+
 }  // namespace test
 
 int main(int argc, char* argv[]) {

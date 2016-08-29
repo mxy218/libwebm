@@ -1230,6 +1230,89 @@ uint64_t Colour::PayloadSize() const {
 
 ///////////////////////////////////////////////////////////////
 //
+// Projection element
+
+uint64_t Projection::ProjectionSize() const {
+  uint64_t size = PayloadSize();
+
+  if (size > 0)
+    size += EbmlMasterElementSize(libwebm::kMkvProjection, size);
+
+  return size;
+}
+
+bool Projection::Write(IMkvWriter* writer) const {
+  const uint64_t size = PayloadSize();
+
+  // Don't write an empty element.
+  if (size == 0)
+    return true;
+
+  if (!WriteEbmlMasterElement(writer, libwebm::kMkvProjection, size))
+    return false;
+
+  if (!WriteEbmlElement(writer, libwebm::kMkvProjectionType,
+                        static_cast<uint64>(type))) {
+    return false;
+  }
+
+  if (private_data_length_ > 0 && private_data_ != NULL &&
+      !WriteEbmlElement(writer, libwebm::kMkvProjectionPrivate, private_data_,
+                        private_data_length_)) {
+    return false;
+  }
+
+  if (!WriteEbmlElement(writer, libwebm::kMkvProjectionPoseYaw, pose_yaw))
+    return false;
+
+  if (!WriteEbmlElement(writer, libwebm::kMkvProjectionPosePitch, pose_pitch)) {
+    return false;
+  }
+
+  if (!WriteEbmlElement(writer, libwebm::kMkvProjectionPoseRoll, pose_roll)) {
+    return false;
+  }
+
+  return true;
+}
+
+bool Projection::SetProjectionPrivate(const uint8_t* data,
+                                      uint64_t data_length) {
+  if (data == NULL || data_length == 0) {
+    return false;
+  }
+
+  uint8_t* new_private_data = new (std::nothrow) uint8_t[data_length];
+  if (new_private_data == NULL) {
+    return false;
+  }
+
+  delete[] private_data_;
+  private_data_ = new_private_data;
+  private_data_length_ = data_length;
+  memcpy(private_data_, data, static_cast<size_t>(data_length));
+
+  return true;
+}
+
+uint64_t Projection::PayloadSize() const {
+  uint64_t size =
+      EbmlElementSize(libwebm::kMkvProjection, static_cast<uint64>(type));
+
+  if (private_data_length_ > 0 && private_data_ != NULL) {
+    size += EbmlElementSize(libwebm::kMkvProjectionPrivate, private_data_,
+                            private_data_length_);
+  }
+
+  size += EbmlElementSize(libwebm::kMkvProjectionPoseYaw, pose_yaw);
+  size += EbmlElementSize(libwebm::kMkvProjectionPosePitch, pose_pitch);
+  size += EbmlElementSize(libwebm::kMkvProjectionPoseRoll, pose_roll);
+
+  return size;
+}
+
+///////////////////////////////////////////////////////////////
+//
 // VideoTrack Class
 
 VideoTrack::VideoTrack(unsigned int* seed)
@@ -1245,7 +1328,8 @@ VideoTrack::VideoTrack(unsigned int* seed)
       stereo_mode_(0),
       alpha_mode_(0),
       width_(0),
-      colour_(NULL) {}
+      colour_(NULL),
+      projection_(NULL) {}
 
 VideoTrack::~VideoTrack() { delete colour_; }
 
@@ -1346,6 +1430,10 @@ bool VideoTrack::Write(IMkvWriter* writer) const {
     if (!colour_->Write(writer))
       return false;
   }
+  if (projection_) {
+    if (!projection_->Write(writer))
+      return false;
+  }
 
   const int64_t stop_position = writer->Position();
   if (stop_position < 0 ||
@@ -1384,6 +1472,25 @@ bool VideoTrack::SetColour(const Colour& colour) {
   return true;
 }
 
+bool VideoTrack::SetProjection(const Projection& projection) {
+  std::auto_ptr<Projection> projection_ptr(new Projection());
+  if (!projection_ptr.get())
+    return false;
+
+  if (projection.private_data()) {
+    if (!projection_ptr->SetProjectionPrivate(
+            projection.private_data(), projection.private_data_length())) {
+      return false;
+    }
+  }
+
+  projection_ptr->pose_yaw = projection.pose_yaw;
+  projection_ptr->pose_pitch = projection.pose_pitch;
+  projection_ptr->pose_roll = projection.pose_roll;
+  delete projection_;
+  projection_ = projection_ptr.release();
+  return true;
+}
 uint64_t VideoTrack::VideoPayloadSize() const {
   uint64_t size =
       EbmlElementSize(libwebm::kMkvPixelWidth, static_cast<uint64>(width_));
@@ -1418,6 +1525,9 @@ uint64_t VideoTrack::VideoPayloadSize() const {
                             static_cast<float>(frame_rate_));
   if (colour_)
     size += colour_->ColourSize();
+
+  if (projection_)
+    size += projection_->ProjectionSize();
 
   return size;
 }

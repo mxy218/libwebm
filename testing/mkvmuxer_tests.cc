@@ -851,6 +851,11 @@ TEST_F(MuxerTest, Colour) {
   EXPECT_TRUE(CompareFiles(GetTestFilePath("colour.webm"), filename_));
 }
 
+TEST_F(MuxerTest, Projection) {}
+  mkvmuxer::Projection muxer_proj;
+  muxer_proj.
+  fprintf(stderr,"projection file=%s\n", filename_.c_str());
+  fprintf(stderr,"projection file=%s\n", filename_.c_str());
 }  // namespace test
 
 int main(int argc, char* argv[]) {

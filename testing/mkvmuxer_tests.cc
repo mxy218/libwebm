@@ -768,6 +768,89 @@ TEST_F(MuxerTest, DocTypeMatroska) {
   EXPECT_TRUE(CompareFiles(GetTestFilePath("matroska_doctype.mkv"), filename_));
 }
 
+TEST_F(MuxerTest, Colour) {
+  EXPECT_TRUE(SegmentInit(true, false, false));
+  AddVideoTrack();
+
+  mkvmuxer::PrimaryChromaticity muxer_pc(.1, .2);
+  mkvmuxer::MasteringMetadata muxer_mm;
+  muxer_mm.luminance_min = 30.0;
+  muxer_mm.luminance_max = 40.0;
+  ASSERT_TRUE(
+      muxer_mm.SetChromaticity(&muxer_pc, &muxer_pc, &muxer_pc, &muxer_pc));
+
+  mkvmuxer::Colour muxer_colour;
+  muxer_colour.matrix_coefficients = 0;
+  muxer_colour.bits_per_channel = 1;
+  muxer_colour.chroma_subsampling_horz = 2;
+  muxer_colour.chroma_subsampling_vert = 3;
+  muxer_colour.cb_subsampling_horz = 4;
+  muxer_colour.cb_subsampling_vert = 5;
+  muxer_colour.chroma_siting_horz = 6;
+  muxer_colour.chroma_siting_vert = 7;
+  muxer_colour.range = 8;
+  muxer_colour.transfer_characteristics = 9;
+  muxer_colour.primaries = 10;
+  muxer_colour.max_cll = 11;
+  muxer_colour.max_fall = 12;
+  ASSERT_TRUE(muxer_colour.SetMasteringMetadata(muxer_mm));
+
+  VideoTrack* const video_track =
+      dynamic_cast<VideoTrack*>(segment_.GetTrackByNumber(kVideoTrackNumber));
+  ASSERT_TRUE(video_track != nullptr);
+  ASSERT_TRUE(video_track->SetColour(muxer_colour));
+  ASSERT_NO_FATAL_FAILURE(AddDummyFrameAndFinalize(kVideoTrackNumber));
+
+  mkvparser::Segment* segment = nullptr;
+  ASSERT_TRUE(ParseMkvFileReleaseSegment(filename_, &segment));
+  std::unique_ptr<mkvparser::Segment> segment_ptr(segment);
+
+  const mkvparser::VideoTrack* const parser_track =
+      static_cast<const mkvparser::VideoTrack*>(
+          segment->GetTracks()->GetTrackByIndex(0));
+  const mkvparser::Colour* parser_colour = parser_track->GetColour();
+  EXPECT_NE(nullptr, parser_colour);
+  EXPECT_EQ(parser_colour->matrix_coefficients,
+            static_cast<long long>(muxer_colour.matrix_coefficients));
+  EXPECT_EQ(parser_colour->bits_per_channel,
+            static_cast<long long>(muxer_colour.bits_per_channel));
+  EXPECT_EQ(parser_colour->chroma_subsampling_horz,
+            static_cast<long long>(muxer_colour.chroma_subsampling_horz));
+  EXPECT_EQ(parser_colour->chroma_subsampling_vert,
+            static_cast<long long>(muxer_colour.chroma_subsampling_vert));
+  EXPECT_EQ(parser_colour->cb_subsampling_horz,
+            static_cast<long long>(muxer_colour.cb_subsampling_horz));
+  EXPECT_EQ(parser_colour->cb_subsampling_vert,
+            static_cast<long long>(muxer_colour.cb_subsampling_vert));
+  EXPECT_EQ(parser_colour->chroma_siting_horz,
+            static_cast<long long>(muxer_colour.chroma_siting_horz));
+  EXPECT_EQ(parser_colour->chroma_siting_vert,
+            static_cast<long long>(muxer_colour.chroma_siting_vert));
+  EXPECT_EQ(parser_colour->range, static_cast<long long>(muxer_colour.range));
+  EXPECT_EQ(parser_colour->transfer_characteristics,
+            static_cast<long long>(muxer_colour.transfer_characteristics));
+  EXPECT_EQ(parser_colour->primaries,
+            static_cast<long long>(muxer_colour.primaries));
+  EXPECT_EQ(parser_colour->max_cll,
+            static_cast<long long>(muxer_colour.max_cll));
+  EXPECT_EQ(parser_colour->max_fall,
+            static_cast<long long>(muxer_colour.max_fall));
+
+  const mkvparser::MasteringMetadata* parser_mm =
+      parser_colour->mastering_metadata;
+  EXPECT_FLOAT_EQ(parser_mm->luminance_min, muxer_mm.luminance_min);
+  EXPECT_FLOAT_EQ(parser_mm->luminance_max, muxer_mm.luminance_max);
+  EXPECT_FLOAT_EQ(parser_mm->r->x, muxer_mm.r()->x);
+  EXPECT_FLOAT_EQ(parser_mm->r->y, muxer_mm.r()->y);
+  EXPECT_FLOAT_EQ(parser_mm->g->x, muxer_mm.g()->x);
+  EXPECT_FLOAT_EQ(parser_mm->g->y, muxer_mm.g()->y);
+  EXPECT_FLOAT_EQ(parser_mm->b->x, muxer_mm.b()->x);
+  EXPECT_FLOAT_EQ(parser_mm->b->y, muxer_mm.b()->y);
+  EXPECT_FLOAT_EQ(parser_mm->white_point->x, muxer_mm.white_point()->x);
+  EXPECT_FLOAT_EQ(parser_mm->white_point->y, muxer_mm.white_point()->y);
+  EXPECT_TRUE(CompareFiles(GetTestFilePath("colour.webm"), filename_));
+}
+
 }  // namespace test
 
 int main(int argc, char* argv[]) {

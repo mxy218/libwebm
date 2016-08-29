@@ -153,7 +153,7 @@ bool ParseMkvFileReleaseSegment(const std::string& webm_file,
     return false;
   }
 
-  std::int64_t pos = 0;
+  long long pos = 0;  // NOLINT
   mkvparser::EBMLHeader ebml_header;
   if (ebml_header.Parse(&reader, pos)) {
     return false;

@@ -78,10 +78,11 @@ bool HasCuePoints(const mkvparser::Segment* segment,
     }
   }
 
-  if (offset == -1) {
+  if (offset <= 0) {
     // No Cues found.
     return false;
   }
+
   *cues_offset = offset;
   return true;
 }

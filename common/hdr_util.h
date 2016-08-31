@@ -62,6 +62,14 @@ bool ColourValuePresent(long long value);
 bool CopyColour(const mkvparser::Colour& parser_colour,
                 mkvmuxer::Colour* muxer_colour);
 
+// Colour field validation helpers. All return true when |value| is valid.
+bool IsMatrixCoefficientsValueValid(uint64_t value);
+bool IsChromaSitingHorzValueValid(uint64_t value);
+bool IsChromaSitingVertValueValid(uint64_t value);
+bool IsColourRangeValueValid(uint64_t value);
+bool IsTransferCharacteristicsValueValid(uint64_t value);
+bool IsPrimariesValueValid(uint64_t value);
+
 // Returns true if |features| is set to one or more valid values.
 bool ParseVpxCodecPrivate(const uint8_t* private_data, int32_t length,
                           Vp9CodecFeatures* features);

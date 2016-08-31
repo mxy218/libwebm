@@ -16,6 +16,7 @@
 #include <cfloat>
 #include <climits>
 #include <cmath>
+#include <cstdio>
 #include <cstring>
 #include <memory>
 #include <new>
@@ -1870,6 +1871,7 @@ bool Cues::Init() const {
   long cue_points_size = 0;
 
   while (pos < stop) {
+    fprintf(stderr, "1\n");
     const long long idpos = pos;
 
     long len;
@@ -1879,6 +1881,7 @@ bool Cues::Init() const {
       return false;
     }
 
+    fprintf(stderr, "2\n");
     pos += len;  // consume ID
 
     const long long size = ReadUInt(pReader, pos, len);
@@ -1890,7 +1893,7 @@ bool Cues::Init() const {
     if (pos + size > stop) {
       return false;
     }
-
+    fprintf(stderr, "3\n");
     if (id == libwebm::kMkvCuePoint) {
       if (!PreloadCuePoint(cue_points_size, idpos))
         return false;

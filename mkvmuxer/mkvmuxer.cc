@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 
+#include "common/hdr_util.h"
 #include "common/webmids.h"
 #include "mkvmuxer/mkvmuxerutil.h"
 #include "mkvmuxer/mkvwriter.h"
@@ -1091,8 +1092,9 @@ bool Colour::Write(IMkvWriter* writer) const {
     return false;
 
   if (matrix_coefficients_ != kValueNotPresent &&
-      !WriteEbmlElement(writer, libwebm::kMkvMatrixCoefficients,
-                        static_cast<uint64>(matrix_coefficients_))) {
+      (!IsMatrixCoefficientsValueValid(matrix_coefficients_) ||
+       !WriteEbmlElement(writer, libwebm::kMkvMatrixCoefficients,
+                         static_cast<uint64>(matrix_coefficients_)))) {
     return false;
   }
   if (bits_per_channel_ != kValueNotPresent &&
@@ -1122,28 +1124,33 @@ bool Colour::Write(IMkvWriter* writer) const {
     return false;
   }
   if (chroma_siting_horz_ != kValueNotPresent &&
-      !WriteEbmlElement(writer, libwebm::kMkvChromaSitingHorz,
-                        static_cast<uint64>(chroma_siting_horz_))) {
+      (!IsChromaSitingHorzValueValid(chroma_siting_horz_) ||
+       !WriteEbmlElement(writer, libwebm::kMkvChromaSitingHorz,
+                         static_cast<uint64>(chroma_siting_horz_)))) {
     return false;
   }
   if (chroma_siting_vert_ != kValueNotPresent &&
-      !WriteEbmlElement(writer, libwebm::kMkvChromaSitingVert,
-                        static_cast<uint64>(chroma_siting_vert_))) {
+      (!IsChromaSitingVertValueValid(chroma_siting_vert_) ||
+       !WriteEbmlElement(writer, libwebm::kMkvChromaSitingVert,
+                         static_cast<uint64>(chroma_siting_vert_)))) {
     return false;
   }
   if (range_ != kValueNotPresent &&
-      !WriteEbmlElement(writer, libwebm::kMkvRange,
-                        static_cast<uint64>(range_))) {
+      (!IsColourRangeValueValid(range_) ||
+       !WriteEbmlElement(writer, libwebm::kMkvRange,
+                         static_cast<uint64>(range_)))) {
     return false;
   }
   if (transfer_characteristics_ != kValueNotPresent &&
-      !WriteEbmlElement(writer, libwebm::kMkvTransferCharacteristics,
-                        static_cast<uint64>(transfer_characteristics_))) {
+      (!IsTransferCharacteristicsValueValid(transfer_characteristics_) ||
+       !WriteEbmlElement(writer, libwebm::kMkvTransferCharacteristics,
+                         static_cast<uint64>(transfer_characteristics_)))) {
     return false;
   }
   if (primaries_ != kValueNotPresent &&
-      !WriteEbmlElement(writer, libwebm::kMkvPrimaries,
-                        static_cast<uint64>(primaries_))) {
+      (!IsPrimariesValueValid(primaries_) ||
+       !WriteEbmlElement(writer, libwebm::kMkvPrimaries,
+                         static_cast<uint64>(primaries_)))) {
     return false;
   }
   if (max_cll_ != kValueNotPresent &&

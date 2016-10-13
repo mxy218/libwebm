@@ -192,6 +192,7 @@ TEST_F(MuxerTest, AddChapters) {
 
 TEST_F(MuxerTest, SimpleBlock) {
   EXPECT_TRUE(SegmentInit(false, false, false));
+  segment_.set_estimate_file_duration(false);
   AddVideoTrack();
 
   // Valid Frame
@@ -220,6 +221,7 @@ TEST_F(MuxerTest, SimpleBlock) {
 
 TEST_F(MuxerTest, SimpleBlockWithAddGenericFrame) {
   EXPECT_TRUE(SegmentInit(false, false, false));
+  segment_.set_estimate_file_duration(false);
   AddVideoTrack();
 
   Frame frame;
@@ -303,6 +305,7 @@ TEST_F(MuxerTest, TrackType) {
 
 TEST_F(MuxerTest, BlockWithAdditional) {
   EXPECT_TRUE(SegmentInit(false, false, false));
+  segment_.set_estimate_file_duration(false);
   AddVideoTrack();
 
   // Valid Frame
@@ -344,6 +347,7 @@ TEST_F(MuxerTest, BlockWithAdditional) {
 
 TEST_F(MuxerTest, BlockAdditionalWithAddGenericFrame) {
   EXPECT_TRUE(SegmentInit(false, false, false));
+  segment_.set_estimate_file_duration(false);
   AddVideoTrack();
 
   Frame frame;
@@ -407,6 +411,7 @@ TEST_F(MuxerTest, SegmentDurationComputation) {
 
 TEST_F(MuxerTest, ForceNewCluster) {
   EXPECT_TRUE(SegmentInit(false, false, false));
+  segment_.set_estimate_file_duration(false);
   AddVideoTrack();
 
   EXPECT_TRUE(segment_.AddFrame(dummy_data_, kFrameLength, kVideoTrackNumber, 0,
@@ -429,6 +434,7 @@ TEST_F(MuxerTest, ForceNewCluster) {
 
 TEST_F(MuxerTest, OutputCues) {
   EXPECT_TRUE(SegmentInit(true, false, false));
+  segment_.set_estimate_file_duration(false);
   AddVideoTrack();
 
   EXPECT_TRUE(
@@ -449,6 +455,7 @@ TEST_F(MuxerTest, OutputCues) {
 
 TEST_F(MuxerTest, CuesBeforeClusters) {
   EXPECT_TRUE(SegmentInit(true, false, false));
+  segment_.set_estimate_file_duration(false);
   AddVideoTrack();
 
   EXPECT_TRUE(
@@ -488,6 +495,7 @@ TEST_F(MuxerTest, CuesBeforeClusters) {
 
 TEST_F(MuxerTest, MaxClusterSize) {
   EXPECT_TRUE(SegmentInit(false, false, false));
+  segment_.set_estimate_file_duration(false);
   AddVideoTrack();
   const uint64_t kMaxClusterSize = 20;
   segment_.set_max_cluster_size(kMaxClusterSize);
@@ -513,6 +521,7 @@ TEST_F(MuxerTest, MaxClusterSize) {
 
 TEST_F(MuxerTest, MaxClusterDuration) {
   EXPECT_TRUE(SegmentInit(false, false, false));
+  segment_.set_estimate_file_duration(false);
   AddVideoTrack();
   const uint64_t kMaxClusterDuration = 4000000;
   segment_.set_max_cluster_duration(kMaxClusterDuration);
@@ -593,6 +602,7 @@ TEST_F(MuxerTest, BlockWithDiscardPadding) {
 
 TEST_F(MuxerTest, AccurateClusterDuration) {
   EXPECT_TRUE(SegmentInit(false, true, false));
+  segment_.set_estimate_file_duration(false);
   AddVideoTrack();
 
   Frame frame;
@@ -727,6 +737,7 @@ TEST_F(MuxerTest, AccurateClusterDurationWithoutFinalizingCluster) {
 
 TEST_F(MuxerTest, UseFixedSizeClusterTimecode) {
   EXPECT_TRUE(SegmentInit(false, false, true));
+  segment_.set_estimate_file_duration(false);
   AddVideoTrack();
 
   Frame frame;

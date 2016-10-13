@@ -1842,6 +1842,9 @@ class Segment {
   // Last timestamp in nanoseconds by track number added to a cluster.
   uint64_t last_track_timestamp_[kMaxTrackNumber];
 
+  // Number of frames written per track.
+  uint64_t track_frames_written_[kMaxTrackNumber];
+
   // Maximum time in nanoseconds for a cluster duration. This variable is a
   // guideline and some clusters may have a longer duration. Default is 30
   // seconds.

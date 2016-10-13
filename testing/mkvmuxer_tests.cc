@@ -917,6 +917,27 @@ TEST_F(MuxerTest, Projection) {
   EXPECT_TRUE(CompareFiles(GetTestFilePath("projection.webm"), filename_));
 }
 
+TEST_F(MuxerTest, SetPixelWidthPixelHeight) {
+  EXPECT_TRUE(SegmentInit(false, false, false));
+  AddVideoTrack();
+  VideoTrack* const video_track =
+      static_cast<VideoTrack*>(segment_.GetTrackByNumber(kVideoTrackNumber));
+  ASSERT_TRUE(video_track != nullptr);
+  video_track->set_pixel_width(500);
+  video_track->set_pixel_height(500);
+
+  EXPECT_TRUE(segment_.AddFrame(dummy_data_, kFrameLength, kVideoTrackNumber, 0,
+                                false));
+  EXPECT_TRUE(segment_.AddFrame(dummy_data_, kFrameLength, kVideoTrackNumber,
+                                2000000, false));
+
+  segment_.Finalize();
+  CloseWriter();
+
+  EXPECT_TRUE(CompareFiles(GetTestFilePath("set_pixelwidth_pixelheight.webm"),
+                           filename_));
+}
+
 }  // namespace test
 
 int main(int argc, char* argv[]) {

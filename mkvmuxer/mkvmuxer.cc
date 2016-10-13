@@ -3046,6 +3046,7 @@ Segment::Segment()
       size_position_(0),
       doc_type_version_(kDefaultDocTypeVersion),
       doc_type_version_written_(0),
+      duration_(0.0),
       writer_cluster_(NULL),
       writer_cues_(NULL),
       writer_header_(NULL) {
@@ -3212,7 +3213,7 @@ bool Segment::Finalize() {
       chunk_count_++;
     }
 
-    const double duration =
+    const double duration = (duration_ > 0.0) ? duration_ :
         (static_cast<double>(last_timestamp_) + last_block_duration_) /
         segment_info_.timecode_scale();
     segment_info_.set_duration(duration);

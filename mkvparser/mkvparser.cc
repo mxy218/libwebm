@@ -5285,6 +5285,7 @@ long VideoTrack::Parse(Segment* pSegment, const Info& info,
   long long display_width = 0;
   long long display_height = 0;
   long long display_unit = 0;
+  long long alpha = 0;
   long long stereo_mode = 0;
 
   double rate = 0.0;
@@ -5336,6 +5337,11 @@ long VideoTrack::Parse(Segment* pSegment, const Info& info,
 
       if (display_unit < 0)
         return E_FILE_FORMAT_INVALID;
+    } else if (id == libwebm::kMkvAlphaMode) {
+      alpha = UnserializeUInt(pReader, pos, size);
+
+      if (alpha < 0)
+        return E_FILE_FORMAT_INVALID;
     } else if (id == libwebm::kMkvStereoMode) {
       stereo_mode = UnserializeUInt(pReader, pos, size);
 
@@ -5384,6 +5390,7 @@ long VideoTrack::Parse(Segment* pSegment, const Info& info,
   pTrack->m_display_height = display_height;
   pTrack->m_display_unit = display_unit;
   pTrack->m_stereo_mode = stereo_mode;
+  pTrack->m_alpha_mode = alpha;
   pTrack->m_rate = rate;
   pTrack->m_colour = colour;
   pTrack->m_projection = projection;
@@ -5502,6 +5509,8 @@ long long VideoTrack::GetDisplayHeight() const {
 }
 
 long long VideoTrack::GetDisplayUnit() const { return m_display_unit; }
+
+long long VideoTrack::GetAlphaMode() const { return m_alpha_mode; }
 
 long long VideoTrack::GetStereoMode() const { return m_stereo_mode; }
 
@@ -7161,6 +7170,9 @@ long Cluster::CreateBlockGroup(long long start_offset, long long size,
   long long bpos = -1;
   long long bsize = -1;
 
+  long long baddpos = -1;
+  long long baddsize = -1;
+
   while (pos < stop) {
     long len;
     const long long id = ReadID(pReader, pos, len);
@@ -7179,6 +7191,11 @@ long Cluster::CreateBlockGroup(long long start_offset, long long size,
       if (bpos < 0) {  // Block ID
         bpos = pos;
         bsize = size;
+      }
+    } else if (id == libwebm::kMkvBlockAdditional) {
+      if (baddpos < 0) {
+        baddpos = pos;
+        baddsize = size;
       }
     } else if (id == libwebm::kMkvBlockDuration) {
       if (size > 8)
@@ -7223,7 +7240,7 @@ long Cluster::CreateBlockGroup(long long start_offset, long long size,
   BlockEntry*& pEntry = *ppEntry;
 
   pEntry = new (std::nothrow)
-      BlockGroup(this, idx, bpos, bsize, prev, next, duration, discard_padding);
+      BlockGroup(this, idx, bpos, bsize, prev, next, duration, discard_padding, baddpos, baddsize);
 
   if (pEntry == NULL)
     return -1;  // generic error
@@ -7548,9 +7565,11 @@ const Block* SimpleBlock::GetBlock() const { return &m_block; }
 
 BlockGroup::BlockGroup(Cluster* pCluster, long idx, long long block_start,
                        long long block_size, long long prev, long long next,
-                       long long duration, long long discard_padding)
+                       long long duration, long long discard_padding,
+                       long long block_addition_start, long long block_addition_size)
     : BlockEntry(pCluster, idx),
       m_block(block_start, block_size, discard_padding),
+      m_block_additions(block_addition_start, block_addition_size),
       m_prev(prev),
       m_next(next),
       m_duration(duration) {}
@@ -7561,6 +7580,8 @@ long BlockGroup::Parse() {
   if (status)
     return status;
 
+  m_block_additions.Parse(m_pCluster);
+
   m_block.SetKey((m_prev > 0) && (m_next <= 0));
 
   return 0;
@@ -7568,6 +7589,7 @@ long BlockGroup::Parse() {
 
 BlockEntry::Kind BlockGroup::GetKind() const { return kBlockGroup; }
 const Block* BlockGroup::GetBlock() const { return &m_block; }
+const BlockAdditions* BlockGroup::GetBlockAdditions() const { return &m_block_additions; }
 long long BlockGroup::GetPrevTimeCode() const { return m_prev; }
 long long BlockGroup::GetNextTimeCode() const { return m_next; }
 long long BlockGroup::GetDurationTimeCode() const { return m_duration; }
@@ -8022,5 +8044,118 @@ long Block::Frame::Read(IMkvReader* pReader, unsigned char* buf) const {
 }
 
 long long Block::GetDiscardPadding() const { return m_discard_padding; }
+
+
+BlockAdditions::BlockAdditions(long long start, long long size)
+ : m_start(start),
+   m_size(size),
+   m_add_id(0),
+   m_buffer_start(0),
+   m_buffer_size(0),
+   m_valid(false)
+{}
+
+BlockAdditions::~BlockAdditions() {}
+
+long long BlockAdditions::GetAddID() const { return m_add_id; }
+
+long BlockAdditions::GetBufferSize() const { return m_buffer_size; }
+
+bool BlockAdditions::IsValid() const { return m_valid; }
+
+long BlockAdditions::Read(IMkvReader* pReader, unsigned char* buf) const {
+    assert(pReader);
+    assert(buf);
+    assert(m_buffer_start >= 0);
+    assert(m_buffer_size > 0);
+
+    const long status = pReader->Read(m_buffer_start, m_buffer_size, buf);
+    return status;
+}
+
+long BlockAdditions::Parse(const Cluster* pCluster) {
+    if (pCluster == NULL)
+        return -1;
+
+    if (pCluster->m_pSegment == NULL)
+        return -1;
+
+    if (m_start < 0 || m_size < 0)
+        return E_FILE_FORMAT_INVALID;
+
+    long long pos = m_start;
+    const long long stop = m_start + m_size;
+
+    long len;
+    long long size;
+
+    IMkvReader* const pReader = pCluster->m_pSegment->m_pReader;
+
+    long long id = ReadUInt(pReader, pos, len);
+
+    if (id != 0x26) // BlockMore EBML ID
+        return E_FILE_FORMAT_INVALID;
+
+    if ((pos + len) > stop)
+        return E_FILE_FORMAT_INVALID;
+
+    pos += len; // consume BlockMore EBML ID
+
+    size = ReadUInt(pReader, pos, len);
+
+    if ((pos + len) > stop)
+        return E_FILE_FORMAT_INVALID;
+
+    pos += len; // consume size
+    
+    id = ReadUInt(pReader, pos, len);
+
+    if (id != 0x6E) // BlockAddID EBML ID
+        return E_FILE_FORMAT_INVALID;
+
+    if ((pos + len) > stop)
+        return E_FILE_FORMAT_INVALID;
+
+    pos += len; // consume BlockAddID EBML ID
+
+    m_add_id = ReadUInt(pReader, pos, len);
+
+    if (m_add_id == 0 ) // BlockAddID id never 0
+        return E_FILE_FORMAT_INVALID;
+
+    if ((pos + len) > stop)
+        return E_FILE_FORMAT_INVALID;
+
+    pos += len; // consume BlockAddID id
+
+    size = UnserializeUInt(pReader, pos, 1);
+    pos += 1; // consume size
+
+    id = UnserializeUInt(pReader, pos, size);
+
+    if (id != 0xA5) // BlockAdditional EBML ID
+        return E_FILE_FORMAT_INVALID;
+
+    if ((pos + size) > stop)
+        return E_FILE_FORMAT_INVALID;
+
+    pos += size; // consume BlockAdditional EBML ID
+
+    size = ReadUInt(pReader, pos, len);
+    pos += len;
+
+    m_buffer_start = pos;
+
+    const long long frame_size = stop - pos;
+
+    if (frame_size > LONG_MAX || frame_size != size)
+        return E_FILE_FORMAT_INVALID;
+
+    m_buffer_size = static_cast<long>(size);
+
+    m_valid = true;
+
+    return 0;  // success
+}
 
 }  // namespace mkvparser

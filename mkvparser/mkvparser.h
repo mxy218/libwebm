@@ -116,6 +116,33 @@ class Block {
   const long long m_discard_padding;
 };
 
+class BlockAdditions {
+  BlockAdditions(const BlockAdditions&);
+  BlockAdditions& operator=(const BlockAdditions&);
+
+ public:
+  const long long m_start;
+  const long long m_size;
+
+  BlockAdditions(long long start, long long size);
+  ~BlockAdditions();
+
+  bool IsValid() const;
+
+  long Parse(const Cluster*);
+
+  long Read(IMkvReader*, unsigned char*) const;
+
+  long long GetAddID() const;
+  long GetBufferSize() const;
+
+ private:
+  long long m_add_id;
+  long long m_buffer_start;
+  long m_buffer_size;
+  bool m_valid;
+};
+
 class BlockEntry {
   BlockEntry(const BlockEntry&);
   BlockEntry& operator=(const BlockEntry&);
@@ -163,12 +190,15 @@ class BlockGroup : public BlockEntry {
              long long block_start,  // absolute pos of block's payload
              long long block_size,  // size of block's payload
              long long prev, long long next, long long duration,
-             long long discard_padding);
+             long long discard_padding,
+             long long block_addition_start, 
+             long long block_addition_size);
 
   long Parse();
 
   Kind GetKind() const;
   const Block* GetBlock() const;
+  const BlockAdditions* GetBlockAdditions() const;
 
   long long GetPrevTimeCode() const;  // relative to block's time
   long long GetNextTimeCode() const;  // as above
@@ -176,6 +206,7 @@ class BlockGroup : public BlockEntry {
 
  private:
   Block m_block;
+  BlockAdditions m_block_additions;
   const long long m_prev;
   const long long m_next;
   const long long m_duration;
@@ -517,6 +548,7 @@ class VideoTrack : public Track {
   long long GetDisplayWidth() const;
   long long GetDisplayHeight() const;
   long long GetDisplayUnit() const;
+  long long GetAlphaMode() const;
   long long GetStereoMode() const;
   double GetFrameRate() const;
 
@@ -533,6 +565,7 @@ class VideoTrack : public Track {
   long long m_display_width;
   long long m_display_height;
   long long m_display_unit;
+  long long m_alpha_mode;
   long long m_stereo_mode;
 
   double m_rate;

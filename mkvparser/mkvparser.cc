@@ -8089,7 +8089,7 @@ long BlockAdditions::Parse(const Cluster* pCluster) {
 
     long long id = ReadID(pReader, pos, len);
 
-    if (id != libwebm::kMkvBlockMore) // BlockMore EBML ID
+    if (id != libwebm::kMkvBlockMore)
         return E_FILE_FORMAT_INVALID;
 
     if ((pos + len) > stop)
@@ -8106,7 +8106,7 @@ long BlockAdditions::Parse(const Cluster* pCluster) {
     
     id = ReadID(pReader, pos, len);
 
-    if (id != libwebm::kMkvBlockAddID) // BlockAddID EBML ID
+    if (id != libwebm::kMkvBlockAddID)
         return E_FILE_FORMAT_INVALID;
 
     if ((pos + len) > stop)
@@ -8129,7 +8129,7 @@ long BlockAdditions::Parse(const Cluster* pCluster) {
 
     id = ReadID(pReader, pos, size);
 
-    if (id != libwebm::kMkvBlockAdditional) // BlockAdditional EBML ID
+    if (id != libwebm::kMkvBlockAdditional)
         return E_FILE_FORMAT_INVALID;
 
     if ((pos + size) > stop)

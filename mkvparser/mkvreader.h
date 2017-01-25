@@ -8,6 +8,8 @@
 #ifndef MKVPARSER_MKVREADER_H_
 #define MKVPARSER_MKVREADER_H_
 
+#include <sys/types.h>  // off_t
+
 #include <cstdio>
 
 #include "mkvparser/mkvparser.h"

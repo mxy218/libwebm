@@ -23,8 +23,8 @@ namespace libwebm {
 std::string GetTempFileName() {
 #if !defined _MSC_VER && !defined __MINGW32__
   std::string temp_file_name_template_str =
-      std::string(std::getenv("TEST_TMPDIR") ? std::getenv("TEST_TMPDIR") :
-                                               ".") +
+      std::string(std::getenv("TEST_TMPDIR") ? std::getenv("TEST_TMPDIR")
+                                             : ".") +
       "/libwebm_temp.XXXXXX";
   char* temp_file_name_template =
       new char[temp_file_name_template_str.length() + 1];
@@ -63,6 +63,15 @@ uint64_t GetFileSize(const std::string& file_name) {
     file_size = st.st_size;
   }
   return file_size;
+}
+
+bool GetFileContents(const std::string& file_name, std::string* contents) {
+  std::ifstream file(file_name.c_str());
+  *contents = std::string(static_cast<size_t>(GetFileSize(file_name)), 0);
+  if (file.good() && contents->size()) {
+    file.read(&(*contents)[0], contents->size());
+  }
+  return !file.fail();
 }
 
 TempFileDeleter::TempFileDeleter() { file_name_ = GetTempFileName(); }

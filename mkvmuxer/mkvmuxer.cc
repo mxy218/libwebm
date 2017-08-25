@@ -1030,19 +1030,16 @@ bool MasteringMetadata::Write(IMkvWriter* writer) const {
       !WriteEbmlElement(writer, libwebm::kMkvLuminanceMin, luminance_min_)) {
     return false;
   }
-  if (r_ &&
-      !r_->Write(writer, libwebm::kMkvPrimaryRChromaticityX,
-                 libwebm::kMkvPrimaryRChromaticityY)) {
+  if (r_ && !r_->Write(writer, libwebm::kMkvPrimaryRChromaticityX,
+                       libwebm::kMkvPrimaryRChromaticityY)) {
     return false;
   }
-  if (g_ &&
-      !g_->Write(writer, libwebm::kMkvPrimaryGChromaticityX,
-                 libwebm::kMkvPrimaryGChromaticityY)) {
+  if (g_ && !g_->Write(writer, libwebm::kMkvPrimaryGChromaticityX,
+                       libwebm::kMkvPrimaryGChromaticityY)) {
     return false;
   }
-  if (b_ &&
-      !b_->Write(writer, libwebm::kMkvPrimaryBChromaticityX,
-                 libwebm::kMkvPrimaryBChromaticityY)) {
+  if (b_ && !b_->Write(writer, libwebm::kMkvPrimaryBChromaticityX,
+                       libwebm::kMkvPrimaryBChromaticityY)) {
     return false;
   }
   if (white_point_ &&
@@ -2666,7 +2663,7 @@ bool Cluster::QueueOrWriteFrame(const Frame* const frame) {
   // and write it if it is okay to do so (i.e.) no other track has an held back
   // frame with timestamp <= the timestamp of the frame in question.
   std::vector<std::list<Frame*>::iterator> frames_to_erase;
-  for (std::list<Frame *>::iterator
+  for (std::list<Frame*>::iterator
            current_track_iterator = stored_frames_[track_number].begin(),
            end = --stored_frames_[track_number].end();
        current_track_iterator != end; ++current_track_iterator) {

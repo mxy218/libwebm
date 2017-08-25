@@ -28,12 +28,12 @@
 
 namespace {
 
-using mkvparser::ContentEncoding;
-using std::string;
-using std::wstring;
 using libwebm::Indent;
 using libwebm::kNanosecondsPerSecond;
 using libwebm::kNanosecondsPerSecondi;
+using mkvparser::ContentEncoding;
+using std::string;
+using std::wstring;
 
 const char VERSION_STRING[] = "1.0.4.5";
 
@@ -1313,9 +1313,10 @@ int main(int argc, char* argv[]) {
     level_stats.set_duration(segment->GetInfo()->GetDuration());
     const vp9_parser::Vp9Level level = level_stats.GetLevel();
     fprintf(out, "VP9 Level:%d\n", level);
-    fprintf(out, "mlsr:%" PRId64 " mlps:%" PRId64
-                 " abr:%g mcs:%g cr:%g mct:%d"
-                 " mad:%d mrf:%d\n",
+    fprintf(out,
+            "mlsr:%" PRId64 " mlps:%" PRId64
+            " abr:%g mcs:%g cr:%g mct:%d"
+            " mad:%d mrf:%d\n",
             level_stats.GetMaxLumaSampleRate(),
             level_stats.GetMaxLumaPictureSize(),
             level_stats.GetAverageBitRate(), level_stats.GetMaxCpbSize(),

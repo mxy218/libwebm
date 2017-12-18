@@ -48,12 +48,12 @@ struct Vp9CodecFeatures {
 };
 
 // disable deprecation warnings for auto_ptr
-#if defined(__GNUC__) && __GNUC__ >= 5
+#if defined(__GNUC__) && __GNUC__ >= 4
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 typedef std::auto_ptr<mkvmuxer::PrimaryChromaticity> PrimaryChromaticityPtr;
-#if defined(__GNUC__) && __GNUC__ >= 5
+#if defined(__GNUC__) && __GNUC__ >= 4
 #pragma GCC diagnostic pop
 #endif
 

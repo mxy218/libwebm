@@ -27,7 +27,7 @@
 #include "mkvparser/mkvparser.h"
 
 // disable deprecation warnings for auto_ptr
-#if defined(__GNUC__) && __GNUC__ >= 5
+#if defined(__GNUC__) && __GNUC__ >= 4
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 

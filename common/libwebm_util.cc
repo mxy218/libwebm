@@ -7,6 +7,7 @@
 // be found in the AUTHORS file in the root of the source tree.
 #include "common/libwebm_util.h"
 
+#include <cassert>
 #include <cstdint>
 #include <cstdio>
 
@@ -23,9 +24,12 @@ std::int64_t Khz90TicksToNanoseconds(std::int64_t ticks) {
 }
 
 bool ParseVP9SuperFrameIndex(const std::uint8_t* frame,
-                             std::size_t frame_length, Ranges* frame_ranges) {
-  if (frame == nullptr || frame_length == 0 || frame_ranges == nullptr)
+                             std::size_t frame_length, Ranges* frame_ranges,
+                             bool* error) {
+  if (frame == nullptr || frame_length == 0 || frame_ranges == nullptr ||
+      error == nullptr) {
     return false;
+  }
 
   bool parse_ok = false;
   const std::uint8_t marker = frame[frame_length - 1];
@@ -35,14 +39,19 @@ bool ParseVP9SuperFrameIndex(const std::uint8_t* frame,
 
   if ((marker & kHasSuperFrameIndexMask) == kSuperFrameMarker) {
     const std::uint32_t kFrameCountMask = 0x7;
+    const int kMaxLengthFieldSize = 4;
     const int num_frames = (marker & kFrameCountMask) + 1;
     const int length_field_size = ((marker >> 3) & kLengthFieldSizeMask) + 1;
     const std::size_t index_length = 2 + length_field_size * num_frames;
 
     if (frame_length < index_length) {
-      std::fprintf(stderr, "VP9Parse: Invalid superframe index size.\n");
+      std::fprintf(stderr,
+                   "VP9ParseSuperFrameIndex: Invalid superframe index size.\n");
+      *error = true;
       return false;
     }
+
+    assert(length_field_size <= kMaxLengthFieldSize);
 
     // Consume the super frame index. Note: it's at the end of the super frame.
     const std::size_t length = frame_length - index_length;
@@ -53,11 +62,20 @@ bool ParseVP9SuperFrameIndex(const std::uint8_t* frame,
       const std::uint8_t* byte = frame + length + 1;
 
       std::size_t frame_offset = 0;
+
       for (int i = 0; i < num_frames; ++i) {
         std::uint32_t child_frame_length = 0;
 
         for (int j = 0; j < length_field_size; ++j) {
           child_frame_length |= (*byte++) << (j * 8);
+        }
+
+        if (frame_offset + child_frame_length > length) {
+          std::fprintf(stderr,
+                       "ParseVP9SuperFrameIndex: Invalid superframe, sub frame "
+                       "larger than entire frame.\n");
+          *error = true;
+          return false;
         }
 
         frame_ranges->push_back(Range(frame_offset, child_frame_length));
@@ -66,12 +84,14 @@ bool ParseVP9SuperFrameIndex(const std::uint8_t* frame,
 
       if (static_cast<int>(frame_ranges->size()) != num_frames) {
         std::fprintf(stderr, "VP9Parse: superframe index parse failed.\n");
+        *error = true;
         return false;
       }
 
       parse_ok = true;
     } else {
       std::fprintf(stderr, "VP9Parse: Invalid superframe index.\n");
+      *error = true;
     }
   }
   return parse_ok;

@@ -97,7 +97,7 @@ struct Status {
     // is considered a bug.
     // Parsing should switch from reading to skipping elements (internal-only
     // use; .
-    kSwitchToSkip = -2147483648,
+    kSwitchToSkip = INT32_MIN,
   };
 
   /**

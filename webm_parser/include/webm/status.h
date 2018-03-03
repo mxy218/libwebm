@@ -94,10 +94,10 @@ struct Status {
 
     // The following codes are internal-only and should not be used by users.
     // Additionally, these codes should never be returned to the user; doing so
-    // is considered a bug.
-    // Parsing should switch from reading to skipping elements (internal-only
-    // use; .
-    kSwitchToSkip = -2147483648,
+    // is considered a bug. Using non-doxygen-style documentation here is
+    // intentional.
+    // Parsing should switch from reading to skipping elements.
+    kSwitchToSkip = INT32_MIN,
   };
 
   /**

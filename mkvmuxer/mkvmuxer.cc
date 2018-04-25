@@ -26,11 +26,6 @@
 #include "mkvmuxer/mkvwriter.h"
 #include "mkvparser/mkvparser.h"
 
-// disable deprecation warnings for auto_ptr
-#if defined(__GNUC__) && __GNUC__ >= 5
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
-
 namespace mkvmuxer {
 
 const float PrimaryChromaticity::kChromaticityMin = 0.0f;
@@ -74,7 +69,7 @@ bool StrCpy(const char* src, char** dst_ptr) {
   return true;
 }
 
-typedef std::auto_ptr<PrimaryChromaticity> PrimaryChromaticityPtr;
+typedef std::unique_ptr<PrimaryChromaticity> PrimaryChromaticityPtr;
 bool CopyChromaticity(const PrimaryChromaticity* src,
                       PrimaryChromaticityPtr* dst) {
   if (!dst)
@@ -1059,22 +1054,22 @@ bool MasteringMetadata::Write(IMkvWriter* writer) const {
 bool MasteringMetadata::SetChromaticity(
     const PrimaryChromaticity* r, const PrimaryChromaticity* g,
     const PrimaryChromaticity* b, const PrimaryChromaticity* white_point) {
-  PrimaryChromaticityPtr r_ptr(NULL);
+  PrimaryChromaticityPtr r_ptr;
   if (r) {
     if (!CopyChromaticity(r, &r_ptr))
       return false;
   }
-  PrimaryChromaticityPtr g_ptr(NULL);
+  PrimaryChromaticityPtr g_ptr;
   if (g) {
     if (!CopyChromaticity(g, &g_ptr))
       return false;
   }
-  PrimaryChromaticityPtr b_ptr(NULL);
+  PrimaryChromaticityPtr b_ptr;
   if (b) {
     if (!CopyChromaticity(b, &b_ptr))
       return false;
   }
-  PrimaryChromaticityPtr wp_ptr(NULL);
+  PrimaryChromaticityPtr wp_ptr;
   if (white_point) {
     if (!CopyChromaticity(white_point, &wp_ptr))
       return false;

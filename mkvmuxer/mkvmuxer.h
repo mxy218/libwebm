@@ -869,11 +869,11 @@ class Tracks {
   // Audio and video type defined by the Matroska specs.
   enum { kVideo = 0x1, kAudio = 0x2 };
 
+  static const char kAV1CodecId[];
   static const char kOpusCodecId[];
   static const char kVorbisCodecId[];
   static const char kVp8CodecId[];
   static const char kVp9CodecId[];
-  static const char kVp10CodecId[];
   static const char kWebVttCaptionsId[];
   static const char kWebVttDescriptionsId[];
   static const char kWebVttMetadataId[];

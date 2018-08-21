@@ -773,6 +773,11 @@ bool Track::Write(IMkvWriter* writer) const {
   if (!type_ || !codec_id_)
     return false;
 
+  // AV1 tracks require a CodecPrivate. See
+  // https://github.com/Matroska-Org/matroska-specification/blob/av1-mappin/codec/av1.md
+  if (!strcmp(codec_id_, Tracks::kAv1CodecId) && !codec_private_)
+    return false;
+
   // |size| may be bigger than what is written out in this function because
   // derived classes may write out more data in the Track element.
   const uint64_t payload_size = PayloadSize();

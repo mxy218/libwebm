@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7b57f663_c856af81",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-08-22T01:11:33Z",
+      "side": 1,
+      "message": "was there a bug for this one or only an email thread?",
+      "revId": "361aec07c44599e812db9a3907634080d290ab6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "42924684_1a3befa2",
+        "filename": "mkvmuxer_sample.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 557,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2018-08-22T01:11:33Z",
+      "side": 1,
+      "message": "this structure would have been better in the previous change to make this easier to diff",
+      "revId": "361aec07c44599e812db9a3907634080d290ab6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

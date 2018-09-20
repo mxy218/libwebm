@@ -77,6 +77,7 @@ void Usage() {
   printf("  -projection_pose_pitch <float> Projection pose pitch\n");
   printf("  -projection_pose_roll <float>  Projection pose roll\n");
   printf("  -stereo_mode <int>             3D video mode\n");
+  printf("  -slowdown_factor <float>       Slowdown Factor\n");
   printf("\n");
   printf("VP9 options:\n");
   printf("  -profile <int>              VP9 profile\n");
@@ -228,6 +229,7 @@ int main(int argc, char* argv[]) {
   float projection_pose_roll = mkvparser::Projection::kValueNotPresent;
   float projection_pose_pitch = mkvparser::Projection::kValueNotPresent;
   float projection_pose_yaw = mkvparser::Projection::kValueNotPresent;
+  float slowdown_factor = 1.0;
   int vp9_profile = -1;  // No profile set.
   int vp9_level = -1;  // No level set.
 
@@ -308,6 +310,8 @@ int main(int argc, char* argv[]) {
       projection_pose_pitch = strtof(argv[++i], &end);
     } else if (!strcmp("-projection_pose_yaw", argv[i]) && i < argc_check) {
       projection_pose_yaw = strtof(argv[++i], &end);
+    } else if (!strcmp("-slowdown_factor", argv[i]) && i < argc_check) {
+      slowdown_factor = strtof(argv[++i], &end);
     } else if (!strcmp("-profile", argv[i]) && i < argc_check) {
       vp9_profile = static_cast<int>(strtol(argv[++i], &end, 10));
     } else if (!strcmp("-level", argv[i]) && i < argc_check) {
@@ -695,7 +699,8 @@ int main(int argc, char* argv[]) {
       }
 
       const long long track_type = parser_track->GetType();
-      const long long time_ns = block->GetTime(cluster);
+      const long long time_ns =
+          (long long)(block->GetTime(cluster) * slowdown_factor);
 
       // Flush any metadata frames to the output file, before we write
       // the current block.

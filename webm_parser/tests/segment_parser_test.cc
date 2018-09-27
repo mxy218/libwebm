@@ -13,6 +13,7 @@
 #include "gtest/gtest.h"
 
 #include "test_utils/element_parser_test.h"
+//#include "test_utils/unassigned_action_callback.h"
 #include "webm/id.h"
 #include "webm/status.h"
 
@@ -41,6 +42,20 @@ TEST_F(SegmentParserTest, EmptyParse) {
     InSequence dummy;
 
     EXPECT_CALL(callback_, OnSegmentBegin(metadata_, NotNull())).Times(1);
+    EXPECT_CALL(callback_, OnSegmentEnd(metadata_)).Times(1);
+  }
+
+  ParseAndVerify();
+}
+
+TEST_F(SegmentParserTest, DefaultActionIsRead) {
+  {
+    InSequence dummy;
+
+    // This intentionally does not set the action and relies on the parser using
+    // a default action value of kRead.
+    EXPECT_CALL(callback_, OnSegmentBegin(metadata_, NotNull()))
+        .WillOnce(Return(Status(Status::kOkCompleted)));
     EXPECT_CALL(callback_, OnSegmentEnd(metadata_)).Times(1);
   }
 

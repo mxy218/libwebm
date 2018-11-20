@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "06ee7d73_8b6f0e73",
+        "filename": "CMakeLists.txt",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002431
+      },
+      "writtenOn": "2018-11-20T22:20:26Z",
+      "side": 1,
+      "message": "2 nits:\n1) Get rid of the tabs: we use spaces.\n2) Drop the WIN32 in the else() and endif().",
+      "range": {
+        "startLine": 27,
+        "startChar": 0,
+        "endLine": 32,
+        "endChar": 0
+      },
+      "revId": "cbf662d9bfd1e28a8be48943bac31d1683d483f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "999b5a79_7ca651d4",
+        "filename": "common/file_util.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002431
+      },
+      "writtenOn": "2018-11-20T22:20:26Z",
+      "side": 1,
+      "message": "could be int",
+      "range": {
+        "startLine": 49,
+        "startChar": 2,
+        "endLine": 49,
+        "endChar": 9
+      },
+      "revId": "cbf662d9bfd1e28a8be48943bac31d1683d483f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

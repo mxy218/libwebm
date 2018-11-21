@@ -16,6 +16,24 @@
       "revId": "cb5a9477073cf7ae4a28356d6e3e5638aba78dc9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8be12e0d_3449381b",
+        "filename": "mkvparser/mkvparser.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 5368,
+      "author": {
+        "id": 1002431
+      },
+      "writtenOn": "2018-11-21T16:35:30Z",
+      "side": 1,
+      "message": "i think we were allowing only auto_ptr in libwebm when it was originally written, but yes to this and many many many criticisms of mkvparser",
+      "parentUuid": "29a42fea_de636a3b",
+      "revId": "cb5a9477073cf7ae4a28356d6e3e5638aba78dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

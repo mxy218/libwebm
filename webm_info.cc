@@ -177,6 +177,10 @@ wstring UTF8ToWideString(const char* str) {
   return wstr;
 }
 
+string GetCodecId(const mkvparser::Track& track) {
+  return (track.GetCodecId() == NULL) ? "" : track.GetCodecId();
+}
+
 void OutputEBMLHeader(const mkvparser::EBMLHeader& ebml, FILE* o,
                       Indent* indent) {
   fprintf(o, "EBML Header:\n");
@@ -376,7 +380,7 @@ bool OutputTracks(const mkvparser::Segment& segment, const Options& options,
               static_cast<int>(private_size));
 
       if (track_type == mkvparser::Track::kVideo) {
-        const std::string codec_id = track->GetCodecId();
+        const std::string codec_id = GetCodecId(*track);
         const std::string v_vp9 = "V_VP9";
         if (codec_id == v_vp9) {
           libwebm::Vp9CodecFeatures features;
@@ -1018,7 +1022,7 @@ bool OutputCluster(const mkvparser::Cluster& cluster,
                 data += frame_offset;
                 frame_size -= frame_offset;
 
-                const string codec_id = track->GetCodecId();
+                const string codec_id = GetCodecId(*track);
                 if (codec_id == "V_VP8") {
                   PrintVP8Info(data, frame_size, o);
                 } else if (codec_id == "V_VP9") {

@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "16d68492_93170589",
+        "filename": "CMakeLists.txt",
+        "patchSetId": 2
+      },
+      "lineNbr": 361,
+      "author": {
+        "id": 1002431
+      },
+      "writtenOn": "2020-02-07T19:22:38Z",
+      "side": 1,
+      "message": "This line needs to be wrapped:\n\n    set_target_properties(webm PROPERTIES PUBLIC_HEADER\n                          \"${webm_parser_public_headers}\")",
+      "revId": "da71d575b45a7a6c9cf75f127872c31a43f894c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c622752b_6fb9a60b",
+        "filename": "CMakeLists.txt",
+        "patchSetId": 2
+      },
+      "lineNbr": 452,
+      "author": {
+        "id": 1002431
+      },
+      "writtenOn": "2020-02-07T19:22:38Z",
+      "side": 1,
+      "message": "The wrapping here should match the style elsewhere in this file:\n\n    install(TARGETS webm\n            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}\n            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}\n            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}\n            PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/webm)\n\nThe install rule should also be wrapped in an ENABLE_WEBM_PARSER block since it\u0027s really only going to be useful when webm_parser is enabled.",
+      "range": {
+        "startLine": 447,
+        "startChar": 0,
+        "endLine": 452,
+        "endChar": 1
+      },
+      "revId": "da71d575b45a7a6c9cf75f127872c31a43f894c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

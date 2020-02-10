@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "63ff530e_169cb15b",
+        "filename": "CMakeLists.txt",
+        "patchSetId": 2
+      },
+      "lineNbr": 361,
+      "author": {
+        "id": 1361710
+      },
+      "writtenOn": "2020-02-10T10:53:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "16d68492_93170589",
+      "revId": "da71d575b45a7a6c9cf75f127872c31a43f894c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c622752b_6fb9a60b",
         "filename": "CMakeLists.txt",
         "patchSetId": 2
@@ -39,6 +57,30 @@
       "revId": "da71d575b45a7a6c9cf75f127872c31a43f894c1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4e04505d_8eb6320b",
+        "filename": "CMakeLists.txt",
+        "patchSetId": 2
+      },
+      "lineNbr": 452,
+      "author": {
+        "id": 1361710
+      },
+      "writtenOn": "2020-02-10T10:53:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c622752b_6fb9a60b",
+      "range": {
+        "startLine": 447,
+        "startChar": 0,
+        "endLine": 452,
+        "endChar": 1
+      },
+      "revId": "da71d575b45a7a6c9cf75f127872c31a43f894c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

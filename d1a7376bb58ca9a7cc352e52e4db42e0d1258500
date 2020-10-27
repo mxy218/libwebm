@@ -16,6 +16,23 @@
       "message": "This is technically ok for an ebml stream, but I think the intent was for the parser to handle only one ebml header.",
       "revId": "d1a7376bb58ca9a7cc352e52e4db42e0d1258500",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "34822f12_8c0895fe",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157809
+      },
+      "writtenOn": "2020-10-27T04:32:07Z",
+      "side": 1,
+      "message": "I\u0027m not sure I understand the issue here. The parser can already handle two concatenated WebM files. I also tried the file https://trac.webkit.org/browser/webkit/trunk/LayoutTests/media/media-source/content/test-vp9-long.webm with the demo parser and it worked just fine.\n\nCan you help me understand what the issue is and how this solves it?",
+      "revId": "d1a7376bb58ca9a7cc352e52e4db42e0d1258500",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

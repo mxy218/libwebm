@@ -33,6 +33,24 @@
       "message": "I\u0027m not sure I understand the issue here. The parser can already handle two concatenated WebM files. I also tried the file https://trac.webkit.org/browser/webkit/trunk/LayoutTests/media/media-source/content/test-vp9-long.webm with the demo parser and it worked just fine.\n\nCan you help me understand what the issue is and how this solves it?",
       "revId": "d1a7376bb58ca9a7cc352e52e4db42e0d1258500",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "12e14b38_afd257f2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002054
+      },
+      "writtenOn": "2020-10-27T15:41:18Z",
+      "side": 1,
+      "message": "The issue is dealing with MSE reinitializing with a new segment. The current segment being parsed will not be parsed fully when the new segment gets sent to be parsed. Probably would be good to have a test case.",
+      "parentUuid": "34822f12_8c0895fe",
+      "revId": "d1a7376bb58ca9a7cc352e52e4db42e0d1258500",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

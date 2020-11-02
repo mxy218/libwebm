@@ -69,6 +69,149 @@
       "parentUuid": "12e14b38_afd257f2",
       "revId": "d1a7376bb58ca9a7cc352e52e4db42e0d1258500",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c3e3932e_f2a5edd5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157809
+      },
+      "writtenOn": "2020-11-02T17:46:26Z",
+      "side": 1,
+      "message": "Discussed offline. Marking as resolved.",
+      "parentUuid": "03395466_3f473bf7",
+      "revId": "d1a7376bb58ca9a7cc352e52e4db42e0d1258500",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d69fe2b0_7caaac9e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157809
+      },
+      "writtenOn": "2020-11-02T17:46:26Z",
+      "side": 1,
+      "message": "webm_parser.cc also needs to be updated to include calls to OnElementEnd()",
+      "revId": "d1a7376bb58ca9a7cc352e52e4db42e0d1258500",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d5f949aa_11edc239",
+        "filename": "webm_parser/include/webm/callback.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1157809
+      },
+      "writtenOn": "2020-11-02T17:46:26Z",
+      "side": 1,
+      "message": "This might need to be updated, depending on whether or not OnElementEnd() is called for skipped elements.",
+      "range": {
+        "startLine": 39,
+        "startChar": 64,
+        "endLine": 40,
+        "endChar": 64
+      },
+      "revId": "d1a7376bb58ca9a7cc352e52e4db42e0d1258500",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d815d0af_df1d1ae7",
+        "filename": "webm_parser/include/webm/callback.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 337,
+      "author": {
+        "id": 1157809
+      },
+      "writtenOn": "2020-11-02T17:46:26Z",
+      "side": 1,
+      "message": "Please add documentation for this.",
+      "revId": "d1a7376bb58ca9a7cc352e52e4db42e0d1258500",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "661a3c8d_a5cf69c1",
+        "filename": "webm_parser/src/master_parser.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1157809
+      },
+      "writtenOn": "2020-11-02T17:46:26Z",
+      "side": 1,
+      "message": "This will cause OnElementEnd() to be called on the original callback, even if the callback chose an action of kSkip in OnElementBegin(). That may or may not be desirable. I don\u0027t have much of an opinion here. It could be argued either way depending on whether or not you think kSkip should notify you of the end of skipped elements. The documentation for OnElementEnd() should be clear on what the behavior is here.",
+      "revId": "d1a7376bb58ca9a7cc352e52e4db42e0d1258500",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4b4784a4_aeb39f15",
+        "filename": "webm_parser/src/master_parser.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1157809
+      },
+      "writtenOn": "2020-11-02T17:46:26Z",
+      "side": 1,
+      "message": "The return value is not checked here. This will likely need a new State in order to handle the kOkPartial return value.",
+      "revId": "d1a7376bb58ca9a7cc352e52e4db42e0d1258500",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c8cd030f_269f8470",
+        "filename": "webm_parser/src/master_parser.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 262,
+      "author": {
+        "id": 1157809
+      },
+      "writtenOn": "2020-11-02T17:46:26Z",
+      "side": 1,
+      "message": "The return value is not checked here. This will likely need a new State in order to handle the kOkPartial return value. Additionally, this should be called before PrepareForNextChild() (and maybe before callback \u003d original_callback; depend on the semantics of OnElementEnd).",
+      "revId": "d1a7376bb58ca9a7cc352e52e4db42e0d1258500",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f2a8db4e_198fa395",
+        "filename": "webm_parser/src/webm_parser.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1157809
+      },
+      "writtenOn": "2020-11-02T17:46:26Z",
+      "side": 1,
+      "message": "The return value is not checked here. This will likely need a new State in order to handle the kOkPartial return value.",
+      "revId": "d1a7376bb58ca9a7cc352e52e4db42e0d1258500",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

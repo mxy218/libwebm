@@ -3069,6 +3069,7 @@ Segment::Segment()
       cluster_list_size_(0),
       cues_position_(kAfterClusters),
       cues_track_(0),
+      ebml_header_size_(0),
       force_new_cluster_(false),
       frames_(NULL),
       frames_capacity_(0),

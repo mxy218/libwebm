@@ -41,30 +41,6 @@ WORKSPACE   directory where the build is done
 EOF
 }
 
-log_err() {
-  echo "[$(date +'%Y-%m-%dT%H:%M:%S%z')]: $*" >&2
-}
-
-#######################################
-# Create build directory
-# Globals:
-#   BUILD_TYPE   static-debug | static
-#   WORKSPACE    directory where build is done
-# Arguments:
-#   None
-# Outputs:
-#   build dir path.
-# Returns:
-#   mkdir result
-#######################################
-make_build_dir() {
-  local build_dir_base
-  build_dir_base="${WORKSPACE}/build-${BUILD_TYPE}"
-  [[ -d "${build_dir_base}" ]] && rm -rf "${build_dir_base}"
-  mkdir -p "${build_dir_base}"
-  echo "${build_dir_base}"
-}
-
 #######################################
 # Cleanup files from the backup directory.
 # Globals:
@@ -94,6 +70,9 @@ setup_ccache() {
 set -e
 LIBWEBM_ROOT="$(realpath "$(dirname "$0")/..")"
 WORKSPACE=${WORKSPACE:-"$(mktemp -d)"}
+
+# shellcheck source=infra/common
+source "${LIBWEBM_ROOT}/infra/common"
 
 echo "Building libwebm in ${WORKSPACE}"
 
@@ -134,13 +113,12 @@ case "${TARGET}" in
       x86_64-w64-mingw32)
         opts+=("${TOOLCHAIN_FILE_FLAG}/x86_64-mingw-gcc.cmake")
         ;;
-      *)
-        log_err "${TARGET} TARGET not supported"
+      *) log_err "${TARGET} TARGET not supported"
         usage
         exit 1
         ;;
     esac
-    BUILD_DIR="$(make_build_dir)"
+    BUILD_DIR="$(make_build_dir "${BUILD_TYPE}")"
     pushd "${BUILD_DIR}"
     cmake "${opts[@]}" "${LIBWEBM_ROOT}"
     make VERBOSE=1

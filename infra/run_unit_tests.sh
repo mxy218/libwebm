@@ -29,7 +29,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -e
+set -eo pipefail
 LIBWEBM_ROOT="$(realpath "$(dirname "$0")/..")"
 WORKSPACE=${WORKSPACE:-"$(mktemp -d)"}
 
@@ -38,75 +38,97 @@ source "${LIBWEBM_ROOT}/infra/common.sh"
 
 usage() {
   cat<< EOF
-Usage: compile.sh BUILD_TYPE TARGET
+Usage: $(basename "$0") TARGET
 Options:
-BUILD_TYPE  supported build type (static, static-debug)
-TARGET      supported target platform compilation: (native, native-clang,
-            i686-w64-mingw32, x86_64-w64-mingw32, native-Makefile.unix)
+TARGET supported targets: (x86-asan, x86-asan, x86_64-asan, x86_64-ubsan,
+       x86_64-valgrind)
 Environment variables:
 WORKSPACE   directory where the build is done
 EOF
 }
 
 #######################################
-# Setup ccache for toolchain.
+# Run valgrind
 #######################################
-setup_ccache() {
-  if [[ -x "$(command -v ccache)" ]]; then
-    export CCACHE_CPP2=yes
-    export PATH="/usr/lib/ccache:${PATH}"
-  fi
+run_valgrind() {
+  valgrind \
+    --leak-check=full \
+    --show-reachable=yes \
+    --track-origins=yes \
+    --error-exitcode=1 \
+    "$@"
 }
 
 ################################################################################
-echo "Building libwebm in ${WORKSPACE}"
+echo "Unit testing libwebm in ${WORKSPACE}"
 
 if [[ ! -d "${WORKSPACE}" ]]; then
   log_err "${WORKSPACE} directory does not exist"
   exit 1
 fi
 
-BUILD_TYPE=${1:?"Build type not defined.$(echo; usage)"}
-TARGET=${2:?"Target not defined.$(echo; usage)"}
-BUILD_DIR="${WORKSPACE}/build-${BUILD_TYPE}"
+TARGET=${1:? "$(echo; usage)"}
+BUILD_DIR="${WORKSPACE}/tests-${TARGET}"
 
+# Create a fresh build directory.
 trap cleanup EXIT
-setup_ccache
-make_build_dir "${BUILD_DIR}"
+make_build_dir  "${BUILD_DIR}"
 
 case "${TARGET}" in
-  native-Makefile.unix)
-    make -C "${LIBWEBM_ROOT}" -f Makefile.unix
+  x86-*) CXX='clang++ -m32' ;;
+  x86_64-*) CXX=clang++ ;;
+  *)
+    log_err "${TARGET} should have x86 or x86_64 prefix."
+    usage
+    exit 1
+    ;;
+esac
+# cmake (3.4.3) will only accept the -m32 variants when used via the CXX env
+# var.
+export CXX
+opts+=("-DCMAKE_BUILD_TYPE=Debug" "-DENABLE_TESTS=ON")
+
+case "${TARGET}" in
+  *-asan) opts+=("-DCMAKE_CXX_FLAGS=-fsanitize=address") ;;
+  *-ubsan) opts+=("-DCMAKE_CXX_FLAGS=-fsanitize=integer") ;;
+  *) ;; # No additional flags needed.
+esac
+
+cmake -B "${BUILD_DIR}" "${opts[@]}" "${LIBWEBM_ROOT}"
+make -j -C "${BUILD_DIR}"
+
+SANITIZER_LOG="${BUILD_DIR}/sanitizer_log"
+UNIT_TESTS="$(find "${BUILD_DIR}" -name '*_tests')"
+case "${TARGET}" in
+  *-asan | *-ubsan)
+    rm -f "${SANITIZER_LOG}"
+    for test in ${UNIT_TESTS}; do
+      LIBWEBM_TEST_DATA_PATH="${LIBWEBM_ROOT}/testing/testdata" "${test}" \
+        --gtest_output="xml:${BUILD_DIR}/$(basename "${test}")_detail.xml" \
+        3<&1 1>&2 2>&3 |tee -a "${SANITIZER_LOG}"
+    done
+    ;;
+  *-valgrind)
+    for test in ${UNIT_TESTS}; do
+      export LIBWEBM_TEST_DATA_PATH="${LIBWEBM_ROOT}/testing/testdata"
+        run_valgrind --error-exitcode=1 "${test}" \
+        --gtest_output="xml:${BUILD_DIR}/$(basename "${test}")_detail.xml"
+    done
     ;;
   *)
-    opts=()
-    case "${BUILD_TYPE}" in
-      static) opts+=("-DCMAKE_BUILD_TYPE=Release") ;;
-      *debug) opts+=("-DCMAKE_BUILD_TYPE=Debug") ;;
-      *)
-        log_err "${BUILD_TYPE} build type not supported"
-        usage
-        exit 1
-        ;;
-    esac
-
-    TOOLCHAIN_FILE_FLAG="-DCMAKE_TOOLCHAIN_FILE=${LIBWEBM_ROOT}/build"
-    case "${TARGET}" in
-      native-clang) opts+=("-DCMAKE_CXX_COMPILER=clang++") ;;
-      native) ;; # No additional flags needed.
-      i686-w64-mingw32)
-        opts+=("${TOOLCHAIN_FILE_FLAG}/x86-mingw-gcc.cmake")
-        ;;
-      x86_64-w64-mingw32)
-        opts+=("${TOOLCHAIN_FILE_FLAG}/x86_64-mingw-gcc.cmake")
-        ;;
-      *)
-        log_err "${TARGET} TARGET not supported"
-        usage
-        exit 1
-        ;;
-    esac
-    cmake -B "${BUILD_DIR}" "${opts[@]}" "${LIBWEBM_ROOT}"
-    make -j -C "${BUILD_DIR}" VERBOSE=1
+    log_err "Unrecognized TARGET:${TARGET}."
+    usage
+    exit 1
     ;;
+esac
+
+case "${TARGET}" in
+  *-asan)
+    asanlog_symbolized="${BUILD_DIR}/asan_log.asanlog_symbolized"
+    grep -v 'Invalid VP9' "${SANITIZER_LOG}" > "${SANITIZER_LOG}.2" || true
+    asan_symbolize.py "${BUILD_DIR}" < "${SANITIZER_LOG}.2" c++filt > \
+      "${asanlog_symbolized}"
+    cat "${asanlog_symbolized}"
+    ;;
+  *) ;;# No other sanitizer options are required
 esac

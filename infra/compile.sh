@@ -112,9 +112,7 @@ case "${TARGET}" in
         exit 1
         ;;
     esac
-    pushd "${BUILD_DIR}"
-    cmake "${opts[@]}" "${LIBWEBM_ROOT}"
-    make VERBOSE=1
-    popd
+    cmake -B "${BUILD_DIR}" -H "${LIBWEBM_ROOT}" "${opts[@]}"
+    make -j -C "${BUILD_DIR}" VERBOSE=1
     ;;
 esac

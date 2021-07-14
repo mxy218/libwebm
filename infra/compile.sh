@@ -41,45 +41,6 @@ WORKSPACE   directory where the build is done
 EOF
 }
 
-log_err() {
-  echo "[$(date +'%Y-%m-%dT%H:%M:%S%z')]: $*" >&2
-}
-
-#######################################
-# Create build directory
-# Globals:
-#   BUILD_TYPE   static-debug | static
-#   WORKSPACE    directory where build is done
-# Arguments:
-#   None
-# Outputs:
-#   build dir path.
-# Returns:
-#   mkdir result
-#######################################
-make_build_dir() {
-  local build_dir_base
-  build_dir_base="${WORKSPACE}/build-${BUILD_TYPE}"
-  [[ -d "${build_dir_base}" ]] && rm -rf "${build_dir_base}"
-  mkdir -p "${build_dir_base}"
-  echo "${build_dir_base}"
-}
-
-#######################################
-# Cleanup files from the backup directory.
-# Globals:
-#   BUILD_DIR     build directory
-#   LIBWEBM_ROOT  repository's root path
-#######################################
-cleanup() {
-  # BUILD_DIR is not completely removed to allow for binary artifacts to be
-  # extracted.
-  [[ -n "${BUILD_DIR}" ]] \
-    && find "${BUILD_DIR}" \( -name "*.[ao]" -o -name "*.l[ao]" \) -exec rm \
-    -f {} +
-  make -C "${LIBWEBM_ROOT}" -f Makefile.unix clean
-}
-
 #######################################
 # Setup ccache for toolchain.
 #######################################
@@ -91,11 +52,14 @@ setup_ccache() {
 }
 
 ################################################################################
-set -e
 LIBWEBM_ROOT="$(realpath "$(dirname "$0")/..")"
 WORKSPACE=${WORKSPACE:-"$(mktemp -d)"}
 
+# shellcheck source=infra/common.sh
+source "${LIBWEBM_ROOT}/infra/common.sh"
+
 echo "Building libwebm in ${WORKSPACE}"
+set -e
 
 if [[ ! -d "${WORKSPACE}" ]]; then
   log_err "${WORKSPACE} directory does not exist"
@@ -140,7 +104,7 @@ case "${TARGET}" in
         exit 1
         ;;
     esac
-    BUILD_DIR="$(make_build_dir)"
+    BUILD_DIR="$(make_build_dir "${WORKSPACE}/build-${BUILD_TYPE}")"
     pushd "${BUILD_DIR}"
     cmake "${opts[@]}" "${LIBWEBM_ROOT}"
     make VERBOSE=1

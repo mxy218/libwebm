@@ -33,6 +33,23 @@
       "message": "Addressed comments",
       "revId": "1215d5a3a8dea0327ff69b878809de1d4e121da1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6f5283eb_49c1091a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 13
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-07-29T23:08:39Z",
+      "side": 1,
+      "message": "rebase and run shfmt -w -i 2 -bn -ci -sr infra/*.sh on the files.",
+      "revId": "1215d5a3a8dea0327ff69b878809de1d4e121da1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

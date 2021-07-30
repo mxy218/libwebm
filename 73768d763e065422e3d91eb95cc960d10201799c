@@ -16,6 +16,86 @@
       "message": "ran shfmt.\nOpened a new cl to address unit test failures.",
       "revId": "73768d763e065422e3d91eb95cc960d10201799c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8912cd65_fe5bd9c3",
+        "filename": "infra/compile.sh",
+        "patchSetId": 14
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-07-30T23:57:52Z",
+      "side": 1,
+      "message": "-H is for help (--help), you want -S here, you can also leave a space after -S \u0026 -B",
+      "range": {
+        "startLine": 115,
+        "startChar": 28,
+        "endLine": 115,
+        "endChar": 29
+      },
+      "revId": "73768d763e065422e3d91eb95cc960d10201799c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2efede80_fcaff143",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 14
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-07-30T23:57:52Z",
+      "side": 1,
+      "message": "these can be marked readonly as globals. a follow up for the other scripts would be good.",
+      "revId": "73768d763e065422e3d91eb95cc960d10201799c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7e62d092_2f96c0b7",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 14
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-07-30T23:57:52Z",
+      "side": 1,
+      "message": "only WORKSPACE and GOOGLETEST_REPO are used here",
+      "revId": "73768d763e065422e3d91eb95cc960d10201799c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "019c3c84_60827103",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 14
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-07-30T23:57:52Z",
+      "side": 1,
+      "message": "this should be -S",
+      "range": {
+        "startLine": 123,
+        "startChar": 24,
+        "endLine": 123,
+        "endChar": 25
+      },
+      "revId": "73768d763e065422e3d91eb95cc960d10201799c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

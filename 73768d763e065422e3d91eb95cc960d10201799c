@@ -204,6 +204,30 @@
       },
       "revId": "73768d763e065422e3d91eb95cc960d10201799c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b0be9f12_802173c3",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 14
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-07-31T02:14:07Z",
+      "side": 1,
+      "message": "\u003e \u003e -S does not work in the vm instance. To make it work, -H was needed. we update this when cmake is updated with gce_provider startup script.\n\u003e \n\u003e Something doesn\u0027t sound right. Can you add cmake --version to the script and run it there again?\n\nAnd/or at the same time add a space after -B/-S to see if it helps with that version.",
+      "parentUuid": "d9fec71a_18e910c1",
+      "range": {
+        "startLine": 123,
+        "startChar": 24,
+        "endLine": 123,
+        "endChar": 25
+      },
+      "revId": "73768d763e065422e3d91eb95cc960d10201799c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "60d3d2e3_dfc06c63",
+        "filename": "infra/compile.sh",
+        "patchSetId": 14
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1507873
+      },
+      "writtenOn": "2021-07-31T01:04:01Z",
+      "side": 1,
+      "message": "same as run_unit_tests.sh",
+      "parentUuid": "8912cd65_fe5bd9c3",
+      "range": {
+        "startLine": 115,
+        "startChar": 28,
+        "endLine": 115,
+        "endChar": 29
+      },
+      "revId": "73768d763e065422e3d91eb95cc960d10201799c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2efede80_fcaff143",
@@ -54,6 +78,24 @@
       "writtenOn": "2021-07-30T23:57:52Z",
       "side": 1,
       "message": "these can be marked readonly as globals. a follow up for the other scripts would be good.",
+      "revId": "73768d763e065422e3d91eb95cc960d10201799c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cbac3a12_55955b12",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 14
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1507873
+      },
+      "writtenOn": "2021-07-31T01:04:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2efede80_fcaff143",
       "revId": "73768d763e065422e3d91eb95cc960d10201799c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -75,6 +117,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "cae8c4e3_dc7dcfab",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 14
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1507873
+      },
+      "writtenOn": "2021-07-31T01:04:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7e62d092_2f96c0b7",
+      "revId": "73768d763e065422e3d91eb95cc960d10201799c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "019c3c84_60827103",
@@ -88,6 +148,30 @@
       "writtenOn": "2021-07-30T23:57:52Z",
       "side": 1,
       "message": "this should be -S",
+      "range": {
+        "startLine": 123,
+        "startChar": 24,
+        "endLine": 123,
+        "endChar": 25
+      },
+      "revId": "73768d763e065422e3d91eb95cc960d10201799c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c8772e4e_09ad21f5",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 14
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1507873
+      },
+      "writtenOn": "2021-07-31T01:04:01Z",
+      "side": 1,
+      "message": "-S does not work in the vm instance. To make it work, -H was needed. we update this when cmake is updated with gce_provider startup script.",
+      "parentUuid": "019c3c84_60827103",
       "range": {
         "startLine": 123,
         "startChar": 24,

@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "61c90203_4d5652dc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 15
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1507873
+      },
+      "writtenOn": "2021-07-31T01:04:01Z",
+      "side": 1,
+      "message": "Addressed comments:\n- shfmt again\n- added readonly\n- fixed comments\n- cmake version in vm is different and -S does not work. Used -H instead. https://stackoverflow.com/questions/31090821/what-does-the-h-option-means-for-cmake",
+      "revId": "896b68667a10bdc38f96961a2ee62c950016d05e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

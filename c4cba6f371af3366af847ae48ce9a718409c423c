@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2a61e7a7_f7a25c98",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 17
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1507873
+      },
+      "writtenOn": "2021-08-02T18:31:28Z",
+      "side": 1,
+      "message": "Cmake version is 3.10.2. -H was used for \u003c 3.13 versions.\n",
+      "revId": "c4cba6f371af3366af847ae48ce9a718409c423c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

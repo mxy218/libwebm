@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e73e1336_dba86923",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1367998
+      },
+      "writtenOn": "2021-08-02T22:21:46Z",
+      "side": 1,
+      "message": "Re https://crbug.com/1235681#c4:\n\nI created https://chromium-review.googlesource.com/admin/groups/aa62a08bf396706ef15f9287cfe859cb3aff8373 and I\u0027m following go/luci/onboarding/git#gerrit-acls\n\nAm I on the right track here?",
+      "revId": "9053b0ed9b24d0ee908e4b295daa507c5526b610",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

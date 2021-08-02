@@ -1,6 +1,6 @@
 # UUID                                  	Group Name
 #
-9107cf7fd8779222bf993ce4331b35b5696fd3eb	webm-committers
-8517a1ac15f69775c799b4e243c02c8e511b45b5	webm-googlers
 1378feaf85c43a72c363e036cd57ce9fd254513c	LUCI-Commit-Queue
 4bc8732fa082450e54b1cd5c1e1cb628577134cc	LUCI
+9107cf7fd8779222bf993ce4331b35b5696fd3eb	webm-committers
+aa62a08bf396706ef15f9287cfe859cb3aff8373	open-codecs-scoped-luci-account

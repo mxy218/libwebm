@@ -33,6 +33,11 @@ set -e
 LIBWEBM_ROOT="$(realpath "$(dirname "$0")/..")"
 WORKSPACE=${WORKSPACE:-"$(mktemp -d)"}
 
+if [[ -z "$(command -v ndk-build)" ]]; then
+  export PATH="$PATH:/opt/android-ndk/"
+  command -v ndk-build
+fi
+
 # shellcheck source=infra/common.sh
 source "${LIBWEBM_ROOT}/infra/common.sh"
 

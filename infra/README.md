@@ -21,3 +21,4 @@ supports the `refs/head/main` branch.
 ## Scripts
 
 **compile.sh** Builds libwebm with supported configuration and host toolchains.
+**compile_android.sh** Builds libwebm with android ndk in PATH.

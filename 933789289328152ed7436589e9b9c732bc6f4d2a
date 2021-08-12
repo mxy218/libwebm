@@ -16,6 +16,23 @@
       "message": "Rolled back cmake -H/-S flags as they don\u0027t work on LUCI builders.\nWe might need to investigate to get a greater version of cmake as Ubuntu 18\u0027s latest version is 3.10. cmake -S does not work in \u003c3.13 versions, and debian 9 has cmake 3.18",
       "revId": "933789289328152ed7436589e9b9c732bc6f4d2a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "334a1db9_bbdc01ee",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 20
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-08-12T00:01:02Z",
+      "side": 1,
+      "message": "add a note here that -S/-B are not used for compatibility with cmake \u003c 3.13.",
+      "revId": "933789289328152ed7436589e9b9c732bc6f4d2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

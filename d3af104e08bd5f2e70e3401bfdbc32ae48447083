@@ -16,6 +16,126 @@
       "message": "Addressed comment.",
       "revId": "d3af104e08bd5f2e70e3401bfdbc32ae48447083",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3adad555_c6825949",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 21
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-08-13T02:31:58Z",
+      "side": 1,
+      "message": "these two can be readonly too I think",
+      "revId": "d3af104e08bd5f2e70e3401bfdbc32ae48447083",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "02309079_7c4a15bc",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 21
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-08-13T02:31:58Z",
+      "side": 1,
+      "message": "this should be marked as \u0027Globals:\u0027",
+      "range": {
+        "startLine": 46,
+        "startChar": 0,
+        "endLine": 46,
+        "endChar": 22
+      },
+      "revId": "d3af104e08bd5f2e70e3401bfdbc32ae48447083",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "55326e1c_c7e4b317",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 21
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-08-13T02:31:58Z",
+      "side": 1,
+      "message": "the extra whitespace can be removed since it isn\u0027t being used to align to any other text",
+      "range": {
+        "startLine": 47,
+        "startChar": 9,
+        "endLine": 47,
+        "endChar": 12
+      },
+      "revId": "d3af104e08bd5f2e70e3401bfdbc32ae48447083",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "17e73725_0020cb14",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 21
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-08-13T02:31:58Z",
+      "side": 1,
+      "message": "I would drop this extra whitespace as horizontal whitespace is a burden to maintain when adding new globals.",
+      "range": {
+        "startLine": 68,
+        "startChar": 13,
+        "endLine": 68,
+        "endChar": 15
+      },
+      "revId": "d3af104e08bd5f2e70e3401bfdbc32ae48447083",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ea765e68_acafa172",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 21
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-08-13T02:31:58Z",
+      "side": 1,
+      "message": "it might be more useful to remove this and use set -x for the cmake invocation",
+      "revId": "d3af104e08bd5f2e70e3401bfdbc32ae48447083",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "587e0ad2_1efefadb",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 21
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-08-13T02:31:58Z",
+      "side": 1,
+      "message": "this could be captured into an array.",
+      "revId": "d3af104e08bd5f2e70e3401bfdbc32ae48447083",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

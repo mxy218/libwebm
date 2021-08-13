@@ -16,6 +16,23 @@
       "message": "android installation crrev.com/i/4047049",
       "revId": "c28eacd39a9909ddcddba835113b9cd8db5397af",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "65711417_8b21c691",
+        "filename": "infra/compile_android.sh",
+        "patchSetId": 4
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-08-13T02:03:34Z",
+      "side": 1,
+      "message": "can this just be handled outside the script?",
+      "revId": "c28eacd39a9909ddcddba835113b9cd8db5397af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

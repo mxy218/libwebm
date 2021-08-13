@@ -33,6 +33,24 @@
       "message": "can this just be handled outside the script?",
       "revId": "c28eacd39a9909ddcddba835113b9cd8db5397af",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8dc2e6ab_bcd5cbe4",
+        "filename": "infra/compile_android.sh",
+        "patchSetId": 4
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1507873
+      },
+      "writtenOn": "2021-08-13T14:22:52Z",
+      "side": 1,
+      "message": "this would be handled at the recipe level if that is the case",
+      "parentUuid": "65711417_8b21c691",
+      "revId": "c28eacd39a9909ddcddba835113b9cd8db5397af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

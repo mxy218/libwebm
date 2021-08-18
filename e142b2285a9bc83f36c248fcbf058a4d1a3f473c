@@ -1,0 +1,101 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e830f962_1a2f5c80",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 22
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-08-18T00:48:51Z",
+      "side": 1,
+      "message": "this can be readonly",
+      "revId": "e142b2285a9bc83f36c248fcbf058a4d1a3f473c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "969cea86_a3314935",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 22
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-08-18T00:48:51Z",
+      "side": 1,
+      "message": "this could be merged to the if below ! -d ... || ! git pull",
+      "revId": "e142b2285a9bc83f36c248fcbf058a4d1a3f473c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d8ef2802_5a269cbc",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 22
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-08-18T00:48:51Z",
+      "side": 1,
+      "message": "like with other languages there should be 2 spaces before the comment if shellfmt will maintain the spacing",
+      "range": {
+        "startLine": 119,
+        "startChar": 7,
+        "endLine": 119,
+        "endChar": 8
+      },
+      "revId": "e142b2285a9bc83f36c248fcbf058a4d1a3f473c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e63c2454_4407bd4c",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 22
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-08-18T00:48:51Z",
+      "side": 1,
+      "message": "maybe \u0027...for backward...\u0027",
+      "range": {
+        "startLine": 123,
+        "startChar": 31,
+        "endLine": 123,
+        "endChar": 37
+      },
+      "revId": "e142b2285a9bc83f36c248fcbf058a4d1a3f473c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4fa727ce_132af3de",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 22
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-08-18T00:48:51Z",
+      "side": 1,
+      "message": "if there are any warnings here how will they be caught?",
+      "revId": "e142b2285a9bc83f36c248fcbf058a4d1a3f473c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

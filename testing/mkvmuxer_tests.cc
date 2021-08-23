@@ -138,6 +138,7 @@ TEST_F(MuxerTest, SegmentInfo) {
 TEST_F(MuxerTest, AddTracks) {
   EXPECT_TRUE(SegmentInit(false, false, false));
 
+  int tmp = -4 << 1;  // UBSAN offending warning
   // Add a Video Track
   AddVideoTrack();
   VideoTrack* const video =

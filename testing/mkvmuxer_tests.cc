@@ -11,6 +11,7 @@
 #include <cstdio>
 #include <cstring>
 #include <iomanip>
+#include <iostream>
 #include <memory>
 #include <ostream>
 #include <string>
@@ -1000,6 +1001,22 @@ TEST_F(MuxerTest, LongTagString) {
   CloseWriter();
 
   EXPECT_TRUE(CompareFiles(GetTestFilePath("long_tag_string.webm"), filename_));
+}
+
+TEST(UBSAN, shift) {
+  int tmp = -4 << 1;  // UBSAN offending warning
+  std::cout << "UBSAN warning" << tmp << std::endl;
+}
+
+TEST(ASAN, overflow) {
+  int * buff = new int[10];
+
+  int result = 0;
+  for (size_t i = 0; i <= 10; ++i) {
+    result += buff[i];
+  }
+
+  std::cout << "overflow of datum: " << result << std::endl;
 }
 
 }  // namespace test

@@ -16,6 +16,69 @@
       "message": "Fixed asan_symbolize to be triggered during EXIT of script.\nAcked we need an implementation to handle warnings in build.\nx86-ubsan can be fixed in another CL.",
       "revId": "875345486928a48f946ed5dad92983149cc068ce",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7d3fd8af_cfa15b05",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 23
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-08-26T20:20:19Z",
+      "side": 1,
+      "message": "this should be ||, no? if the directory doesn\u0027t exist or a pull in an existing one fails we should clone the repo.\n\ndid shellfmt not remove the space before the \u0027;\u0027? It should be removed.",
+      "range": {
+        "startLine": 74,
+        "startChar": 36,
+        "endLine": 74,
+        "endChar": 38
+      },
+      "revId": "875345486928a48f946ed5dad92983149cc068ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "779fface_8370aa4f",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 23
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-08-26T20:20:19Z",
+      "side": 1,
+      "message": "This should just describe what the function is doing, symbolizing the asan log; when it\u0027s called is outside of its scope.",
+      "revId": "875345486928a48f946ed5dad92983149cc068ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8f450c10_cfd5ad05",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 23
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-08-26T20:20:19Z",
+      "side": 1,
+      "message": "break before the \u0027\u003e\u0027, we\u0027ll treat it like other operators such as | or \u0026\u0026",
+      "range": {
+        "startLine": 106,
+        "startChar": 77,
+        "endLine": 106,
+        "endChar": 78
+      },
+      "revId": "875345486928a48f946ed5dad92983149cc068ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

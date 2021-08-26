@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7d0e18d7_ebf3420c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 23
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1507873
+      },
+      "writtenOn": "2021-08-26T00:25:30Z",
+      "side": 1,
+      "message": "Fixed asan_symbolize to be triggered during EXIT of script.\nAcked we need an implementation to handle warnings in build.\nx86-ubsan can be fixed in another CL.",
+      "revId": "875345486928a48f946ed5dad92983149cc068ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

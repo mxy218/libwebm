@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "14599307_ee330b7d",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 22
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1507873
+      },
+      "writtenOn": "2021-08-26T00:25:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e830f962_1a2f5c80",
+      "revId": "e142b2285a9bc83f36c248fcbf058a4d1a3f473c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "969cea86_a3314935",
@@ -35,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b10c845f_3e02b346",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 22
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1507873
+      },
+      "writtenOn": "2021-08-26T00:25:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "969cea86_a3314935",
+      "revId": "e142b2285a9bc83f36c248fcbf058a4d1a3f473c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d8ef2802_5a269cbc",
@@ -48,6 +84,30 @@
       "writtenOn": "2021-08-18T00:48:51Z",
       "side": 1,
       "message": "like with other languages there should be 2 spaces before the comment if shellfmt will maintain the spacing",
+      "range": {
+        "startLine": 119,
+        "startChar": 7,
+        "endLine": 119,
+        "endChar": 8
+      },
+      "revId": "e142b2285a9bc83f36c248fcbf058a4d1a3f473c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "34f57bca_2b73aea6",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 22
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1507873
+      },
+      "writtenOn": "2021-08-26T00:25:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d8ef2802_5a269cbc",
       "range": {
         "startLine": 119,
         "startChar": 7,
@@ -81,6 +141,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "cc9a0842_de69af18",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 22
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1507873
+      },
+      "writtenOn": "2021-08-26T00:25:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e63c2454_4407bd4c",
+      "range": {
+        "startLine": 123,
+        "startChar": 31,
+        "endLine": 123,
+        "endChar": 37
+      },
+      "revId": "e142b2285a9bc83f36c248fcbf058a4d1a3f473c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4fa727ce_132af3de",
@@ -94,6 +178,24 @@
       "writtenOn": "2021-08-18T00:48:51Z",
       "side": 1,
       "message": "if there are any warnings here how will they be caught?",
+      "revId": "e142b2285a9bc83f36c248fcbf058a4d1a3f473c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "053c3862_7f33ad84",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 22
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1507873
+      },
+      "writtenOn": "2021-08-26T00:25:30Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "4fa727ce_132af3de",
       "revId": "e142b2285a9bc83f36c248fcbf058a4d1a3f473c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }

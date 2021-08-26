@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4718d740_908357fe",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 23
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1507873
+      },
+      "writtenOn": "2021-08-26T23:36:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7d3fd8af_cfa15b05",
+      "range": {
+        "startLine": 74,
+        "startChar": 36,
+        "endLine": 74,
+        "endChar": 38
+      },
+      "revId": "875345486928a48f946ed5dad92983149cc068ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "779fface_8370aa4f",
@@ -58,6 +82,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3d940956_9cc404af",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 23
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1507873
+      },
+      "writtenOn": "2021-08-26T23:36:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "779fface_8370aa4f",
+      "revId": "875345486928a48f946ed5dad92983149cc068ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8f450c10_cfd5ad05",
@@ -71,6 +113,30 @@
       "writtenOn": "2021-08-26T20:20:19Z",
       "side": 1,
       "message": "break before the \u0027\u003e\u0027, we\u0027ll treat it like other operators such as | or \u0026\u0026",
+      "range": {
+        "startLine": 106,
+        "startChar": 77,
+        "endLine": 106,
+        "endChar": 78
+      },
+      "revId": "875345486928a48f946ed5dad92983149cc068ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "50d3a32c_2941fb59",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 23
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1507873
+      },
+      "writtenOn": "2021-08-26T23:36:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8f450c10_cfd5ad05",
       "range": {
         "startLine": 106,
         "startChar": 77,

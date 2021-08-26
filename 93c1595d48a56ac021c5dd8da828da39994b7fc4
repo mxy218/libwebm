@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "20d8654a_f05f4541",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 24
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1507873
+      },
+      "writtenOn": "2021-08-26T23:36:01Z",
+      "side": 1,
+      "message": "Addressed wrong evaluation in git pull.\nFixed format issues.\nFixed comments.",
+      "revId": "93c1595d48a56ac021c5dd8da828da39994b7fc4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

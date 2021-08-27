@@ -110,6 +110,30 @@
       },
       "revId": "aea73f72c79ec75ea1b37c68fbe07ee3b41b6fe9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "49a6e92c_bc09fa97",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 26
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-08-27T18:58:15Z",
+      "side": 1,
+      "message": "\u003e I added the TODO but keep what the code is actually doing right now.\n\u003e This code snippet in found after running the scripts. However i don\u0027t see if there is a dump of ub sanitizer_log.\n\u003e However, we still working on integration a gcc inspector in LUCI.\n\nTake a look at the configuration and you will see \u0027Clang IOC runtime errors\u0027 [1]. That\u0027s the origin of the TODO because it\u0027s a blocker to moving to LUCI.\n\n[1] https://build.webmproject.org/jenkins/view/webm/job/libwebm__test/configure",
+      "parentUuid": "28005a8d_a39fa04b",
+      "range": {
+        "startLine": 113,
+        "startChar": 11,
+        "endLine": 113,
+        "endChar": 52
+      },
+      "revId": "aea73f72c79ec75ea1b37c68fbe07ee3b41b6fe9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

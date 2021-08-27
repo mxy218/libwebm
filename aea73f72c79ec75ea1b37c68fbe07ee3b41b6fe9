@@ -16,6 +16,52 @@
       "message": "Changed comments and sanitize_log function to dump_sanitizer_log",
       "revId": "aea73f72c79ec75ea1b37c68fbe07ee3b41b6fe9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ec5e7fa4_e1ed704e",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 26
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-08-27T17:31:14Z",
+      "side": 1,
+      "message": "this last part is controlled outside of the function, it can be removed so that the comment reflects just what the function does:\n\nhttps://google.github.io/styleguide/shellguide.html#s4.2-function-comments",
+      "range": {
+        "startLine": 83,
+        "startChar": 61,
+        "endLine": 83,
+        "endChar": 78
+      },
+      "revId": "aea73f72c79ec75ea1b37c68fbe07ee3b41b6fe9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e5275bba_29d1de45",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 26
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-08-27T17:31:14Z",
+      "side": 1,
+      "message": "instead I think this should be a TODO to process ubsan warnings like is done in jenkins: \u0027TODO(b/185520494): ...\u0027",
+      "range": {
+        "startLine": 113,
+        "startChar": 11,
+        "endLine": 113,
+        "endChar": 52
+      },
+      "revId": "aea73f72c79ec75ea1b37c68fbe07ee3b41b6fe9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

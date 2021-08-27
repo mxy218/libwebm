@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5e4914b2_4af68bea",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-08-27T17:36:44Z",
+      "side": 1,
+      "message": "lowercase \u0027Scripts\u0027 and maybe say fix link error with x86-ubsan",
+      "range": {
+        "startLine": 7,
+        "startChar": 13,
+        "endLine": 7,
+        "endChar": 32
+      },
+      "revId": "211c4c0cfbbd2565b069261e541255a929232ad0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6e809b3a_b693ed43",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-08-27T17:36:44Z",
+      "side": 1,
+      "message": "this should be b:185520494",
+      "range": {
+        "startLine": 10,
+        "startChar": 5,
+        "endLine": 10,
+        "endChar": 14
+      },
+      "revId": "211c4c0cfbbd2565b069261e541255a929232ad0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f1d1682e_5349eb12",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 3
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-08-27T17:36:44Z",
+      "side": 1,
+      "message": "https://cmake.org/cmake/help/v3.19/variable/CMAKE_LANG_STANDARD_LIBRARIES.html\n\n\"This variable should not be set by project code. It is meant to be set by CMake’s platform information modules for the current toolchain, or by a toolchain file when used with CMAKE_TOOLCHAIN_FILE.\"\n\nyou should be able to add this to CMAKE_EXE_LINKER_FLAGS:\nhttps://cmake.org/cmake/help/v3.19/variable/CMAKE_EXE_LINKER_FLAGS.html",
+      "revId": "211c4c0cfbbd2565b069261e541255a929232ad0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

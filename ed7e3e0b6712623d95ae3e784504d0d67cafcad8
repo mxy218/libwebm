@@ -18,6 +18,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a125ab4c_3aeab0c3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 27
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1507873
+      },
+      "writtenOn": "2021-08-27T23:48:38Z",
+      "side": 1,
+      "message": "changed TODO comment",
+      "revId": "ed7e3e0b6712623d95ae3e784504d0d67cafcad8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "45cc9aee_248e590a",
@@ -31,6 +48,30 @@
       "writtenOn": "2021-08-27T18:58:15Z",
       "side": 1,
       "message": "TODO(b/185520494) is preferred as the bug has context and owners/authors can change over time.",
+      "range": {
+        "startLine": 114,
+        "startChar": 6,
+        "endLine": 114,
+        "endChar": 22
+      },
+      "revId": "ed7e3e0b6712623d95ae3e784504d0d67cafcad8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "59665f4a_8a6d7cf2",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 27
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1507873
+      },
+      "writtenOn": "2021-08-27T23:48:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "45cc9aee_248e590a",
       "range": {
         "startLine": 114,
         "startChar": 6,

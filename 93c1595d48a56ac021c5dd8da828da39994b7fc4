@@ -16,6 +16,29 @@
       "message": "Addressed wrong evaluation in git pull.\nFixed format issues.\nFixed comments.",
       "revId": "93c1595d48a56ac021c5dd8da828da39994b7fc4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f96bc6b1_1c534a82",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 24
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-08-27T00:13:04Z",
+      "side": 1,
+      "message": "this was my explanation for why the message should be something like: \u0027Symbolizes and prints any warnings in SANITIZER_LOG\u0027\n\nthe function name could be symbolize_sanitizer_log or dump_sanitizer_log to make that more apparent",
+      "range": {
+        "startLine": 83,
+        "startChar": 2,
+        "endLine": 83,
+        "endChar": 67
+      },
+      "revId": "93c1595d48a56ac021c5dd8da828da39994b7fc4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

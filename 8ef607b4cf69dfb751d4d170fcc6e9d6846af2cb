@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6dab1671_36ffbf85",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-08-27T00:07:16Z",
+      "side": 1,
+      "message": "since the other change is open this can be merged into it as an option",
+      "revId": "8ef607b4cf69dfb751d4d170fcc6e9d6846af2cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5351da4b_ed0439a3",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-08-27T00:07:16Z",
+      "side": 1,
+      "message": "in comparisons we prefer to lead with the variable rather than the literal for readability. please swap these.",
+      "revId": "8ef607b4cf69dfb751d4d170fcc6e9d6846af2cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "282361bd_64b171c6",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-08-27T00:07:16Z",
+      "side": 1,
+      "message": "they\u0027re equivalent, but in other places we reference https://bugs.llvm.org/show_bug.cgi?id\u003d17693 since __int128_t isn\u0027t used in our projects.",
+      "range": {
+        "startLine": 155,
+        "startChar": 8,
+        "endLine": 155,
+        "endChar": 51
+      },
+      "revId": "8ef607b4cf69dfb751d4d170fcc6e9d6846af2cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fa3e95cd_225562ea",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-08-27T00:07:16Z",
+      "side": 1,
+      "message": "these don\u0027t aggregate, the last one will take preference. This one may work, but in other jobs we use -lgcc_s",
+      "range": {
+        "startLine": 157,
+        "startChar": 14,
+        "endLine": 157,
+        "endChar": 32
+      },
+      "revId": "8ef607b4cf69dfb751d4d170fcc6e9d6846af2cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

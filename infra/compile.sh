@@ -97,7 +97,7 @@ case "${TARGET}" in
     esac
 
     TOOLCHAIN_FILE_FLAG="-DCMAKE_TOOLCHAIN_FILE=${LIBWEBM_ROOT}/build"
-    case "${TARGET}" in
+    case "$TARGET" in
       native-clang) opts+=("-DCMAKE_CXX_COMPILER=clang++") ;;
       native) ;; # No additional flags needed.
       i686-w64-mingw32)

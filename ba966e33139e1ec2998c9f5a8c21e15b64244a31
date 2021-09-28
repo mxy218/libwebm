@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dde2f8d7_1436c4f4",
+        "filename": "infra/compile.sh",
+        "patchSetId": 5
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-09-28T21:07:07Z",
+      "side": 1,
+      "message": "there\u0027s no reason to update this line with this change",
+      "revId": "ba966e33139e1ec2998c9f5a8c21e15b64244a31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

@@ -34,7 +34,7 @@ details on the presubmit API built into depot_tools.
 """
 import subprocess2
 USE_PYTHON3 = True
-_INCLUDE_SOURCE_FILES_ONLY = [r'.*\.(c|cc|[hc]pp|h)$']
+_INCLUDE_SOURCE_FILES_ONLY = [r".*\.(c|cc|[hc]pp|h)$"]
 _LIBWEBM_MAX_LINE_LENGTH = 80
 _INCLUDE_BASH_FILES_ONLY = [r".*\.sh$"]
 

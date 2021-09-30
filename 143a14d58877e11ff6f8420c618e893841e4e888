@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3338e88a_ced36b80",
+        "filename": "PRESUBMIT.py",
+        "patchSetId": 9
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-09-30T19:10:01Z",
+      "side": 1,
+      "message": "add a blank line after the import, we usually treat this as its own section similar to includes in c++.\n\nhttps://google.github.io/styleguide/pyguide.html#313-imports-formatting",
+      "revId": "143a14d58877e11ff6f8420c618e893841e4e888",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e4409997_ae58de6b",
+        "filename": "PRESUBMIT.py",
+        "patchSetId": 9
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-09-30T19:10:01Z",
+      "side": 1,
+      "message": "One line docstrings should end in a period:\n\nhttps://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings\n\nThere\u0027s an existing one like this at line 43, so you could follow up with a separate change for both.",
+      "revId": "143a14d58877e11ff6f8420c618e893841e4e888",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

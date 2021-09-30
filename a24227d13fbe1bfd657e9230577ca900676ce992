@@ -1,6 +1,30 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fcf4099e_9987e3b3",
+        "filename": "PRESUBMIT.py",
+        "patchSetId": 7
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1507873
+      },
+      "writtenOn": "2021-09-30T00:14:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e1eb5eb0_34385fcc",
+      "range": {
+        "startLine": 39,
+        "startChar": 29,
+        "endLine": 39,
+        "endChar": 30
+      },
+      "revId": "a24227d13fbe1bfd657e9230577ca900676ce992",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "84b36f2d_5421a699",
@@ -14,6 +38,24 @@
       "writtenOn": "2021-09-29T18:17:34Z",
       "side": 1,
       "message": "let\u0027s consistently add shellcheck --version to the output from all the PRESUBMIT.py files for documentation purposes.",
+      "revId": "a24227d13fbe1bfd657e9230577ca900676ce992",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "98e931e5_ad16442b",
+        "filename": "PRESUBMIT.py",
+        "patchSetId": 7
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1507873
+      },
+      "writtenOn": "2021-09-30T00:14:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "84b36f2d_5421a699",
       "revId": "a24227d13fbe1bfd657e9230577ca900676ce992",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }

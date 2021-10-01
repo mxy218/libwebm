@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2e66d9fa_c53b4e61",
+        "filename": "PRESUBMIT.py",
+        "patchSetId": 9
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1507873
+      },
+      "writtenOn": "2021-10-01T15:59:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3338e88a_ced36b80",
+      "revId": "143a14d58877e11ff6f8420c618e893841e4e888",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e4409997_ae58de6b",
@@ -31,6 +49,24 @@
       "writtenOn": "2021-09-30T19:10:01Z",
       "side": 1,
       "message": "One line docstrings should end in a period:\n\nhttps://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings\n\nThere\u0027s an existing one like this at line 43, so you could follow up with a separate change for both.",
+      "revId": "143a14d58877e11ff6f8420c618e893841e4e888",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fdccdd1d_dfc0a0fd",
+        "filename": "PRESUBMIT.py",
+        "patchSetId": 9
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1507873
+      },
+      "writtenOn": "2021-10-01T15:59:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e4409997_ae58de6b",
       "revId": "143a14d58877e11ff6f8420c618e893841e4e888",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }

@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "94827679_c1e4a6cc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1507873
+      },
+      "writtenOn": "2021-10-11T23:30:13Z",
+      "side": 1,
+      "message": "synchronized with libwebp\u0027s PRESUBMIT",
+      "revId": "7979574c823d311d212fb761cb2ec01b24e8795f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

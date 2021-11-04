@@ -31,7 +31,8 @@
 
 set -xeo pipefail
 readonly GOOGLETEST_REPO="https://github.com/google/googletest.git"
-readonly LIBWEBM_ROOT="$(realpath "$(dirname "$0")/..")"
+LIBWEBM_ROOT="$(realpath "$(dirname "$0")/..")"
+readonly LIBWEBM_ROOT
 readonly WORKSPACE=${WORKSPACE:-"$(mktemp -d -t webm.XXX)"}
 
 # shellcheck source=infra/common.sh
@@ -73,7 +74,8 @@ ensure_googletest() {
 
   if [[ ! -d "${googletest_dir}" ]] || ! git -C "${googletest_dir}" pull; then
     rm -rf "${googletest_dir}"
-    git clone --depth 1 "${GOOGLETEST_REPO}" "${googletest_dir}"
+    git clone "${GOOGLETEST_REPO}" "${googletest_dir}"
+    git -C "${googletest_dir}" checkout e2f39789 # warnings shown
   fi
 
   opts+=("-DGTEST_SRC_DIR=${googletest_dir}")
@@ -111,7 +113,7 @@ dump_sanitizer_log() {
       fi
       ;;
     *) ;;  # No other sanitizer options are required
-    # TODO(b/185520494): Handle ubsan warning output inspection
+      # TODO(b/185520494): Handle ubsan warning output inspection
   esac
 }
 

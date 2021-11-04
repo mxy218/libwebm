@@ -120,6 +120,7 @@ class Vp9LevelStatsTests : public ::testing::Test {
 TEST_F(Vp9LevelStatsTests, VideoOnlyFile) {
   CreateAndLoadSegment("test_stereo_left_right.webm");
   ProcessTheFrames();
+  int unused_int = 0;
   EXPECT_EQ(256, parser_.width());
   EXPECT_EQ(144, parser_.height());
   EXPECT_EQ(1, parser_.column_tiles());
@@ -183,9 +184,25 @@ TEST_F(Vp9LevelStatsTests, SetDuration) {
   EXPECT_EQ(3, stats_.GetMaxReferenceFrames());
 }
 
+TEST(WarningRuntime, ShiftOverflow) {
+  unsigned long x = 1 << 32;
+  unsigned int y = -1;
+  std::cout << "ShiftOverflow warning: " << x << y << std::endl;
+}
+
+TEST(WarningRuntime, BaseIOs) {
+  std::cout << std::hex;
+}
+
+TEST (WarningRuntime, BasicStringUnsignedIntegerOverflow) {
+  bool b = std::string() < "1";
+  EXPECT_TRUE(b);
+}
+
 }  // namespace
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
+
   return RUN_ALL_TESTS();
 }

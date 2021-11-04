@@ -175,7 +175,25 @@ TEST_F(Vp9HeaderParserTests, API) {
 
 }  // namespace
 
+TEST(RuntimeError, LoadOfValueIosFmt) {
+  char storage[sizeof(int) + 1];
+  int * p = reinterpret_cast<int*>(storage + 1);
+
+  *p = 0x123456789;
+
+  std::cerr << std::hex;
+  std::cerr << (unsigned int) storage[0] << ' '
+            << (unsigned int) storage[1] << ' '
+            << (unsigned int) storage[2] << ' '
+            << (unsigned int) storage[3] << '\n';
+
+  storage[0] = 1;
+
+  std::cerr << (*p) << '\n';
+}
+
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
+
   return RUN_ALL_TESTS();
 }

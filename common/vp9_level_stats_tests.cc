@@ -120,7 +120,7 @@ class Vp9LevelStatsTests : public ::testing::Test {
 TEST_F(Vp9LevelStatsTests, VideoOnlyFile) {
   CreateAndLoadSegment("test_stereo_left_right.webm");
   ProcessTheFrames();
-  EXPECT_EQ(256, parser_.width());
+  EXPECT_EQ(255, parser_.width());
   EXPECT_EQ(144, parser_.height());
   EXPECT_EQ(1, parser_.column_tiles());
   EXPECT_EQ(0, parser_.frame_parallel_mode());

@@ -187,5 +187,6 @@ TEST_F(Vp9LevelStatsTests, SetDuration) {
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
+  malloc(400UL);
   return RUN_ALL_TESTS();
 }

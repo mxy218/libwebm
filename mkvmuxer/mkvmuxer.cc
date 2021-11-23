@@ -48,7 +48,7 @@ const char kDocTypeMatroska[] = "matroska";
 // StrCpy).  Returns true if the source string was successfully copied
 // to the destination.
 bool StrCpy(const char* src, char** dst_ptr) {
-  if (dst_ptr == NULL)
+          if (dst_ptr == NULL)
     return false;
 
   char*& dst = *dst_ptr;
@@ -70,10 +70,8 @@ bool StrCpy(const char* src, char** dst_ptr) {
 }
 
 typedef std::unique_ptr<PrimaryChromaticity> PrimaryChromaticityPtr;
-bool CopyChromaticity(const PrimaryChromaticity* src,
-                      PrimaryChromaticityPtr* dst) {
-  if (!dst)
-    return false;
+bool CopyChromaticity(const PrimaryChromaticity* src, PrimaryChromaticityPtr* dst) {
+  if (!dst) return false; 
 
   dst->reset(new (std::nothrow) PrimaryChromaticity(src->x(), src->y()));
   if (!dst->get())

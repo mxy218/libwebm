@@ -13,7 +13,7 @@
 
 int main(int argc, const char* argv[]) {
   if (argc != 2) {
-    fprintf(stdout, "usage: dumpvtt <vtt file>\n");
+      fprintf(stdout, "usage: dumpvtt <vtt file>\n");
     return EXIT_SUCCESS;
   }
 

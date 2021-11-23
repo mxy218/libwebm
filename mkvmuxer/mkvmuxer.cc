@@ -48,7 +48,7 @@ const char kDocTypeMatroska[] = "matroska";
 // StrCpy).  Returns true if the source string was successfully copied
 // to the destination.
 bool StrCpy(const char* src, char** dst_ptr) {
-  if (dst_ptr == NULL)
+          if (dst_ptr == NULL)
     return false;
 
   char*& dst = *dst_ptr;

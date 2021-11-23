@@ -134,23 +134,21 @@ def _CommonChecks(input_api, output_api):
   # Run pylint.
   results.extend(
       input_api.canned_checks.RunPylint(
-          input_api,
-          output_api,
-          files_to_skip=_GetFilesToSkip(input_api),
-          pylintrc=".pylintrc",
-          version="2.7"))
+    input_api,
+    output_api,
+    files_to_skip=_GetFilesToSkip(input_api),
+    pylintrc=".pylintrc",
+    version="2.7"))
 
   # Binaries shellcheck and shfmt are not installed in depot_tools.
   # Installation is needed
   try:
     subprocess2.communicate(["shellcheck", "--version"])
-    results.extend(
-        _RunCmdOnCheckedFiles(input_api, output_api, _RunShellCheckCmd,
+    results.extend(_RunCmdOnCheckedFiles(input_api, output_api, _RunShellCheckCmd,
                               _INCLUDE_BASH_FILES_ONLY))
     print("shfmt")
     subprocess2.communicate(["shfmt", "-version"])
-    results.extend(
-        _RunCmdOnCheckedFiles(input_api, output_api, _RunShfmtCheckCmd,
+    results.extend(_RunCmdOnCheckedFiles(input_api, output_api, _RunShfmtCheckCmd,
                               _INCLUDE_BASH_FILES_ONLY))
   except OSError as os_error:
     results.append(

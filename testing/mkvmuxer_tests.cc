@@ -11,7 +11,6 @@
 #include <cstdio>
 #include <cstring>
 #include <iomanip>
-#include <iostream>
 #include <memory>
 #include <ostream>
 #include <string>
@@ -138,9 +137,6 @@ TEST_F(MuxerTest, SegmentInfo) {
 
 TEST_F(MuxerTest, AddTracks) {
   EXPECT_TRUE(SegmentInit(false, false, false));
-
-  int tmp = -4 << 1;  // UBSAN offending warning
-  std::cout << "UBSAN warning" << tmp << std::endl;
 
   // Add a Video Track
   AddVideoTrack();

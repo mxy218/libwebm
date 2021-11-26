@@ -31,7 +31,8 @@
 
 set -xeo pipefail
 readonly GOOGLETEST_REPO="https://github.com/google/googletest.git"
-readonly LIBWEBM_ROOT="$(realpath "$(dirname "$0")/..")"
+LIBWEBM_ROOT="$(realpath "$(dirname "$0")/..")"
+readonly LIBWEBM_ROOT
 readonly WORKSPACE=${WORKSPACE:-"$(mktemp -d -t webm.XXX)"}
 
 # shellcheck source=infra/common.sh
@@ -111,7 +112,7 @@ dump_sanitizer_log() {
       fi
       ;;
     *) ;;  # No other sanitizer options are required
-    # TODO(b/185520494): Handle ubsan warning output inspection
+      # TODO(b/185520494): Handle ubsan warning output inspection
   esac
 }
 

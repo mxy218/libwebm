@@ -31,7 +31,8 @@
 
 set -e
 LIBWEBM_ROOT="$(realpath "$(dirname "$0")/..")"
-WORKSPACE=${WORKSPACE:-"$(mktemp -d)"}
+readonly LIBWEBM_ROOT
+readonly WORKSPACE=${WORKSPACE:-"$(mktemp -d -t webm.XXX)"}
 
 # shellcheck source=infra/common.sh
 source "${LIBWEBM_ROOT}/infra/common.sh"

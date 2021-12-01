@@ -30,8 +30,10 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 set -e
+shopt -s inherit_errexit
+
 LIBWEBM_ROOT="$(realpath "$(dirname "$0")/..")"
-WORKSPACE=${WORKSPACE:-"$(mktemp -d)"}
+WORKSPACE=${WORKSPACE:-"$(mktemp -d -t web.XXX)"}
 
 # shellcheck source=infra/common.sh
 source "${LIBWEBM_ROOT}/infra/common.sh"
@@ -52,7 +54,9 @@ EOF
 # Setup ccache for toolchain.
 #######################################
 setup_ccache() {
-  if [[ -x "$(command -v ccache)" ]]; then
+  local command_ccache
+  command_ccache="$(command -v ccache)"
+  if [[ -x "${command_ccache}" ]]; then
     export CCACHE_CPP2=yes
     export PATH="/usr/lib/ccache:${PATH}"
   fi

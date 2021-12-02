@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6cbb8cad_1bf8a913",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-12-02T21:47:16Z",
+      "side": 1,
+      "message": "this doesn\u0027t really say what the change does.",
+      "revId": "6e161b9fb0eb7cde50f444bcb72df1031927c7a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9f0a17c4_584922de",
+        "filename": "infra/compile.sh",
+        "patchSetId": 4
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-12-02T21:47:16Z",
+      "side": 1,
+      "message": "are we using this meaningfully somewhere?",
+      "revId": "6e161b9fb0eb7cde50f444bcb72df1031927c7a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c4b1b3e7_2f6897f3",
+        "filename": "infra/compile.sh",
+        "patchSetId": 4
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-12-02T21:47:16Z",
+      "side": 1,
+      "message": "was this due to a shellcheck warning?",
+      "revId": "6e161b9fb0eb7cde50f444bcb72df1031927c7a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

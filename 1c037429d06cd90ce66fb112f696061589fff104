@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "571fdffe_212959a7",
+        "filename": "PRESUBMIT.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-12-06T19:26:25Z",
+      "side": 1,
+      "message": "^ is still ok to use here, we\u0027re not in multi-line any more, so it means the same thing",
+      "range": {
+        "startLine": 60,
+        "startChar": 20,
+        "endLine": 60,
+        "endChar": 22
+      },
+      "revId": "1c037429d06cd90ce66fb112f696061589fff104",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

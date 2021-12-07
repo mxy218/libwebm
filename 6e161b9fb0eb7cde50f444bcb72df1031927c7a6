@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ecbaaa6b_e6f0c97d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1507873
+      },
+      "writtenOn": "2021-12-07T03:55:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6cbb8cad_1bf8a913",
+      "revId": "6e161b9fb0eb7cde50f444bcb72df1031927c7a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9f0a17c4_584922de",
@@ -35,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b7ffcff0_385ddcad",
+        "filename": "infra/compile.sh",
+        "patchSetId": 4
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1507873
+      },
+      "writtenOn": "2021-12-07T03:55:35Z",
+      "side": 1,
+      "message": "shellcheck v0.8.0:\nIn /usr/local/google/home/alanisbaez/workspace/cc/libwebm/infra/compile.sh line 72:\n  usage\n  ^---^ SC2311 (info): Bash implicitly disabled set -e for this function invocation because it\u0027s inside a command substitution. Add set -e; before it or enable inherit_errexit.",
+      "parentUuid": "9f0a17c4_584922de",
+      "revId": "6e161b9fb0eb7cde50f444bcb72df1031927c7a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c4b1b3e7_2f6897f3",
@@ -48,6 +84,24 @@
       "writtenOn": "2021-12-02T21:47:16Z",
       "side": 1,
       "message": "was this due to a shellcheck warning?",
+      "revId": "6e161b9fb0eb7cde50f444bcb72df1031927c7a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "282687ee_cfb0270c",
+        "filename": "infra/compile.sh",
+        "patchSetId": 4
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1507873
+      },
+      "writtenOn": "2021-12-07T03:55:35Z",
+      "side": 1,
+      "message": "Yes\nIn /usr/local/google/home/alanisbaez/workspace/cc/libwebm/infra/compile.sh line 56:\n  if [[ -x \"$(command -v ccache)\" ]]; then\n              ^---------------^ SC2312 (info): Consider invoking this command separately to avoid masking its return value (or use \u0027|| true\u0027 to ignore).",
+      "parentUuid": "c4b1b3e7_2f6897f3",
       "revId": "6e161b9fb0eb7cde50f444bcb72df1031927c7a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }

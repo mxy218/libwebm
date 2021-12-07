@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1b77f68c_489b0628",
+        "filename": "infra/compile.sh",
+        "patchSetId": 8
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-12-07T23:12:37Z",
+      "side": 1,
+      "message": "this will push up the version requirement for bash, to 4.4 I think, but we can go with this for now",
+      "revId": "9d8e7484f9d24caac7a1b73c6009d67116e5b9ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "934a6223_26f3a159",
+        "filename": "infra/compile.sh",
+        "patchSetId": 8
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-12-07T23:12:37Z",
+      "side": 1,
+      "message": "add 2\u003e/dev/null; another option would be ccache --version \u003e /dev/null",
+      "revId": "9d8e7484f9d24caac7a1b73c6009d67116e5b9ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b0f5c64c_e4fe76b4",
+        "filename": "infra/compile_android.sh",
+        "patchSetId": 8
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-12-07T23:12:37Z",
+      "side": 1,
+      "message": "let\u0027s match this to the ccache invocation",
+      "revId": "9d8e7484f9d24caac7a1b73c6009d67116e5b9ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

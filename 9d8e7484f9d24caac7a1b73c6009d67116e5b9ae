@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "128847b4_f74a3655",
+        "filename": "infra/compile.sh",
+        "patchSetId": 8
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1507873
+      },
+      "writtenOn": "2021-12-08T15:46:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "934a6223_26f3a159",
+      "revId": "9d8e7484f9d24caac7a1b73c6009d67116e5b9ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b0f5c64c_e4fe76b4",
@@ -48,6 +66,24 @@
       "writtenOn": "2021-12-07T23:12:37Z",
       "side": 1,
       "message": "let\u0027s match this to the ccache invocation",
+      "revId": "9d8e7484f9d24caac7a1b73c6009d67116e5b9ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "848c72fd_524a8ad0",
+        "filename": "infra/compile_android.sh",
+        "patchSetId": 8
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1507873
+      },
+      "writtenOn": "2021-12-08T15:46:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b0f5c64c_e4fe76b4",
       "revId": "9d8e7484f9d24caac7a1b73c6009d67116e5b9ae",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }

@@ -16,6 +16,29 @@
       "message": "+2 was removed?",
       "revId": "58b91b0ec405e2c7f623b051c85d5116a540071a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "05cc11a3_c6d2f16a",
+        "filename": "PRESUBMIT.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-12-08T00:00:41Z",
+      "side": 1,
+      "message": "\u0027lessor\u0027 should be removed",
+      "range": {
+        "startLine": 64,
+        "startChar": 35,
+        "endLine": 64,
+        "endChar": 41
+      },
+      "revId": "58b91b0ec405e2c7f623b051c85d5116a540071a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

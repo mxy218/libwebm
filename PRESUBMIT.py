@@ -78,14 +78,6 @@ def _GetFilesToSkip(input_api):
   ]
 
 
-def _CheckChangeLintsClean(input_api, output_api):
-  """Makes sure that libwebm/ code is cpplint clean."""
-  sources = lambda x: input_api.FilterSourceFile(
-      x, files_to_check=_INCLUDE_SOURCE_FILES_ONLY, files_to_skip=None)
-  return input_api.canned_checks.CheckChangeLintsClean(input_api, output_api,
-                                                       sources)
-
-
 def _RunShellCheckCmd(input_api, output_api, bash_file):
   """shellcheck command wrapper."""
   cmd = ["shellcheck", "-x", "-oall", "-sbash", bash_file]
@@ -157,10 +149,9 @@ def _CommonChecks(input_api, output_api):
       input_api.canned_checks.CheckPatchFormatted(
           input_api,
           output_api,
-          check_clang_format=True,
+          check_clang_format=False,
           check_python=True,
           result_factory=output_api.PresubmitError))
-  results.extend(_CheckChangeLintsClean(input_api, output_api))
 
   # Run pylint.
   results.extend(
@@ -170,6 +161,26 @@ def _CommonChecks(input_api, output_api):
           files_to_skip=_GetFilesToSkip(input_api),
           pylintrc=".pylintrc",
           version="2.7"))
+
+  # Clang Format
+  source_file_filter = lambda x: input_api.FilterSourceFile(
+      x, files_to_check=_INCLUDE_SOURCE_FILES_ONLY)
+  commands = []
+  commands.append(
+      input_api.Command(
+          name="Check clang format",
+          cmd=[
+              "/usr/bin/clang-format",
+              "--dry-run",
+              "--style=file",
+          ] + [
+              f.AbsoluteLocalPath()
+              for f in input_api.AffectedSourceFiles(source_file_filter)
+          ],
+          kwargs={},
+          message=output_api.PresubmitError))
+
+  results.extend(input_api.RunTests(commands))
 
   # Binaries shellcheck and shfmt are not installed in depot_tools.
   # Installation is needed

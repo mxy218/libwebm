@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "80de0536_efc2d32f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-12-10T00:41:47Z",
+      "side": 1,
+      "message": "So what was the failing with git cl format? Is there a bug or discussion about why it wasn\u0027t working?",
+      "revId": "e43e97d620a0e1cfaa52ef0d4fc647d31a41fda2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

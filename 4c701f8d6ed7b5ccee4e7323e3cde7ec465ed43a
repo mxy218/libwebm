@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4f2b1a49_ce07a9e4",
+        "filename": "infra/compile.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-12-11T03:52:39Z",
+      "side": 1,
+      "message": "I think for our general naming scheme elsewhere this might be i686-clang or i686-linux-clang, but we only control the environment on LUCI, so this is ok",
+      "range": {
+        "startLine": 48,
+        "startChar": 12,
+        "endLine": 48,
+        "endChar": 22
+      },
+      "revId": "4c701f8d6ed7b5ccee4e7323e3cde7ec465ed43a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

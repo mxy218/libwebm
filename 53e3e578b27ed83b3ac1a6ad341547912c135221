@@ -105,6 +105,24 @@
       "parentUuid": "be6936e5_d7c9d042",
       "revId": "53e3e578b27ed83b3ac1a6ad341547912c135221",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "adf76528_73f4f49d",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 10
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-12-14T20:34:16Z",
+      "side": 1,
+      "message": "\u003e \u003e removing -kp did not help. other one line # comments are changed when -kp is used.\n\u003e \n\u003e I can\u0027t get this indent check with 3.4.1, so maybe it was an unintentional direct edit? As for -kp the changes to comments are expected (like at line 115). We put it in to try to have 2 spaces before comments, but since that relies on the reviewer to call out I think it\u0027s a better trade to take the comment formatting that shfmt wants.\n\nremove this edit from the patch",
+      "parentUuid": "49407e16_f0b3a685",
+      "revId": "53e3e578b27ed83b3ac1a6ad341547912c135221",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

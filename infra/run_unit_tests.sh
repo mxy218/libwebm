@@ -105,15 +105,15 @@ dump_sanitizer_log() {
     *-asan)
       asanlog_symbolized="${BUILD_DIR}/asan_log.asanlog_symbolized"
       grep -v 'Invalid VP9' "${SANITIZER_LOG}" > "${SANITIZER_LOG}.2" || true
-      "${asan_symbolize_tool}" "${BUILD_DIR}" c++filt < "${SANITIZER_LOG}.2" \
-        > "${asanlog_symbolized}"
+      "${asan_symbolize_tool}" "${BUILD_DIR}" < "${SANITIZER_LOG}.2" \
+        | c++filt > "${asanlog_symbolized}"
       if [[ -s "${asanlog_symbolized}" ]]; then
         cat "${asanlog_symbolized}"
         return 1
       fi
       ;;
     *) ;;  # No other sanitizer options are required
-    # TODO(b/185520494): Handle ubsan warning output inspection
+      # TODO(b/185520494): Handle ubsan warning output inspection
   esac
 }
 

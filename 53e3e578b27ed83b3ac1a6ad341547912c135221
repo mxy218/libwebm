@@ -123,6 +123,24 @@
       "parentUuid": "49407e16_f0b3a685",
       "revId": "53e3e578b27ed83b3ac1a6ad341547912c135221",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5961d257_3d8ed155",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 10
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1507873
+      },
+      "writtenOn": "2021-12-15T05:10:00Z",
+      "side": 1,
+      "message": "I think this was a early edit, even with -kp or without the # TODO is moved. Let\u0027s keep it this way as this CL is about updating shellcheck and shfmt",
+      "parentUuid": "adf76528_73f4f49d",
+      "revId": "53e3e578b27ed83b3ac1a6ad341547912c135221",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

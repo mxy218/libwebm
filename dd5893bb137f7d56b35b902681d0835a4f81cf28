@@ -52,6 +52,24 @@
       "parentUuid": "5e94addd_5b16974c",
       "revId": "dd5893bb137f7d56b35b902681d0835a4f81cf28",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d4b0a9ac_06e94fa0",
+        "filename": "infra/run_unit_tests.sh",
+        "patchSetId": 13
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-12-16T22:19:47Z",
+      "side": 1,
+      "message": "\u003e \u003e I cannot undo this edit otherwise patch-check will keep failing on this. If I undo this edit anyway, the patch-check will fail again anytime this script is touched.\n\u003e \n\u003e What fails? shfmt? I don\u0027t think I saw that locally.\n\nactually maybe I missed that, when I was looking at -kp",
+      "parentUuid": "285cdd85_57f455f3",
+      "revId": "dd5893bb137f7d56b35b902681d0835a4f81cf28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

@@ -11,6 +11,7 @@
 #include "webvtt/vttreader.h"
 #include "webvtt/webvttparser.h"
 
+
 int main(int argc, const char* argv[]) {
   if (argc != 2) {
     fprintf(stdout, "usage: dumpvtt <vtt file>\n");

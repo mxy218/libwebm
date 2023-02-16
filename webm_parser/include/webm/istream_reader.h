@@ -72,6 +72,8 @@ class IstreamReader : public Reader {
 
   std::uint64_t Position() const override;
 
+  void SetPosition(std::uint64_t new_position) override;
+
   /**
    Constructs a new reader and its data source in place.
 

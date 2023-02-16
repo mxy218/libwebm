@@ -130,4 +130,8 @@ Status IstreamReader::Skip(std::uint64_t num_to_skip,
 
 std::uint64_t IstreamReader::Position() const { return position_; }
 
+void IstreamReader::SetPosition(std::uint64_t new_position) {
+  position_ = new_position;
+}
+
 }  // namespace webm

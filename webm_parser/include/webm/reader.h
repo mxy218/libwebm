@@ -83,6 +83,16 @@ class Reader {
    `kUnknownElementPosition` must not be returned.
    */
   virtual std::uint64_t Position() const = 0;
+
+  /**
+   Sets the Reader's new absolute byte position in the stream.
+
+   Implementations that track the stream position internally may require
+   manual updating after seeking.
+
+   \param new_position The new absolute byte position in the stream
+   */
+  virtual void SetPosition(std::uint64_t new_position) = 0;
 };
 
 /**

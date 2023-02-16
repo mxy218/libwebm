@@ -119,4 +119,8 @@ Status FileReader::Skip(std::uint64_t num_to_skip,
 
 std::uint64_t FileReader::Position() const { return position_; }
 
+void FileReader::SetPosition(std::uint64_t new_position) {
+  position_ = new_position;
+}
+
 }  // namespace webm

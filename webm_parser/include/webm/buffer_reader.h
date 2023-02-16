@@ -116,6 +116,8 @@ class BufferReader : public Reader {
 
   std::uint64_t Position() const override;
 
+  void SetPosition(std::uint64_t new_position) override;
+
   /**
    Gets the total size of the buffer.
    */

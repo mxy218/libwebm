@@ -69,6 +69,8 @@ class FileReader : public Reader {
 
   std::uint64_t Position() const override;
 
+  void SetPosition(std::uint64_t new_position) override;
+
  private:
   struct FileCloseFunctor {
     void operator()(FILE* file) const {

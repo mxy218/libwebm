@@ -107,4 +107,8 @@ Status BufferReader::Skip(std::uint64_t num_to_skip,
 
 std::uint64_t BufferReader::Position() const { return pos_; }
 
+void BufferReader::SetPosition(std::uint64_t new_position) {
+  pos_ = new_position;
+}
+
 }  // namespace webm

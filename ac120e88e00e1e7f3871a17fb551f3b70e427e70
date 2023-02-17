@@ -90,6 +90,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a9674758_0e706ca9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1571532
+      },
+      "writtenOn": "2023-02-17T01:10:21Z",
+      "side": 1,
+      "message": "Thanks, that sounds fair. The SetPosition() function isn\u0027t seeking in itself, it\u0027s just something that you can use while seeking. In my project I am using FileReader, but it seems like since the three example Reader implementations all store the current position as a private variable you would want to be able to set them, even if just back to 0.\n\nI see four different possibilities for what to do here, let me know what you think sounds best.\n\n1. Keep the SetPosition() function in the three implementations but remove it from the Reader interface. Since it is just setting the value of the internal uint64_t it wouldn\u0027t need to handle failures at all.\n\n2. Create an actual seeking function in the Reader implementations (or at least in FileReader) that seeks within the file and updates position_. A challenge here is that the DidSeek() function of the WebmParser wouldn\u0027t be accessible. Because seeking wouldn\u0027t be guaranteed by the Reader interface (which makes sense), we couldn\u0027t just give the user-facing version of the Seek() function to the parser. Unless the FileReader held some reference to the WebmParser (which seems like too big of a change), the user would still have to call DidSeek() afterward which isn\u0027t too bad, but it could be easily forgotten.\n\n3. Forget about this because implementing your own Reader isn\u0027t that hard.\n\n4. Make the position_ variable in the Reader implementations protected so that I could subclass FileReader to make a setter function.",
+      "parentUuid": "c85aad2c_464da53f",
+      "revId": "ac120e88e00e1e7f3871a17fb551f3b70e427e70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "7ed4fe8f_e270ff2e",
         "filename": "webm_parser/include/webm/reader.h",
         "patchSetId": 3

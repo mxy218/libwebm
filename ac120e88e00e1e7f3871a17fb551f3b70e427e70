@@ -72,6 +72,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "c85aad2c_464da53f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157809
+      },
+      "writtenOn": "2023-02-17T00:29:02Z",
+      "side": 1,
+      "message": "Reader intentionally has no seeking API because not all data sources can seek (e.g., a network socket).\n\nI\u0027m not opposed to adding seeking functionality to concrete Reader implementations. e.g., BufferReader could easily have a seeking method. FileReader and IstreamReader could too but those might want an API that allows them to report seeking failure (e.g., if the FILE/istream is stdin and cannot seek).\n\nBut I don\u0027t think we can really have a top-level seeking method on Reader given there will be implementations that cannot support it.",
+      "parentUuid": "33f16ecd_d9c8d4a8",
+      "revId": "ac120e88e00e1e7f3871a17fb551f3b70e427e70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "7ed4fe8f_e270ff2e",
         "filename": "webm_parser/include/webm/reader.h",
         "patchSetId": 3

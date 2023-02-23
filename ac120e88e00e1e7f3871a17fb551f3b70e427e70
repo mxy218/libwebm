@@ -108,6 +108,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "388d046b_aa3b2a25",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157809
+      },
+      "writtenOn": "2023-02-23T17:34:50Z",
+      "side": 1,
+      "message": "\u003e The SetPosition() function isn\u0027t seeking in itself\n\nIt is in the BufferReader implementation.\n\nI think option 2 is preferable. You\u0027re correct that the reader couldn\u0027t call DidSeek() on the parser but IMO that\u0027s okay; I don\u0027t think it should be the Reader\u0027s responsibility to inform the parser of the seek.\n\nI wouldn\u0027t put this as a virtual function in the top-level Reader class. Rather just have the appropriate function on each subclass (kinda like how BufferReader already has a `size()` function).",
+      "parentUuid": "a9674758_0e706ca9",
+      "revId": "ac120e88e00e1e7f3871a17fb551f3b70e427e70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "7ed4fe8f_e270ff2e",
         "filename": "webm_parser/include/webm/reader.h",
         "patchSetId": 3

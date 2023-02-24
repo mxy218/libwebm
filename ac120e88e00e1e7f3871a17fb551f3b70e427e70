@@ -126,6 +126,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a97de4ef_a7b557d8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1571532
+      },
+      "writtenOn": "2023-02-24T06:55:41Z",
+      "side": 1,
+      "message": "I implemented a `Seek()` function for `FileReader`. I didn\u0027t think any of the existing Status codes fit well for seeking failure so I added another one, but I can see that being controversial so let me know if I should change that.\n\nI wrote a macro to attempt to use `_fseeki64()` vs `fseeko64()` vs `fseeko()` depending on what is available. I based this on how it is done in `mkvwriter` and `mkvreader`, but let me know if it\u0027s too wacky for this. The type casting seems a little off to me, but I will defer to how it is done in those two classes. \n\nI chose to have the function not error when seeking past the end of the file because `fseek` doesn\u0027t have a problem with it. `Seek()` will return `kOkCompleted` and the parser will subsequently detect that it is at the end of the file. If we wanted the reader to detect that it was at the end we could do something like attempting to seek to the negative `seek_position` from the `SEEK_END` and seeing if the system calls return EINVAL. In that case `Seek()` would return `kEndOfFile` I would have to double check that this is the case for all three of those `fseek` functions but I think this would work. The reason I think we probably shouldn\u0027t do this is that the parser will handle it fine as is. I imagine there are some weird cases like seeking past the end of a file that\u0027s being written in real time where you would want this call to be fine. Let me know if you disagree. Thanks!",
+      "parentUuid": "388d046b_aa3b2a25",
+      "revId": "ac120e88e00e1e7f3871a17fb551f3b70e427e70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "7ed4fe8f_e270ff2e",
         "filename": "webm_parser/include/webm/reader.h",
         "patchSetId": 3

@@ -142,6 +142,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "293c0598_75acb77a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157809
+      },
+      "writtenOn": "2023-02-28T17:07:44Z",
+      "side": 1,
+      "message": "Overall the approach looks okay to me. I just left a couple of nits regarding platform compatibility.",
+      "parentUuid": "a97de4ef_a7b557d8",
+      "revId": "ac120e88e00e1e7f3871a17fb551f3b70e427e70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7ed4fe8f_e270ff2e",

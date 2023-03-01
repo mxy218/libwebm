@@ -39,6 +39,48 @@
       "message": "The `#else` here assumes POSIX. I think we should instead use `#elif _POSIX_C_SOURCE \u003e\u003d 200112L` before using `fseeko`, and have the final `#else` use `std::fseek` (i.e. just the C stdlib) as the final fallback.",
       "revId": "e5fcc423a6054acda65be1b1a8b60abbed55a930",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6c4df33d_490b6400",
+        "filename": "webm_parser/src/file_reader.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1571532
+      },
+      "writtenOn": "2023-03-01T04:42:04Z",
+      "side": 1,
+      "message": "From what I\u0027ve tried, only `fseek()` allows the `std::` prefix and even that didn\u0027t require it. I will add it to the new `fseek()` case but it doesn\u0027t compile if added to any of the other cases.",
+      "parentUuid": "845fdc0c_83b577b3",
+      "range": {
+        "startLine": 20,
+        "startChar": 0,
+        "endLine": 26,
+        "endChar": 52
+      },
+      "revId": "e5fcc423a6054acda65be1b1a8b60abbed55a930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "63f9a882_f2f2b90f",
+        "filename": "webm_parser/src/file_reader.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1571532
+      },
+      "writtenOn": "2023-03-01T04:42:04Z",
+      "side": 1,
+      "message": "Good idea, that seems like a pretty rare case.",
+      "parentUuid": "159ffd39_0811c2e1",
+      "revId": "e5fcc423a6054acda65be1b1a8b60abbed55a930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

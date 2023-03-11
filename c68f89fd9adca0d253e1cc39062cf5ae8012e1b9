@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b0369289_f43339ee",
+        "filename": "common/vp9_level_stats.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-11T00:59:18Z",
+      "side": 1,
+      "message": "https://chromium.googlesource.com/webm/libwebm/+/b87133b5d8ef3b7a9d1ec97d11480298c7d7cd23/common/vp9_level_stats.h#50",
+      "revId": "c68f89fd9adca0d253e1cc39062cf5ae8012e1b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

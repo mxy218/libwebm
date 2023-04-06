@@ -292,8 +292,8 @@ long UnserializeInt(IMkvReader* pReader, long long pos, long long size,
   if (!pReader || pos < 0 || size < 1 || size > 8)
     return E_FILE_FORMAT_INVALID;
 
-  signed char first_byte = 0;
-  const long status = pReader->Read(pos, 1, (unsigned char*)&first_byte);
+  unsigned char first_byte = 0;
+  const long status = pReader->Read(pos, 1, &first_byte);
 
   if (status < 0)
     return status;

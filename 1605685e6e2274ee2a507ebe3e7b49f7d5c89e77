@@ -16,6 +16,24 @@
       "message": "There are test failures. Maybe this needs to be signed!",
       "revId": "1605685e6e2274ee2a507ebe3e7b49f7d5c89e77",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c6940dc1_6db82624",
+        "filename": "mkvparser/mkvparser.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 296,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-04-06T22:51:19Z",
+      "side": 1,
+      "message": "I guess this is a big-endian signed integer, so the first byte contains the sign bit.",
+      "parentUuid": "dc61f7db_ca3373d6",
+      "revId": "1605685e6e2274ee2a507ebe3e7b49f7d5c89e77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

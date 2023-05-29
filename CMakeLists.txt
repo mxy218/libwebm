@@ -24,6 +24,7 @@ option(ENABLE_TESTS "Enables tests." OFF)
 option(ENABLE_IWYU "Enables include-what-you-use support." OFF)
 option(ENABLE_WERROR "Enable warnings as errors." OFF)
 option(ENABLE_WEBM_PARSER "Enables new parser API." OFF)
+option(ENABLE_SAMPLE_PROGRAMS "Enables sample programs." ON)
 
 if(WIN32 OR CYGWIN OR MSYS)
   # Allow use of rand_r() / fdopen() and other POSIX functions.
@@ -63,21 +64,32 @@ endif ()
 # Source list variables.
 set(dumpvtt_sources "${LIBWEBM_SRC_DIR}/dumpvtt.cc")
 
-set(libwebm_common_sources
-    "${LIBWEBM_SRC_DIR}/common/file_util.cc"
+set(libwebm_common_public_headers
     "${LIBWEBM_SRC_DIR}/common/file_util.h"
-    "${LIBWEBM_SRC_DIR}/common/hdr_util.cc"
     "${LIBWEBM_SRC_DIR}/common/hdr_util.h"
+    "${LIBWEBM_SRC_DIR}/common/indent.h"
+    "${LIBWEBM_SRC_DIR}/common/vp9_header_parser.h"
+    "${LIBWEBM_SRC_DIR}/common/vp9_level_stats.h"
+    "${LIBWEBM_SRC_DIR}/common/webm_constants.h"
+    "${LIBWEBM_SRC_DIR}/common/webm_endian.h"
     "${LIBWEBM_SRC_DIR}/common/webmids.h")
 
-set(mkvmuxer_sources
-    "${LIBWEBM_SRC_DIR}/mkvmuxer/mkvmuxer.cc"
+set(libwebm_common_sources
+    ${libwebm_common_public_headers}
+    "${LIBWEBM_SRC_DIR}/common/file_util.cc"
+    "${LIBWEBM_SRC_DIR}/common/hdr_util.cc")
+
+set(mkvmuxer_public_headers
     "${LIBWEBM_SRC_DIR}/mkvmuxer/mkvmuxer.h"
     "${LIBWEBM_SRC_DIR}/mkvmuxer/mkvmuxertypes.h"
-    "${LIBWEBM_SRC_DIR}/mkvmuxer/mkvmuxerutil.cc"
     "${LIBWEBM_SRC_DIR}/mkvmuxer/mkvmuxerutil.h"
+    "${LIBWEBM_SRC_DIR}/mkvmuxer/mkvwriter.h")
+
+set(mkvmuxer_sources
+    ${mkvmuxer_public_headers}
+    "${LIBWEBM_SRC_DIR}/mkvmuxer/mkvmuxer.cc"
+    "${LIBWEBM_SRC_DIR}/mkvmuxer/mkvmuxerutil.cc"
     "${LIBWEBM_SRC_DIR}/mkvmuxer/mkvwriter.cc"
-    "${LIBWEBM_SRC_DIR}/mkvmuxer/mkvwriter.h"
     "${LIBWEBM_SRC_DIR}/common/webmids.h")
 
 set(mkvmuxer_sample_sources
@@ -90,11 +102,14 @@ set(mkvmuxer_tests_sources
     "${LIBWEBM_SRC_DIR}/testing/test_util.cc"
     "${LIBWEBM_SRC_DIR}/testing/test_util.h")
 
-set(mkvparser_sources
-    "${LIBWEBM_SRC_DIR}/mkvparser/mkvparser.cc"
+set(mkvparser_public_headers
     "${LIBWEBM_SRC_DIR}/mkvparser/mkvparser.h"
+    "${LIBWEBM_SRC_DIR}/mkvparser/mkvreader.h")
+
+set(mkvparser_sources
+    ${mkvparser_public_headers}
+    "${LIBWEBM_SRC_DIR}/mkvparser/mkvparser.cc"
     "${LIBWEBM_SRC_DIR}/mkvparser/mkvreader.cc"
-    "${LIBWEBM_SRC_DIR}/mkvparser/mkvreader.h"
     "${LIBWEBM_SRC_DIR}/common/webmids.h")
 
 set(mkvparser_sample_sources "${LIBWEBM_SRC_DIR}/mkvparser_sample.cc")
@@ -118,11 +133,6 @@ set(vp9_level_stats_tests_sources
     "${LIBWEBM_SRC_DIR}/common/vp9_level_stats.h"
     "${LIBWEBM_SRC_DIR}/testing/test_util.cc"
     "${LIBWEBM_SRC_DIR}/testing/test_util.h")
-
-set(vttdemux_sources
-    "${LIBWEBM_SRC_DIR}/vttdemux.cc"
-    "${LIBWEBM_SRC_DIR}/webvtt/webvttparser.cc"
-    "${LIBWEBM_SRC_DIR}/webvtt/webvttparser.h")
 
 set(webm_parser_public_headers
     "${LIBWEBM_SRC_DIR}/webm_parser/include/webm/buffer_reader.h"
@@ -287,15 +297,11 @@ set(webm_parser_tests_sources
     "${LIBWEBM_SRC_DIR}/webm_parser/tests/webm_parser_tests.cc")
 
 set(webm_info_sources
+    ${libwebm_common_public_headers}
     "${LIBWEBM_SRC_DIR}/common/indent.cc"
-    "${LIBWEBM_SRC_DIR}/common/indent.h"
     "${LIBWEBM_SRC_DIR}/common/vp9_header_parser.cc"
-    "${LIBWEBM_SRC_DIR}/common/vp9_header_parser.h"
     "${LIBWEBM_SRC_DIR}/common/vp9_level_stats.cc"
-    "${LIBWEBM_SRC_DIR}/common/vp9_level_stats.h"
-    "${LIBWEBM_SRC_DIR}/common/webm_constants.h"
     "${LIBWEBM_SRC_DIR}/common/webm_endian.cc"
-    "${LIBWEBM_SRC_DIR}/common/webm_endian.h"
     "${LIBWEBM_SRC_DIR}/webm_info.cc")
 
 set(webmts_sources
@@ -318,11 +324,24 @@ set(webm2pes_tests_sources
     "${LIBWEBM_SRC_DIR}/m2ts/tests/webm2pes_tests.cc")
 set(webm2ts_sources "${LIBWEBM_SRC_DIR}/m2ts/vpxpes2ts_main.cc")
 
-set(webvtt_common_sources
-    "${LIBWEBM_SRC_DIR}/webvtt/vttreader.cc"
+set(webvtt_common_headers
     "${LIBWEBM_SRC_DIR}/webvtt/vttreader.h"
-    "${LIBWEBM_SRC_DIR}/webvtt/webvttparser.cc"
     "${LIBWEBM_SRC_DIR}/webvtt/webvttparser.h")
+
+set(webvtt_common_sources
+    ${webvtt_common_headers}
+    "${LIBWEBM_SRC_DIR}/webvtt/vttreader.cc"
+    "${LIBWEBM_SRC_DIR}/webvtt/webvttparser.cc")
+
+set(vttdemux_sources
+    ${webvtt_common_sources}
+    "${LIBWEBM_SRC_DIR}/vttdemux.cc")
+
+# Public headers that will be installed with the library.
+set(webm_public_headers
+    ${libwebm_common_public_headers}
+    ${mkvmuxer_public_headers}
+    ${mkvparser_public_headers})
 
 # Targets.
 add_library(mkvmuxer OBJECT ${mkvmuxer_sources})
@@ -340,18 +359,20 @@ if (WIN32)
   set_target_properties(webm PROPERTIES PREFIX lib)
 endif ()
 
-add_executable(mkvparser_sample ${mkvparser_sample_sources})
-target_link_libraries(mkvparser_sample LINK_PUBLIC webm)
+if (ENABLE_SAMPLE_PROGRAMS)
+  add_executable(mkvparser_sample ${mkvparser_sample_sources})
+  target_link_libraries(mkvparser_sample LINK_PUBLIC webm)
 
-add_executable(mkvmuxer_sample ${mkvmuxer_sample_sources}
-               $<TARGET_OBJECTS:webvtt_common>)
-target_link_libraries(mkvmuxer_sample LINK_PUBLIC webm)
+  add_executable(mkvmuxer_sample ${mkvmuxer_sample_sources}
+                $<TARGET_OBJECTS:webvtt_common>)
+  target_link_libraries(mkvmuxer_sample LINK_PUBLIC webm)
 
-add_executable(dumpvtt ${dumpvtt_sources} $<TARGET_OBJECTS:webvtt_common>)
-target_link_libraries(dumpvtt LINK_PUBLIC webm)
+  add_executable(dumpvtt ${dumpvtt_sources} $<TARGET_OBJECTS:webvtt_common>)
+  target_link_libraries(dumpvtt LINK_PUBLIC webm)
 
-add_executable(vttdemux ${vttdemux_sources})
-target_link_libraries(vttdemux LINK_PUBLIC webm)
+  add_executable(vttdemux ${vttdemux_sources})
+  target_link_libraries(vttdemux LINK_PUBLIC webm)
+endif ()
 
 if (ENABLE_WEBMINFO)
   add_executable(webm_info ${webm_info_sources})
@@ -362,17 +383,11 @@ if (ENABLE_WEBM_PARSER)
   include_directories(webm_parser webm_parser/include)
   add_library(webm_parser OBJECT ${webm_parser_sources})
   target_sources(webm PUBLIC $<TARGET_OBJECTS:webm_parser>)
-  set_target_properties(webm PROPERTIES PUBLIC_HEADER
-                        "${webm_parser_public_headers}")
 
   add_executable(webm_parser_demo ${webm_parser_demo_sources})
   target_link_libraries(webm_parser_demo LINK_PUBLIC webm)
 
-  install(TARGETS webm
-          ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-          LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-          RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-          PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/webm)
+  list(APPEND webm_public_headers ${webm_parser_public_headers})
 endif ()
 
 if (ENABLE_WEBMTS)
@@ -454,3 +469,10 @@ if (ENABLE_IWYU)
     message(STATUS "  See README.libwebm for more information.")
   endif ()
 endif ()
+
+set_target_properties(webm PROPERTIES PUBLIC_HEADER "${webm_public_headers}")
+install(TARGETS webm
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/webm)

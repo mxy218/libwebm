@@ -16,6 +16,91 @@
       "message": "Hi, hopefully it\u0027s OK to tag you as reviewers, sorry if not, I just browsed the list of recent libwebm reviewers. \n\nHoping to update the CMake build so that the install target is always available, to make it easier to package with Conan.\n\nThanks!",
       "revId": "2c975b0914da302c5ace9fccbeac568d1b864530",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f21f7bac_69ffa4ca",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-30T22:11:08Z",
+      "side": 1,
+      "message": "Thanks for the patch. Let\u0027s try to limit what headers are installed to only those needed for mkvmuxer, mkvparser and webm_parser.",
+      "revId": "2c975b0914da302c5ace9fccbeac568d1b864530",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "969c8ee9_00e06703",
+        "filename": "CMakeLists.txt",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-30T22:11:08Z",
+      "side": 1,
+      "message": "These only belong in the webm_info example. There isn\u0027t a separate library exposing these interfaces.",
+      "revId": "2c975b0914da302c5ace9fccbeac568d1b864530",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f15f699f_d0c2a179",
+        "filename": "CMakeLists.txt",
+        "patchSetId": 1
+      },
+      "lineNbr": 344,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-30T22:11:08Z",
+      "side": 1,
+      "message": "webvtt isn\u0027t being assembled into an installable library at this point. It\u0027s only used in the samples. For now let\u0027s avoid installing the headers.",
+      "revId": "2c975b0914da302c5ace9fccbeac568d1b864530",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "641f1318_aac0737e",
+        "filename": "CMakeLists.txt",
+        "patchSetId": 1
+      },
+      "lineNbr": 356,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-30T22:11:08Z",
+      "side": 1,
+      "message": "these 2 lines can be deleted.",
+      "revId": "2c975b0914da302c5ace9fccbeac568d1b864530",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8422a678_8cca92f6",
+        "filename": "CMakeLists.txt",
+        "patchSetId": 1
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-30T22:11:08Z",
+      "side": 1,
+      "message": "This can be one line or the indent can be fixed to align with the \u0027(\u0027.",
+      "revId": "2c975b0914da302c5ace9fccbeac568d1b864530",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

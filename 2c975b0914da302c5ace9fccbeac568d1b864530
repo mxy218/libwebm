@@ -90,6 +90,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "b7985737_a4944591",
+        "filename": "CMakeLists.txt",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-31T22:58:41Z",
+      "side": 1,
+      "message": "\u003e Are you referring to the entire `libwebm_common_public_headers` list?\n\nSorry, I meant the new headers added to that list. I didn\u0027t check on the others that were a part of it before this patch.",
+      "parentUuid": "26a31a74_4e1ef313",
+      "revId": "2c975b0914da302c5ace9fccbeac568d1b864530",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "f15f699f_d0c2a179",
         "filename": "CMakeLists.txt",
         "patchSetId": 1

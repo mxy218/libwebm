@@ -16,6 +16,24 @@
       "message": "Please restore the newline at the end of the file. There doesn\u0027t need to be a blank line though (see the diff comment `No newline at end of right file.`). Some editors like vscode can strip this.",
       "revId": "d1b981b790762c8103dc82220b837b3d952e086c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9161ef28_e5076592",
+        "filename": "CMakeLists.txt",
+        "patchSetId": 1
+      },
+      "lineNbr": 457,
+      "author": {
+        "id": 1361710
+      },
+      "writtenOn": "2023-05-31T14:23:25Z",
+      "side": 0,
+      "message": "Done",
+      "parentUuid": "4b8baa63_d6638016",
+      "revId": "d1b981b790762c8103dc82220b837b3d952e086c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

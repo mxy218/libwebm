@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b4156a4d_c89910e7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1361710
+      },
+      "writtenOn": "2023-05-31T09:51:46Z",
+      "side": 1,
+      "message": "Fixed most things, just have a question about the scope of one your comments. I wouldn\u0027t mind tidying up the source lists further with some guidance, it\u0027s not entirely clear from the outside what is supposed to be \u0027public\u0027 of the older code, webm_parser is a bit tidier.\n\nTangentially; As part of packaging with Conan, I\u0027ve had to tackle building on Windows too unfortunately, and I\u0027m having some problems building it as a shared library (dll). Do you \u0027officially\u0027 support that configuration? Does it work there? The first issue I hit is that the build doesn\u0027t seem to generate a lib file to accompany the dll, indicating that no symbols are being exported. When I force all symbols to be exported with the cmake flag, I do get a lib file generated, but I then undefined symbol errors. Joy.",
+      "revId": "192e16e47ee86f80710b87bb0bc8afece7623a24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

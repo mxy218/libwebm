@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f0b6a514_61dd982c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-06-01T22:50:05Z",
+      "side": 1,
+      "message": "I think this part might be misleading, the length isn\u0027t necessary known, meaning it\u0027s a constant. memcpy may still be faster though.",
+      "revId": "7781224b486cde95153b2b80f3154f100b936058",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

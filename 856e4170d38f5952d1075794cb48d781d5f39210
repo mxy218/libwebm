@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9087c183_5b7866b9",
+        "filename": "CMakeLists.txt",
+        "patchSetId": 7
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-06-01T19:53:12Z",
+      "side": 1,
+      "message": "let\u0027s skip `file_util.h` and `hdr_util.h` for now. `hdr_util.h` might be helpful, `file_util.h` is mostly for tests.",
+      "revId": "856e4170d38f5952d1075794cb48d781d5f39210",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b872f370_0e59ba40",
+        "filename": "CMakeLists.txt",
+        "patchSetId": 7
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-06-01T19:53:12Z",
+      "side": 1,
+      "message": "Installing this at `webm/` will break the include in `mkvmuxer.h`: `#include \"common/webmids.h\"`",
+      "revId": "856e4170d38f5952d1075794cb48d781d5f39210",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a8fd05ec_2cf25b11",
+        "filename": "CMakeLists.txt",
+        "patchSetId": 7
+      },
+      "lineNbr": 361,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-06-01T19:53:12Z",
+      "side": 1,
+      "message": "Let\u0027s do this in a separate change since it isn\u0027t related to the install changes. If you\u0027re not familiar, with gerrit you can make changes in a separate branch and upload each change or the branch tip and it will show the relationship. Responding to comments to changes in the chain can be done with git rebase.",
+      "revId": "856e4170d38f5952d1075794cb48d781d5f39210",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

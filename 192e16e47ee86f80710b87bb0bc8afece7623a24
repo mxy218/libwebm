@@ -56,6 +56,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "b467fd36_f852c3fd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-06-01T19:42:48Z",
+      "side": 1,
+      "message": "\u003e Yeah, it\u0027s possible to add `set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)` to force symbols to be exported on Windows too, which solves that problem for me without affecting any other platform. Would it be OK if I added that to the patch?\n\u003e \n\nLet\u0027s keep each change focused on one thing. As a workaround that would be OK in a follow up change.\n\n\u003e When combined with the new `ENABLE_SAMPLE_PROGRAMS` option I added to the patch, I\u0027m able to build a functional linkable dll for Windows.\n\u003e \n\u003e Another issue I\u0027ve had with the Windows build is where the build forces the library name and extension:\n\u003e set_target_properties(webm PROPERTIES PROJECT_LABEL libwebm)\n\u003e set_target_properties(webm PROPERTIES PREFIX lib)\n\u003e \n\u003e Conan expects the more usual Windows-like names of `webm.lib` and `webm.dll`, which are the default if you don\u0027t explicitly set those properties. Currently I\u0027m using a patch file as part of the package to workaround this:\n\u003e https://github.com/conan-io/conan-center-index/pull/17740/files#diff-80ebf119711ad25eb0719f364926224daa9a634fb889bb5f6fe23215c4cba510\n\u003e \n\u003e I can keep doing that, it\u0027s not a problem, but would you be open to removing it from the build as part of this patch instead? It could be a little controversial since it\u0027s a breaking change, but you mentioned that Windows isn\u0027t well supported anyway.\n\nMaking this change in a separate patch would be fine. We had some discussion of this in libaom [1] and libwebp [2]. Here I expect the target is used less frequently so a breaking change should be fine.\n\n[1]: https://aomedia-review.googlesource.com/c/aom/+/173603\n[2]: https://chromium-review.googlesource.com/c/webm/libwebp/+/3780645",
+      "parentUuid": "8ddbb5c0_6fb85f53",
+      "revId": "192e16e47ee86f80710b87bb0bc8afece7623a24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "fa89ed99_09bd6d15",
         "filename": "CMakeLists.txt",
         "patchSetId": 2

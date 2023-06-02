@@ -16,6 +16,63 @@
       "message": "Opened separate patches.",
       "revId": "d66d70c89e3361db63693fc157ad305c4e486828",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7d6e133b_7111ab12",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 9
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-06-02T19:37:25Z",
+      "side": 1,
+      "message": "Thanks for splitting the changes. This looks good, just a couple of cosmetic comments.",
+      "revId": "d66d70c89e3361db63693fc157ad305c4e486828",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cc7df819_69d88663",
+        "filename": "CMakeLists.txt",
+        "patchSetId": 9
+      },
+      "lineNbr": 475,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-06-02T19:37:25Z",
+      "side": 1,
+      "message": "subdirectory",
+      "range": {
+        "startLine": 475,
+        "startChar": 32,
+        "endLine": 475,
+        "endChar": 44
+      },
+      "revId": "d66d70c89e3361db63693fc157ad305c4e486828",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6d53fa89_96063b99",
+        "filename": "CMakeLists.txt",
+        "patchSetId": 9
+      },
+      "lineNbr": 476,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-06-02T19:37:25Z",
+      "side": 1,
+      "message": "break this long line at or before 80 characters.",
+      "revId": "d66d70c89e3361db63693fc157ad305c4e486828",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

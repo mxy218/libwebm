@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e16bf7a4_7ca1aa42",
+        "filename": "CMakeLists.txt",
+        "patchSetId": 9
+      },
+      "lineNbr": 475,
+      "author": {
+        "id": 1361710
+      },
+      "writtenOn": "2023-06-05T08:57:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cc7df819_69d88663",
+      "range": {
+        "startLine": 475,
+        "startChar": 32,
+        "endLine": 475,
+        "endChar": 44
+      },
+      "revId": "d66d70c89e3361db63693fc157ad305c4e486828",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6d53fa89_96063b99",
@@ -71,6 +95,24 @@
       "writtenOn": "2023-06-02T19:37:25Z",
       "side": 1,
       "message": "break this long line at or before 80 characters.",
+      "revId": "d66d70c89e3361db63693fc157ad305c4e486828",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "835014f5_6bfc95e6",
+        "filename": "CMakeLists.txt",
+        "patchSetId": 9
+      },
+      "lineNbr": 476,
+      "author": {
+        "id": 1361710
+      },
+      "writtenOn": "2023-06-05T08:57:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6d53fa89_96063b99",
       "revId": "d66d70c89e3361db63693fc157ad305c4e486828",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }

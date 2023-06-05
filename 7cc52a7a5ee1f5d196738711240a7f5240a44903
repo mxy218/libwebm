@@ -16,6 +16,24 @@
       "message": "There weren\u0027t many short lines that got broken in this project. If we wanted to control that `--max-subgroups-hwrap 3` could work.",
       "revId": "7cc52a7a5ee1f5d196738711240a7f5240a44903",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5deb06df_fe150582",
+        "filename": "CMakeLists.txt",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002054
+      },
+      "writtenOn": "2023-06-05T20:59:00Z",
+      "side": 1,
+      "message": "This is fine by me.",
+      "parentUuid": "7af9c02d_355a09be",
+      "revId": "7cc52a7a5ee1f5d196738711240a7f5240a44903",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

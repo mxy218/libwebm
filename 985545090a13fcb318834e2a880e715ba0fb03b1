@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d8612db2_6948fcbe",
+        "filename": "CMakeLists.txt",
+        "patchSetId": 2
+      },
+      "lineNbr": 365,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-06-05T19:52:14Z",
+      "side": 1,
+      "message": "Indent is off here, but to avoid any issues with your branches and getting in sync with gerrit we can fix this in another change.",
+      "revId": "985545090a13fcb318834e2a880e715ba0fb03b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

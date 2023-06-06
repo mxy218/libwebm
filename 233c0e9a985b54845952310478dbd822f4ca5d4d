@@ -16,6 +16,24 @@
       "message": "I rebased the other two changes since they had fallen out of sync with this one.",
       "revId": "233c0e9a985b54845952310478dbd822f4ca5d4d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3065a312_288db4cb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 13
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1361710
+      },
+      "writtenOn": "2023-06-06T12:59:57Z",
+      "side": 1,
+      "message": "Thanks!",
+      "parentUuid": "b71de3e9_489a99d4",
+      "revId": "233c0e9a985b54845952310478dbd822f4ca5d4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [

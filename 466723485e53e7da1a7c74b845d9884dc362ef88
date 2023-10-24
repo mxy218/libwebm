@@ -16,6 +16,40 @@
       "message": "Hi James,\n\nWe\u0027ve run into some build issues with the latest XCode (15.01) when targeting \u003e\u003d C++20 because Apple have finally removed `result_type` and `argument_type` (among other things) which are used in webm_parser. These were deprecated in C++17 and then scheduled for removal in C++20.\n\nAFAIK this project targets C++11, so in this PR I\u0027ve kept backwards compatibility by using a feature detection macro to fallback to the current use of `result_type` when the newer replacement code is not available.\n\nI felt that keeping the `argument_type` alias could be misleading since this has been removed from the standard, so I removed this under the belief that it\u0027s best to write for the newest standard possible when it won\u0027t break backwards compatibility. \n\nI would have liked to remove `result_type` too but I think keeping it makes the backwards compatibility tidier. I considered making the `result_type` alias private in the post-C++17 code to alleviate some of my concerns about it being misleading, but again I thought this made the backwards compatibility code messier, I don\u0027t feel strongly about this though.\n\nThanks in advance for reviewing!",
       "revId": "466723485e53e7da1a7c74b845d9884dc362ef88",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "335f7a45_8cbcf1e9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-10-24T18:54:07Z",
+      "side": 1,
+      "message": "Thanks for the fix.",
+      "revId": "466723485e53e7da1a7c74b845d9884dc362ef88",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "74743c9f_a0d1f261",
+        "filename": "webm_parser/src/master_parser.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-10-24T18:54:07Z",
+      "side": 1,
+      "message": "I think we can avoid the trailing return type here:\nhttps://google.github.io/styleguide/cppguide.html#trailing_return",
+      "revId": "466723485e53e7da1a7c74b845d9884dc362ef88",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

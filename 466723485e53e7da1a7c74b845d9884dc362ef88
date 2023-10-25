@@ -50,6 +50,24 @@
       "message": "I think we can avoid the trailing return type here:\nhttps://google.github.io/styleguide/cppguide.html#trailing_return",
       "revId": "466723485e53e7da1a7c74b845d9884dc362ef88",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "acbcbacd_e767e21c",
+        "filename": "webm_parser/src/master_parser.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1361710
+      },
+      "writtenOn": "2023-10-25T09:13:05Z",
+      "side": 1,
+      "message": "Ahh sorry, we use a different style guide and they\u0027ve become habitual. I\u0027ve pushed a fix now.",
+      "parentUuid": "74743c9f_a0d1f261",
+      "revId": "466723485e53e7da1a7c74b845d9884dc362ef88",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

@@ -16,6 +16,24 @@
       "message": "Thank you for the review. Would it be possible to tag a new version with this change in please?",
       "revId": "6538e61b37c6b9c5d8e05321a6e830ecef888393",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d96ef682_70d86771",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-10-26T19:43:45Z",
+      "side": 1,
+      "message": "\u003e Thank you for the review. Would it be possible to tag a new version with this change in please?\n\nDone: https://chromium.googlesource.com/webm/libwebm/+/refs/tags/libwebm-1.0.0.31",
+      "parentUuid": "7e292783_9a547777",
+      "revId": "6538e61b37c6b9c5d8e05321a6e830ecef888393",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [

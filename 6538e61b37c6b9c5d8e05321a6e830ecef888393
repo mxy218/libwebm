@@ -1,5 +1,23 @@
 {
-  "comments": [],
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7e292783_9a547777",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1361710
+      },
+      "writtenOn": "2023-10-26T08:41:03Z",
+      "side": 1,
+      "message": "Thank you for the review. Would it be possible to tag a new version with this change in please?",
+      "revId": "6538e61b37c6b9c5d8e05321a6e830ecef888393",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ],
   "submitRequirementResults": [
     {
       "submitRequirement": {

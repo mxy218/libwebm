@@ -22,6 +22,30 @@
       },
       "revId": "0d8682df47c4904b7ad952286d62d2d3a5e153a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5de880f1_45785283",
+        "filename": "CMakeLists.txt",
+        "patchSetId": 1
+      },
+      "lineNbr": 392,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-08-02T01:46:03Z",
+      "side": 1,
+      "message": "I checked the official GoogleTest `gtest` and `gtest_main` library targets. They can be built as `STATIC` or `SHARED`; they are not `OBJECT` libraries. So it is good to use `STATIC` here.",
+      "parentUuid": "aa6cd5fb_c5a4a810",
+      "range": {
+        "startLine": 392,
+        "startChar": 27,
+        "endLine": 392,
+        "endChar": 33
+      },
+      "revId": "0d8682df47c4904b7ad952286d62d2d3a5e153a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

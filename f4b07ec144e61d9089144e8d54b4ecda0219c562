@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "473ea0bc_087fc773",
+        "filename": "CMakeLists.txt",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-08-02T00:12:01Z",
+      "side": 0,
+      "message": "we can check for `ENABLE_TESTS` here too.",
+      "revId": "f4b07ec144e61d9089144e8d54b4ecda0219c562",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

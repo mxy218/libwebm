@@ -16,6 +16,24 @@
       "message": "Tried to click `SUBMIT` button and got `Could not perform action: submit not permitted`. I might need your help to submit it.",
       "revId": "3b630045052e1e4d563207ab9e3be8d137c26067",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9be84df2_e2a238ae",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-08-02T22:07:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "967e214e_f2c778bb",
+      "revId": "3b630045052e1e4d563207ab9e3be8d137c26067",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [

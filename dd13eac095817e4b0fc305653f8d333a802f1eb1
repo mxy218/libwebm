@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3d70194f_8bcbe506",
+        "filename": ".clang-format",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-08-02T02:30:11Z",
+      "side": 1,
+      "message": "\u003e Nit: Delete this?\n\nOops, I was testing the behavior and forgot about it.",
+      "parentUuid": "3766b2d4_9b3ef187",
+      "revId": "dd13eac095817e4b0fc305653f8d333a802f1eb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0dc3a759_477ca143",
@@ -31,6 +49,24 @@
       "writtenOn": "2024-08-02T02:20:27Z",
       "side": 1,
       "message": "Optional: It might be good to add a comment to explain what the include categories are. You can convert what you wrote at line 22 into a comment here.",
+      "revId": "dd13eac095817e4b0fc305653f8d333a802f1eb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6a8ba085_b0579f31",
+        "filename": ".clang-format",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-08-02T02:30:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0dc3a759_477ca143",
       "revId": "dd13eac095817e4b0fc305653f8d333a802f1eb1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },

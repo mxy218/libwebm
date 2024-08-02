@@ -46,6 +46,23 @@
       },
       "revId": "0d8682df47c4904b7ad952286d62d2d3a5e153a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3f28a6f6_d449930c",
+        "filename": "CMakeLists.txt",
+        "patchSetId": 1
+      },
+      "lineNbr": 393,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-08-02T01:50:47Z",
+      "side": 1,
+      "message": "The official GoogleTest\u0027s CMakeLists.txt also has:\n\n```\n    target_link_libraries(gtest_main PUBLIC gtest)\n```\n\nThis allows executables to link with just `gtest_main`. I suggest we do the same.",
+      "revId": "0d8682df47c4904b7ad952286d62d2d3a5e153a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

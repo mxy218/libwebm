@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "967e214e_f2c778bb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1562862
+      },
+      "writtenOn": "2024-08-02T22:06:49Z",
+      "side": 1,
+      "message": "Tried to click `SUBMIT` button and got `Could not perform action: submit not permitted`. I might need your help to submit it.",
+      "revId": "3b630045052e1e4d563207ab9e3be8d137c26067",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

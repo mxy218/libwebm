@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "dbfd1cc2_2331cfe2",
+        "filename": ".clang-format",
+        "patchSetId": 5
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-08-02T18:07:55Z",
+      "side": 1,
+      "message": "\u003e \u003e What is the `ext` here?\n\u003e \u003e \n\u003e \u003e Optional: Perhaps we should describe what each group is. No need to comment if these come from the clang-format documentation.\n\u003e \n\u003e They might be mentioned in the documentation, but they come from the defaults. Let me add a note.\n\nDone.",
+      "parentUuid": "b5576ec6_3715d7da",
+      "revId": "45c582b99907a58c9cd0abe5184d1e9e0bf81a7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d5456843_9f1536d4",
@@ -67,6 +85,24 @@
       "side": 1,
       "message": "\u003e Why do two groups have priority 2 (line 16 and this line)?\n\nIt will enforce some ordering for `\"#include \u003cext/.*\u003e\"` style includes. This is the default from `clang-format --dump-config --style\u003dGoogle`. I\u0027ll add a note.",
       "parentUuid": "d5456843_9f1536d4",
+      "revId": "45c582b99907a58c9cd0abe5184d1e9e0bf81a7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d2bcb744_79549ea8",
+        "filename": ".clang-format",
+        "patchSetId": 5
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-08-02T18:07:55Z",
+      "side": 1,
+      "message": "\u003e \u003e Why do two groups have priority 2 (line 16 and this line)?\n\u003e \n\u003e It will enforce some ordering for `\"#include \u003cext/.*\u003e\"` style includes. This is the default from `clang-format --dump-config --style\u003dGoogle`. I\u0027ll add a note.\n\nDone.",
+      "parentUuid": "5c1ecd31_ea244dc7",
       "revId": "45c582b99907a58c9cd0abe5184d1e9e0bf81a7e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }

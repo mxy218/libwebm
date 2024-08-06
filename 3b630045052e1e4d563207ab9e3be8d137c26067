@@ -51,6 +51,24 @@
       "message": "James: Is this line redundant with line 16 (`#include \u003ccfloat\u003e`)?",
       "revId": "3b630045052e1e4d563207ab9e3be8d137c26067",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f200a70f_fc0fe060",
+        "filename": "mkvparser/mkvparser.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-08-06T18:40:43Z",
+      "side": 1,
+      "message": "\u003e James: Is this line redundant with line 16 (`#include \u003ccfloat\u003e`)?\n\nMost likely, it looks like `\u003ccfloat\u003e` came afterward. This block was for compatibility with Visual Studio versions prior to 2013. I don\u0027t have this setup to verify.",
+      "parentUuid": "e12173a3_dabf866e",
+      "revId": "3b630045052e1e4d563207ab9e3be8d137c26067",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [

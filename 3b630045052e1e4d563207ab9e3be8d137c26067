@@ -87,6 +87,24 @@
       "parentUuid": "f200a70f_fc0fe060",
       "revId": "3b630045052e1e4d563207ab9e3be8d137c26067",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "be641132_2eef90a6",
+        "filename": "mkvparser/mkvparser.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-08-06T18:45:16Z",
+      "side": 1,
+      "message": "\u003e \u003e \u003e James: Is this line redundant with line 16 (`#include \u003ccfloat\u003e`)?\n\u003e \u003e \n\u003e \u003e Most likely, it looks like `\u003ccfloat\u003e` came afterward. This block was for compatibility with Visual Studio versions prior to 2013. I don\u0027t have this setup to verify.\n\u003e \n\u003e Though the newer docs mention this:\n\u003e \n\u003e https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/isnan-isnan-isnanf?view\u003dmsvc-170#requirements\n\nhttps://chromium-review.googlesource.com/c/webm/libwebm/+/5766635",
+      "parentUuid": "e14e57dd_8990d116",
+      "revId": "3b630045052e1e4d563207ab9e3be8d137c26067",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
